@@ -1,0 +1,307 @@
+---
+modules:
+  - docassemble.base.util
+---
+id: short_form_sections
+sets:
+  - short_form_sections
+code: |
+  short_deductions
+  short_adjusted_net_income
+  short_other_deductions
+  short_net_income
+  short_prior_year
+  short_expenses_part_1
+  short_expenses_part_2
+  short_expenses_total
+  short_counsel_fees
+  short_assets_real_estate
+  motor_vehicles.gather()
+  pensions.gather()
+  other_assets.gather()
+  short_assets_total
+  liabilities.gather()
+  short_liabilities_total
+  short_certification
+  attorney_statement
+  short_form_sections = True
+---
+id: short_deductions
+sets:
+  - short_deductions
+continue button field: short_deductions
+question: |
+  Itemized deductions from gross income
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Federal income tax deductions: short_deduction_federal
+    datatype: currency
+    required: False
+  - State income tax deductions: short_deduction_state
+    datatype: currency
+    required: False
+  - F.I.C.A. and Medicare: short_deduction_fica
+    datatype: currency
+    required: False
+  - Medical insurance: short_deduction_medical
+    datatype: currency
+    required: False
+  - Union dues: short_deduction_union
+    datatype: currency
+    required: False
+---
+code: |
+  short_deductions_total_weekly = (
+    to_weekly(value("short_deduction_federal"), financial_cadence_default)
+    + to_weekly(value("short_deduction_state"), financial_cadence_default)
+    + to_weekly(value("short_deduction_fica"), financial_cadence_default)
+    + to_weekly(value("short_deduction_medical"), financial_cadence_default)
+    + to_weekly(value("short_deduction_union"), financial_cadence_default)
+  )
+---
+id: short_adjusted_net_income
+continue button field: short_adjusted_net_income
+question: |
+  Adjusted net weekly income
+subquestion: |
+  Total deductions: ${ currency(short_deductions_total_weekly) }
+
+  Adjusted net weekly income: ${ currency(income_total_weekly - short_deductions_total_weekly) }
+---
+code: |
+  short_adjusted_net_weekly_income = income_total_weekly - short_deductions_total_weekly
+---
+id: short_other_deductions
+sets:
+  - short_other_deductions
+continue button field: short_other_deductions
+question: |
+  Other deductions from salary or wages
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Credit union loan repayment: short_other_deduction_credit_union_loan
+    datatype: currency
+    required: False
+  - Savings: short_other_deduction_savings
+    datatype: currency
+    required: False
+  - Retirement: short_other_deduction_retirement
+    datatype: currency
+    required: False
+  - Other (specify): short_other_deduction_other_description
+    required: False
+  - Other amount: short_other_deduction_other_amount
+    datatype: currency
+    required: False
+---
+code: |
+  short_other_deductions_total_weekly = (
+    to_weekly(value("short_other_deduction_credit_union_loan"), financial_cadence_default)
+    + to_weekly(value("short_other_deduction_savings"), financial_cadence_default)
+    + to_weekly(value("short_other_deduction_retirement"), financial_cadence_default)
+    + to_weekly(value("short_other_deduction_other_amount"), financial_cadence_default)
+  )
+---
+id: short_net_income
+continue button field: short_net_income
+question: |
+  Net weekly income
+subquestion: |
+  Net weekly income: ${ currency(short_adjusted_net_weekly_income - short_other_deductions_total_weekly) }
+---
+code: |
+  short_net_weekly_income = short_adjusted_net_weekly_income - short_other_deductions_total_weekly
+---
+id: short_prior_year
+sets:
+  - short_prior_year
+continue button field: short_prior_year
+question: |
+  Prior year income
+fields:
+  - Gross yearly income from prior year: prior_year_gross_amount
+    datatype: currency
+    required: False
+  - Number of years paid into Social Security: years_paid_into_social_security
+    datatype: integer
+    required: False
+    min: 0
+---
+id: short_expenses_part_1
+sets:
+  - short_expenses_part_1
+continue button field: short_expenses_part_1
+question: |
+  Weekly expenses (part 1)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Rent or mortgage (PIT): short_expense_rent
+    datatype: currency
+    required: False
+  - Homeowners/tenant insurance: short_expense_home_insurance
+    datatype: currency
+    required: False
+  - Maintenance and repair: short_expense_maintenance
+    datatype: currency
+    required: False
+  - Heat: short_expense_heat
+    datatype: currency
+    required: False
+  - Electricity and/or gas: short_expense_electric
+    datatype: currency
+    required: False
+  - Telephone: short_expense_phone
+    datatype: currency
+    required: False
+  - Water/sewer: short_expense_water
+    datatype: currency
+    required: False
+  - Food: short_expense_food
+    datatype: currency
+    required: False
+  - House supplies: short_expense_supplies
+    datatype: currency
+    required: False
+  - Laundry and cleaning: short_expense_laundry
+    datatype: currency
+    required: False
+---
+id: short_expenses_part_2
+sets:
+  - short_expenses_part_2
+continue button field: short_expenses_part_2
+question: |
+  Weekly expenses (part 2)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Clothing: short_expense_clothing
+    datatype: currency
+    required: False
+  - Life insurance: short_expense_life_insurance
+    datatype: currency
+    required: False
+  - Medical insurance: short_expense_medical_insurance
+    datatype: currency
+    required: False
+  - Uninsured medicals: short_expense_uninsured_medical
+    datatype: currency
+    required: False
+  - Incidentals and toiletries: short_expense_incidentals
+    datatype: currency
+    required: False
+  - Motor vehicle expenses: short_expense_motor_vehicle
+    datatype: currency
+    required: False
+  - Motor vehicle payment: short_expense_motor_vehicle_payment
+    datatype: currency
+    required: False
+  - Child care: short_expense_child_care
+    datatype: currency
+    required: False
+  - Other (explain): short_expense_other_description
+    required: False
+  - Other amount: short_expense_other_amount
+    datatype: currency
+    required: False
+---
+code: |
+  short_expenses_total_weekly = (
+    to_weekly(value("short_expense_rent"), financial_cadence_default)
+    + to_weekly(value("short_expense_home_insurance"), financial_cadence_default)
+    + to_weekly(value("short_expense_maintenance"), financial_cadence_default)
+    + to_weekly(value("short_expense_heat"), financial_cadence_default)
+    + to_weekly(value("short_expense_electric"), financial_cadence_default)
+    + to_weekly(value("short_expense_phone"), financial_cadence_default)
+    + to_weekly(value("short_expense_water"), financial_cadence_default)
+    + to_weekly(value("short_expense_food"), financial_cadence_default)
+    + to_weekly(value("short_expense_supplies"), financial_cadence_default)
+    + to_weekly(value("short_expense_laundry"), financial_cadence_default)
+    + to_weekly(value("short_expense_clothing"), financial_cadence_default)
+    + to_weekly(value("short_expense_life_insurance"), financial_cadence_default)
+    + to_weekly(value("short_expense_medical_insurance"), financial_cadence_default)
+    + to_weekly(value("short_expense_uninsured_medical"), financial_cadence_default)
+    + to_weekly(value("short_expense_incidentals"), financial_cadence_default)
+    + to_weekly(value("short_expense_motor_vehicle"), financial_cadence_default)
+    + to_weekly(value("short_expense_motor_vehicle_payment"), financial_cadence_default)
+    + to_weekly(value("short_expense_child_care"), financial_cadence_default)
+    + to_weekly(value("short_expense_other_amount"), financial_cadence_default)
+  )
+---
+id: short_expenses_total
+continue button field: short_expenses_total
+question: |
+  Weekly expenses total
+subquestion: |
+  Total weekly expenses: ${ currency(short_expenses_total_weekly) }
+---
+id: short_counsel_fees
+sets:
+  - short_counsel_fees
+continue button field: short_counsel_fees
+question: |
+  Counsel fees
+fields:
+  - Retainer amount(s) paid to your attorney(s): short_counsel_retainer
+    datatype: currency
+    required: False
+  - Legal fees incurred to date against retainer(s): short_counsel_fees_incurred
+    datatype: currency
+    required: False
+  - Anticipated total legal expense (minimum): short_counsel_range_min
+    datatype: currency
+    required: False
+  - Anticipated total legal expense (maximum): short_counsel_range_max
+    datatype: currency
+    required: False
+---
+id: short_assets_real_estate
+sets:
+  - short_assets_real_estate
+continue button field: short_assets_real_estate
+question: |
+  Assets - real estate
+fields:
+  - Real estate location: short_real_estate_location
+    required: False
+  - Title held in the name of: short_real_estate_title
+    required: False
+  - Fair market value: short_real_estate_fmv
+    datatype: currency
+    required: False
+  - Mortgage amount: short_real_estate_mortgage
+    datatype: currency
+    required: False
+  - Equity: short_real_estate_equity
+    datatype: currency
+    required: False
+---
+id: short_assets_total
+continue button field: short_assets_total
+question: |
+  Assets summary
+subquestion: |
+  Motor vehicles, retirement plans, and other assets were collected in the previous steps.
+---
+id: short_liabilities_total
+continue button field: short_liabilities_total
+question: |
+  Liabilities summary
+subquestion: |
+  Liabilities collected: ${ len(liabilities) if defined('liabilities') else 0 }
+---
+id: short_certification
+sets:
+  - short_certification
+continue button field: short_certification
+question: |
+  Certification
+fields:
+  - Signature: user_signature
+    required: False
+  - Signature date: user_signature_date
+    datatype: date
+    required: False

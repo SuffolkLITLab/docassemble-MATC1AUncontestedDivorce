@@ -1,8 +1,3 @@
-license = "MIT"
-license-files = [
-    "LICENSE",
-]
-
 [build-system]
 requires = [
     "setuptools==80.9.0",
@@ -11,14 +6,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.MATC1AUncontestedDivorce"
-version = "1.0"
+version = "1.18"
 description = "Joint Divorce Petition"
 readme = "README.md"
 authors = [
     { name = "Court Forms Online", email = "litlab@suffolk.edu" },
 ]
 dependencies = [
-    "docassemble.ALMassachusetts @ git+https://github.com/SuffolkLITLab/docassemble-ALMassachusetts.git@main",
+    "docassemble.ALMassachusetts>=0.1.2",
     "docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main",
 ]
 

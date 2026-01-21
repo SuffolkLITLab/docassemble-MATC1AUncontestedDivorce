@@ -1,0 +1,103 @@
+---
+modules:
+  - docassemble.base.util
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALMassachusetts:al_massachusetts.yml
+  - financial_statement_shared.yml
+  - financial_statement_short.yml
+  - financial_statement_long.yml
+  - financial_statement_schedule_a.yml
+  - financial_statement_schedule_b.yml
+---
+metadata:
+  title: |
+    Financial Statement (Short or Long)
+  short title: |
+    Financial Statement
+  description: |
+    This interview helps you prepare a Massachusetts financial statement for Probate and Family Court.
+    You will answer questions about your income, expenses, assets, and debts.
+  authors:
+    - Court Forms Online
+  jurisdiction: NAM-US-US+MA
+  typical_role: plaintiff
+  maturity: draft
+---
+code: |
+  # Default court context
+  allowed_courts = ["Probate and Family Court"]
+---
+objects:
+  - users: ALPeopleList.using(target_number=1)
+  - other_parties: ALPeopleList.using(target_number=1)
+  - trial_court: MACourt
+  - user_employer_address: DAAddress
+---
+sections:
+  - review_fs: Review your answers
+---
+mandatory: True
+code: |
+  al_intro_screen
+  interview_order_financial_statement
+---
+id: interview_order_financial_statement
+code: |
+  nav.set_section("Introduction")
+  fs_intro
+
+  nav.set_section("Eligibility")
+  gross_annual_income
+  financial_form_type
+
+  nav.set_section("Court and parties")
+  trial_court
+  docket_number
+  users[0].name.first
+  other_parties[0].name.first
+
+  nav.set_section("Personal information")
+  users[0].birthdate
+  users[0].phone_number
+  users[0].address.address
+  user_employer_name
+  if user_employer_name or user_job_title:
+    user_employer_address.address
+  user_has_health_insurance
+
+  nav.set_section("Cadence")
+  financial_cadence_default
+
+  nav.set_section("Income")
+  income_base_pay_amount
+  income_pensions_amount
+  income_other_description
+
+  if has_self_employment_income:
+    schedule_a_sections
+  if has_rental_income:
+    schedule_b_sections
+  income_totals
+
+  if financial_form_type == "short":
+    short_form_sections
+  else:
+    long_form_sections
+
+  nav.set_section("Review")
+  fs_review
+
+  nav.set_section("Download")
+  fs_download
+
+  interview_order_financial_statement = True
+---
+id: financial_form_type
+code: |
+  if gross_annual_income >= 75000:
+    financial_form_type = "long"
+  else:
+    financial_form_type = "short"
+---

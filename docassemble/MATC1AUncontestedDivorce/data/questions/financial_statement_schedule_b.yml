@@ -1,0 +1,112 @@
+---
+modules:
+  - docassemble.base.util
+---
+variable name: schedule_b_expense_choices
+data:
+  - [advertising, "Advertising"]
+  - [motor_vehicle_travel, "Motor vehicle and travel"]
+  - [insurance, "Insurance"]
+  - [cleaning_maintenance, "Cleaning and maintenance"]
+  - [commissions, "Commissions"]
+  - [mortgage_interest, "Interest on mortgage to banks"]
+  - [other_interest, "Other interest"]
+  - [legal_professional, "Legal and professional services"]
+  - [repairs, "Repairs"]
+  - [supplies, "Supplies"]
+  - [taxes, "Taxes"]
+  - [utilities, "Utilities"]
+  - [wages, "Wages"]
+  - [other, "Other expenses"]
+---
+id: schedule_b_sections
+sets:
+  - schedule_b_sections
+code: |
+  schedule_b_intro
+  schedule_b_rent_received
+  schedule_b_expenses_list
+  schedule_b_expenses.gather()
+  schedule_b_expense_totals
+  schedule_b_weekly_income
+  schedule_b_sections = True
+---
+id: schedule_b_intro
+continue button field: schedule_b_intro
+question: |
+  Schedule B - rental income
+subquestion: |
+  You indicated that you have rental income.
+---
+id: schedule_b_rent_received
+sets:
+  - schedule_b_rent_received
+continue button field: schedule_b_rent_received
+question: |
+  Annual rent received
+fields:
+  - Annual rent received: schedule_b_annual_rent_received
+    datatype: currency
+    required: False
+---
+id: schedule_b_expenses_list
+sets:
+  - schedule_b_expenses_list
+continue button field: schedule_b_expenses_list
+question: |
+  Annual rental expenses
+subquestion: |
+  Add each expense line item and its annual amount.
+fields:
+  - Do you have rental expenses to list?: schedule_b_expenses.there_are_any
+    datatype: yesno
+---
+id: schedule_b_expense_item
+generic object: schedule_b_expenses
+question: |
+  Rental expense
+fields:
+  - Expense category: schedule_b_expenses[i].category
+    code: |
+      schedule_b_expense_choices
+  - Expense description (if needed): schedule_b_expenses[i].description
+    required: False
+  - Annual amount: schedule_b_expenses[i].amount
+    datatype: currency
+    required: False
+---
+code: |
+  schedule_b_expenses[i].complete = True
+---
+id: schedule_b_expenses_more
+question: |
+  Do you have another rental expense to add?
+fields:
+  - Do you have another rental expense to add?: schedule_b_expenses.there_is_another
+    datatype: yesno
+---
+code: |
+  schedule_b_total_annual_expenses = 0
+  if defined("schedule_b_expenses"):
+    for expense in schedule_b_expenses:
+      schedule_b_total_annual_expenses += float(expense.amount or 0)
+---
+id: schedule_b_expense_totals
+continue button field: schedule_b_expense_totals
+question: |
+  Total annual expenses
+subquestion: |
+  Total annual expenses: ${ currency(schedule_b_total_annual_expenses) }
+---
+code: |
+  schedule_b_weekly_rental_income = (
+    (float(value("schedule_b_annual_rent_received") or 0) - schedule_b_total_annual_expenses) / 52
+  )
+---
+id: schedule_b_weekly_income
+continue button field: schedule_b_weekly_income
+question: |
+  Weekly rental income
+subquestion: |
+  Weekly rental income (annual rent minus expenses, divided by 52):
+  ${ currency(schedule_b_weekly_rental_income) }

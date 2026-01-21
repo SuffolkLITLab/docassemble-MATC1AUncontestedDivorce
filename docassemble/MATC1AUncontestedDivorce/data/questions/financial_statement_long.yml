@@ -1,0 +1,516 @@
+---
+modules:
+  - docassemble.base.util
+---
+id: long_form_sections
+sets:
+  - long_form_sections
+code: |
+  long_deductions
+  long_net_income
+  long_prior_year
+  long_expenses_part_1
+  long_expenses_part_2
+  long_expenses_part_3
+  long_expenses_total
+  long_counsel_fees
+  long_real_estate_primary
+  long_real_estate_secondary
+  motor_vehicles.gather()
+  pensions.gather()
+  other_assets.gather()
+  long_assets_total
+  liabilities.gather()
+  long_liabilities_total
+  long_certification
+  long_notary
+  attorney_statement
+  long_form_sections = True
+---
+id: long_deductions
+sets:
+  - long_deductions
+continue button field: long_deductions
+question: |
+  Weekly deductions from gross income
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Federal tax withholding/estimated payments: long_deduction_federal
+    datatype: currency
+    required: False
+  - Federal withholding allowances claimed: long_federal_allowances
+    datatype: integer
+    required: False
+    min: 0
+  - State tax withholding/estimated payments: long_deduction_state
+    datatype: currency
+    required: False
+  - State withholding allowances claimed: long_state_allowances
+    datatype: integer
+    required: False
+    min: 0
+  - F.I.C.A.: long_deduction_fica
+    datatype: currency
+    required: False
+  - Medicare: long_deduction_medicare
+    datatype: currency
+    required: False
+  - Medical insurance: long_deduction_medical
+    datatype: currency
+    required: False
+  - Dental insurance: long_deduction_dental
+    datatype: currency
+    required: False
+  - Vision insurance: long_deduction_vision
+    datatype: currency
+    required: False
+  - Union dues: long_deduction_union
+    datatype: currency
+    required: False
+  - Child support: long_deduction_child_support
+    datatype: currency
+    required: False
+  - Spousal support: long_deduction_spousal_support
+    datatype: currency
+    required: False
+  - Retirement: long_deduction_retirement
+    datatype: currency
+    required: False
+  - Savings: long_deduction_savings
+    datatype: currency
+    required: False
+  - Deferred compensation: long_deduction_deferred_comp
+    datatype: currency
+    required: False
+  - Credit union (loan): long_deduction_credit_union_loan
+    datatype: currency
+    required: False
+  - Credit union (savings): long_deduction_credit_union_savings
+    datatype: currency
+    required: False
+  - Charitable contributions: long_deduction_charity
+    datatype: currency
+    required: False
+  - Life insurance: long_deduction_life_insurance
+    datatype: currency
+    required: False
+  - Other (specify): long_deduction_other_description
+    required: False
+  - Other amount: long_deduction_other_amount
+    datatype: currency
+    required: False
+---
+code: |
+  long_deductions_total_weekly = (
+    to_weekly(value("long_deduction_federal"), financial_cadence_default)
+    + to_weekly(value("long_deduction_state"), financial_cadence_default)
+    + to_weekly(value("long_deduction_fica"), financial_cadence_default)
+    + to_weekly(value("long_deduction_medicare"), financial_cadence_default)
+    + to_weekly(value("long_deduction_medical"), financial_cadence_default)
+    + to_weekly(value("long_deduction_dental"), financial_cadence_default)
+    + to_weekly(value("long_deduction_vision"), financial_cadence_default)
+    + to_weekly(value("long_deduction_union"), financial_cadence_default)
+    + to_weekly(value("long_deduction_child_support"), financial_cadence_default)
+    + to_weekly(value("long_deduction_spousal_support"), financial_cadence_default)
+    + to_weekly(value("long_deduction_retirement"), financial_cadence_default)
+    + to_weekly(value("long_deduction_savings"), financial_cadence_default)
+    + to_weekly(value("long_deduction_deferred_comp"), financial_cadence_default)
+    + to_weekly(value("long_deduction_credit_union_loan"), financial_cadence_default)
+    + to_weekly(value("long_deduction_credit_union_savings"), financial_cadence_default)
+    + to_weekly(value("long_deduction_charity"), financial_cadence_default)
+    + to_weekly(value("long_deduction_life_insurance"), financial_cadence_default)
+    + to_weekly(value("long_deduction_other_amount"), financial_cadence_default)
+  )
+---
+id: long_net_income
+continue button field: long_net_income
+question: |
+  Net weekly income
+subquestion: |
+  Total gross weekly income: ${ currency(income_total_weekly) }
+
+  Total weekly deductions: ${ currency(long_deductions_total_weekly) }
+
+  Net weekly income: ${ currency(income_total_weekly - long_deductions_total_weekly) }
+---
+code: |
+  long_net_weekly_income = income_total_weekly - long_deductions_total_weekly
+---
+id: long_prior_year
+sets:
+  - long_prior_year
+continue button field: long_prior_year
+question: |
+  Prior year income
+fields:
+  - Gross income from prior year: prior_year_gross_amount
+    datatype: currency
+    required: False
+  - Number of years paid into Social Security: years_paid_into_social_security
+    datatype: integer
+    required: False
+    min: 0
+---
+id: long_expenses_part_1
+sets:
+  - long_expenses_part_1
+continue button field: long_expenses_part_1
+question: |
+  Weekly expenses (part 1)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Rent: long_expense_rent
+    datatype: currency
+    required: False
+  - Mortgage (principal, interest, taxes, insurance if escrowed): long_expense_mortgage
+    datatype: currency
+    required: False
+  - Property taxes and assessments: long_expense_property_tax
+    datatype: currency
+    required: False
+  - Homeowner/tenant insurance: long_expense_home_insurance
+    datatype: currency
+    required: False
+  - Maintenance fees or condo fees: long_expense_maintenance_fees
+    datatype: currency
+    required: False
+  - Heat: long_expense_heat
+    datatype: currency
+    required: False
+  - Electricity: long_expense_electric
+    datatype: currency
+    required: False
+  - Propane or natural gas: long_expense_gas
+    datatype: currency
+    required: False
+  - Telephone: long_expense_phone
+    datatype: currency
+    required: False
+  - Water/sewer: long_expense_water
+    datatype: currency
+    required: False
+  - Food: long_expense_food
+    datatype: currency
+    required: False
+  - House supplies: long_expense_supplies
+    datatype: currency
+    required: False
+---
+id: long_expenses_part_2
+sets:
+  - long_expenses_part_2
+continue button field: long_expenses_part_2
+question: |
+  Weekly expenses (part 2)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Laundry: long_expense_laundry
+    datatype: currency
+    required: False
+  - Dry cleaning: long_expense_dry_cleaning
+    datatype: currency
+    required: False
+  - Clothing: long_expense_clothing
+    datatype: currency
+    required: False
+  - Life insurance: long_expense_life_insurance
+    datatype: currency
+    required: False
+  - Medical insurance: long_expense_medical_insurance
+    datatype: currency
+    required: False
+  - Dental insurance: long_expense_dental_insurance
+    datatype: currency
+    required: False
+  - Vision insurance: long_expense_vision_insurance
+    datatype: currency
+    required: False
+  - Uninsured medical: long_expense_uninsured_medical
+    datatype: currency
+    required: False
+  - Uninsured dental: long_expense_uninsured_dental
+    datatype: currency
+    required: False
+  - Motor vehicle expenses: long_expense_motor_vehicle
+    datatype: currency
+    required: False
+  - Fuel: long_expense_fuel
+    datatype: currency
+    required: False
+  - Motor vehicle insurance: long_expense_vehicle_insurance
+    datatype: currency
+    required: False
+  - Motor vehicle maintenance: long_expense_vehicle_maintenance
+    datatype: currency
+    required: False
+  - Loan payment(s): long_expense_loan_payments
+    datatype: currency
+    required: False
+  - Entertainment: long_expense_entertainment
+    datatype: currency
+    required: False
+  - Vacation: long_expense_vacation
+    datatype: currency
+    required: False
+  - Cable TV: long_expense_cable
+    datatype: currency
+    required: False
+---
+id: long_expenses_part_3
+sets:
+  - long_expenses_part_3
+continue button field: long_expenses_part_3
+question: |
+  Weekly expenses (part 3)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Child support (attach order if from different court): long_expense_child_support
+    datatype: currency
+    required: False
+  - Child(ren)'s day care expense: long_expense_child_day_care
+    datatype: currency
+    required: False
+  - Child(ren)'s education: long_expense_child_education
+    datatype: currency
+    required: False
+  - Education (self): long_expense_education_self
+    datatype: currency
+    required: False
+  - Employment-related uniforms: long_expense_uniforms
+    datatype: currency
+    required: False
+  - Employment-related travel: long_expense_employment_travel
+    datatype: currency
+    required: False
+  - Employment continuing education: long_expense_continuing_education
+    datatype: currency
+    required: False
+  - Employment expenses (other): long_expense_employment_other_description
+    required: False
+  - Employment expenses (other amount): long_expense_employment_other_amount
+    datatype: currency
+    required: False
+  - Lottery tickets: long_expense_lottery
+    datatype: currency
+    required: False
+  - Charitable contributions: long_expense_charity
+    datatype: currency
+    required: False
+  - Child(ren)'s allowance: long_expense_child_allowance
+    datatype: currency
+    required: False
+  - Extraordinary travel for visitation: long_expense_visitation_travel
+    datatype: currency
+    required: False
+  - Other (specify): long_expense_other_description
+    required: False
+  - Other amount: long_expense_other_amount
+    datatype: currency
+    required: False
+---
+code: |
+  long_expenses_total_weekly = (
+    to_weekly(value("long_expense_rent"), financial_cadence_default)
+    + to_weekly(value("long_expense_mortgage"), financial_cadence_default)
+    + to_weekly(value("long_expense_property_tax"), financial_cadence_default)
+    + to_weekly(value("long_expense_home_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_maintenance_fees"), financial_cadence_default)
+    + to_weekly(value("long_expense_heat"), financial_cadence_default)
+    + to_weekly(value("long_expense_electric"), financial_cadence_default)
+    + to_weekly(value("long_expense_gas"), financial_cadence_default)
+    + to_weekly(value("long_expense_phone"), financial_cadence_default)
+    + to_weekly(value("long_expense_water"), financial_cadence_default)
+    + to_weekly(value("long_expense_food"), financial_cadence_default)
+    + to_weekly(value("long_expense_supplies"), financial_cadence_default)
+    + to_weekly(value("long_expense_laundry"), financial_cadence_default)
+    + to_weekly(value("long_expense_dry_cleaning"), financial_cadence_default)
+    + to_weekly(value("long_expense_clothing"), financial_cadence_default)
+    + to_weekly(value("long_expense_life_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_medical_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_dental_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_vision_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_uninsured_medical"), financial_cadence_default)
+    + to_weekly(value("long_expense_uninsured_dental"), financial_cadence_default)
+    + to_weekly(value("long_expense_motor_vehicle"), financial_cadence_default)
+    + to_weekly(value("long_expense_fuel"), financial_cadence_default)
+    + to_weekly(value("long_expense_vehicle_insurance"), financial_cadence_default)
+    + to_weekly(value("long_expense_vehicle_maintenance"), financial_cadence_default)
+    + to_weekly(value("long_expense_loan_payments"), financial_cadence_default)
+    + to_weekly(value("long_expense_entertainment"), financial_cadence_default)
+    + to_weekly(value("long_expense_vacation"), financial_cadence_default)
+    + to_weekly(value("long_expense_cable"), financial_cadence_default)
+    + to_weekly(value("long_expense_child_support"), financial_cadence_default)
+    + to_weekly(value("long_expense_child_day_care"), financial_cadence_default)
+    + to_weekly(value("long_expense_child_education"), financial_cadence_default)
+    + to_weekly(value("long_expense_education_self"), financial_cadence_default)
+    + to_weekly(value("long_expense_uniforms"), financial_cadence_default)
+    + to_weekly(value("long_expense_employment_travel"), financial_cadence_default)
+    + to_weekly(value("long_expense_continuing_education"), financial_cadence_default)
+    + to_weekly(value("long_expense_employment_other_amount"), financial_cadence_default)
+    + to_weekly(value("long_expense_lottery"), financial_cadence_default)
+    + to_weekly(value("long_expense_charity"), financial_cadence_default)
+    + to_weekly(value("long_expense_child_allowance"), financial_cadence_default)
+    + to_weekly(value("long_expense_visitation_travel"), financial_cadence_default)
+    + to_weekly(value("long_expense_other_amount"), financial_cadence_default)
+  )
+---
+id: long_expenses_total
+continue button field: long_expenses_total
+question: |
+  Weekly expenses total
+subquestion: |
+  Total weekly expenses: ${ currency(long_expenses_total_weekly) }
+---
+id: long_counsel_fees
+sets:
+  - long_counsel_fees
+continue button field: long_counsel_fees
+question: |
+  Counsel fees
+fields:
+  - Retainer amount(s) paid to your attorney(s): long_counsel_retainer
+    datatype: currency
+    required: False
+  - Legal fees incurred to date against retainer(s): long_counsel_fees_incurred
+    datatype: currency
+    required: False
+  - Anticipated total legal expense (minimum): long_counsel_range_min
+    datatype: currency
+    required: False
+  - Anticipated total legal expense (maximum): long_counsel_range_max
+    datatype: currency
+    required: False
+---
+id: long_real_estate_primary
+sets:
+  - long_real_estate_primary
+continue button field: long_real_estate_primary
+question: |
+  Real estate - primary residence
+fields:
+  - Address (street, city/town, state): long_primary_real_estate_address
+    required: False
+  - Title held in name of: long_primary_real_estate_title
+    required: False
+  - Purchase price: long_primary_real_estate_purchase_price
+    datatype: currency
+    required: False
+  - Year of purchase: long_primary_real_estate_purchase_year
+    datatype: integer
+    required: False
+  - Current assessed value: long_primary_real_estate_assessed_value
+    datatype: currency
+    required: False
+  - Date of last assessment: long_primary_real_estate_assessment_date
+    datatype: date
+    required: False
+  - Fair market value: long_primary_real_estate_fmv
+    datatype: currency
+    required: False
+  - Outstanding 1st mortgage: long_primary_real_estate_first_mortgage
+    datatype: currency
+    required: False
+  - Outstanding 2nd mortgage/home equity loan: long_primary_real_estate_second_mortgage
+    datatype: currency
+    required: False
+  - Equity: long_primary_real_estate_equity
+    datatype: currency
+    required: False
+---
+id: long_real_estate_secondary
+sets:
+  - long_real_estate_secondary
+continue button field: long_real_estate_secondary
+question: |
+  Real estate - vacation or second home
+fields:
+  - Address (street, city/town, state): long_secondary_real_estate_address
+    required: False
+  - Title held in name of: long_secondary_real_estate_title
+    required: False
+  - Purchase price: long_secondary_real_estate_purchase_price
+    datatype: currency
+    required: False
+  - Year of purchase: long_secondary_real_estate_purchase_year
+    datatype: integer
+    required: False
+  - Current assessed value: long_secondary_real_estate_assessed_value
+    datatype: currency
+    required: False
+  - Date of last assessment: long_secondary_real_estate_assessment_date
+    datatype: date
+    required: False
+  - Fair market value: long_secondary_real_estate_fmv
+    datatype: currency
+    required: False
+  - Outstanding 1st mortgage: long_secondary_real_estate_first_mortgage
+    datatype: currency
+    required: False
+  - Outstanding 2nd mortgage/home equity loan: long_secondary_real_estate_second_mortgage
+    datatype: currency
+    required: False
+  - Equity: long_secondary_real_estate_equity
+    datatype: currency
+    required: False
+---
+id: long_assets_total
+continue button field: long_assets_total
+question: |
+  Assets summary
+subquestion: |
+  Motor vehicles, pensions, and other assets were collected in the previous steps.
+---
+id: long_liabilities_total
+continue button field: long_liabilities_total
+question: |
+  Liabilities summary
+subquestion: |
+  Liabilities collected: ${ len(liabilities) if defined('liabilities') else 0 }
+---
+id: long_certification
+sets:
+  - long_certification
+continue button field: long_certification
+question: |
+  Certification
+fields:
+  - Signature: user_signature
+    required: False
+  - Signature date: user_signature_date
+    datatype: date
+    required: False
+---
+id: long_notary
+sets:
+  - long_notary
+continue button field: long_notary
+question: |
+  Notary
+fields:
+  - Will you have this notarized now?: will_notarize_now
+    datatype: yesno
+  - County: notary_county
+    show if:
+      variable: will_notarize_now
+      is: True
+    required: False
+  - Date of appearance: notary_appearance_date
+    show if:
+      variable: will_notarize_now
+      is: True
+    datatype: date
+    required: False
+  - Notary public name: notary_name
+    show if:
+      variable: will_notarize_now
+      is: True
+    required: False
+  - Commission expires: notary_commission_expires
+    show if:
+      variable: will_notarize_now
+      is: True
+    required: False

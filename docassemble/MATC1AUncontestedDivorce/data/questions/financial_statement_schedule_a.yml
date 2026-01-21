@@ -1,0 +1,331 @@
+---
+modules:
+  - docassemble.base.util
+---
+variable name: schedule_a_expense_choices
+data:
+  - [cost_goods, "Cost of goods sold"]
+  - [advertising, "Advertising"]
+  - [bad_debts, "Bad debts"]
+  - [motor_vehicle_gas, "Motor vehicles - gas"]
+  - [motor_vehicle_insurance, "Motor vehicles - insurance"]
+  - [motor_vehicle_maintenance, "Motor vehicles - maintenance"]
+  - [motor_vehicle_registration, "Motor vehicles - registration"]
+  - [commissions, "Commissions"]
+  - [depletion, "Depletion"]
+  - [dues_publications, "Dues and publications"]
+  - [employee_benefits, "Employee benefit programs"]
+  - [freight, "Freight"]
+  - [insurance_other, "Insurance (other than health)"]
+  - [mortgage_interest, "Interest on mortgage to banks"]
+  - [loan_interest, "Interest on loans"]
+  - [legal_professional, "Legal and professional services"]
+  - [office_expenses, "Office expenses"]
+  - [laundry_cleaning, "Laundry and cleaning"]
+  - [pension_profit_sharing, "Pension and profit sharing"]
+  - [rent_leased_equipment, "Rent on leased equipment"]
+  - [machinery_equipment, "Machinery/equipment"]
+  - [other_business_property, "Other business property"]
+  - [repairs, "Repairs"]
+  - [supplies, "Supplies"]
+  - [taxes, "Taxes"]
+  - [travel, "Travel"]
+  - [meals_entertainment, "Meals and entertainment"]
+  - [utilities_phones, "Utilities and phones"]
+  - [wages, "Wages"]
+  - [other, "Other expenses"]
+---
+id: schedule_a_sections
+sets:
+  - schedule_a_sections
+code: |
+  schedule_a_intro
+  schedule_a_gross_receipts
+  schedule_a_expenses_list
+  schedule_a_expenses.gather()
+  schedule_a_expense_totals
+  schedule_a_weekly_income
+  schedule_a_business_nature
+  schedule_a_seasonal
+  schedule_a_accounting
+  schedule_a_year_to_date
+  schedule_a_sections = True
+---
+id: schedule_a_intro
+continue button field: schedule_a_intro
+question: |
+  Schedule A - self-employment or business income
+subquestion: |
+  You indicated that you have self-employment or business income.
+---
+id: schedule_a_gross_receipts
+sets:
+  - schedule_a_gross_receipts
+continue button field: schedule_a_gross_receipts
+question: |
+  Gross monthly receipts
+fields:
+  - Gross monthly receipts: schedule_a_gross_monthly_receipts
+    datatype: currency
+    required: False
+---
+id: schedule_a_expenses_list
+sets:
+  - schedule_a_expenses_list
+continue button field: schedule_a_expenses_list
+question: |
+  Monthly business expenses
+subquestion: |
+  Add each expense line item and its monthly amount.
+fields:
+  - Do you have business expenses to list?: schedule_a_expenses.there_are_any
+    datatype: yesno
+---
+id: schedule_a_expense_item
+generic object: schedule_a_expenses
+question: |
+  Business expense
+fields:
+  - Expense category: schedule_a_expenses[i].category
+    code: |
+      schedule_a_expense_choices
+  - Expense description (if needed): schedule_a_expenses[i].description
+    required: False
+  - Monthly amount: schedule_a_expenses[i].amount
+    datatype: currency
+    required: False
+---
+code: |
+  schedule_a_expenses[i].complete = True
+---
+id: schedule_a_expenses_more
+question: |
+  Do you have another business expense to add?
+fields:
+  - Do you have another business expense to add?: schedule_a_expenses.there_is_another
+    datatype: yesno
+---
+code: |
+  schedule_a_total_monthly_expenses = 0
+  if defined("schedule_a_expenses"):
+    for expense in schedule_a_expenses:
+      schedule_a_total_monthly_expenses += float(expense.amount or 0)
+---
+id: schedule_a_expense_totals
+continue button field: schedule_a_expense_totals
+question: |
+  Total monthly expenses
+subquestion: |
+  Total monthly expenses: ${ currency(schedule_a_total_monthly_expenses) }
+---
+code: |
+  schedule_a_weekly_business_income = (
+    (float(value("schedule_a_gross_monthly_receipts") or 0) - schedule_a_total_monthly_expenses) / 4.3
+  )
+---
+id: schedule_a_weekly_income
+continue button field: schedule_a_weekly_income
+question: |
+  Weekly business income
+subquestion: |
+  Weekly business income (gross monthly receipts minus total monthly expenses, divided by 4.3):
+  ${ currency(schedule_a_weekly_business_income) }
+---
+id: schedule_a_business_nature
+continue button field: schedule_a_business_nature
+question: |
+  Nature of self-employment or business
+fields:
+  - Describe the nature of the business: schedule_a_business_nature
+    required: False
+---
+id: schedule_a_seasonal
+sets:
+  - schedule_a_seasonal
+continue button field: schedule_a_seasonal
+question: |
+  Seasonal business
+fields:
+  - Is this business seasonal?: schedule_a_is_seasonal
+    datatype: yesno
+  - January income percentage: schedule_a_january_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - January expenses percentage: schedule_a_january_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - February income percentage: schedule_a_february_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - February expenses percentage: schedule_a_february_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - March income percentage: schedule_a_march_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - March expenses percentage: schedule_a_march_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - April income percentage: schedule_a_april_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - April expenses percentage: schedule_a_april_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - May income percentage: schedule_a_may_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - May expenses percentage: schedule_a_may_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - June income percentage: schedule_a_june_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - June expenses percentage: schedule_a_june_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - July income percentage: schedule_a_july_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - July expenses percentage: schedule_a_july_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - August income percentage: schedule_a_august_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - August expenses percentage: schedule_a_august_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - September income percentage: schedule_a_september_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - September expenses percentage: schedule_a_september_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - October income percentage: schedule_a_october_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - October expenses percentage: schedule_a_october_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - November income percentage: schedule_a_november_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - November expenses percentage: schedule_a_november_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - December income percentage: schedule_a_december_income_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+  - December expenses percentage: schedule_a_december_expense_pct
+    datatype: number
+    show if:
+      variable: schedule_a_is_seasonal
+      is: True
+    required: False
+---
+id: schedule_a_accounting
+sets:
+  - schedule_a_accounting
+continue button field: schedule_a_accounting
+question: |
+  Accounting basis
+fields:
+  - Accounting basis: schedule_a_accounting_basis
+    input type: radio
+    choices:
+      - Calendar year: calendar
+      - Fiscal year: fiscal
+  - Fiscal year start date: schedule_a_fiscal_start
+    show if:
+      variable: schedule_a_accounting_basis
+      is: fiscal
+    required: False
+  - Fiscal year end date: schedule_a_fiscal_end
+    show if:
+      variable: schedule_a_accounting_basis
+      is: fiscal
+    required: False
+---
+id: schedule_a_year_to_date
+sets:
+  - schedule_a_year_to_date
+continue button field: schedule_a_year_to_date
+question: |
+  Year-to-date totals
+fields:
+  - Gross receipts year to date: schedule_a_gross_receipts_ytd
+    datatype: currency
+    required: False
+  - Gross expenses year to date: schedule_a_gross_expenses_ytd
+    datatype: currency
+    required: False

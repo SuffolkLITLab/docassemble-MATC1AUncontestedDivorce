@@ -1,0 +1,570 @@
+---
+modules:
+  - docassemble.base.util
+---
+code: |
+  from docassemble.base.util import defined, log, value
+
+  def fs_log(message, level="debug"):
+    global debug_log
+    log(f"[fs] {message}", level)
+    if not defined("debug_log"):
+      debug_log = []
+    debug_log.append(message)
+
+  def to_weekly(amount, cadence):
+    if amount is None:
+      return 0
+    try:
+      value = float(amount)
+    except Exception:
+      return 0
+    if cadence == "weekly":
+      return value
+    if cadence == "biweekly":
+      return value / 2
+    if cadence == "semimonthly":
+      return value / 2.15
+    if cadence == "monthly":
+      return value / 4.3
+    if cadence == "annual":
+      return value / 52
+    return value
+---
+variable name: cadence_choices
+data:
+  - [weekly, "Weekly"]
+  - [biweekly, "Every 2 weeks"]
+  - [semimonthly, "Twice per month"]
+  - [monthly, "Monthly"]
+  - [annual, "Yearly"]
+---
+variable name: other_asset_type_choices
+data:
+  - [checking, "Checking account"]
+  - [savings, "Savings account"]
+  - [cash, "Cash on hand"]
+  - [cd, "Certificate of deposit"]
+  - [credit_union, "Credit union account"]
+  - [escrow, "Funds held in escrow"]
+  - [stocks, "Stocks"]
+  - [bonds, "Bonds"]
+  - [bond_funds, "Bond funds"]
+  - [notes_held, "Notes held"]
+  - [brokerage_cash, "Cash in brokerage account"]
+  - [money_market, "Money market account"]
+  - [us_savings_bonds, "U.S. savings bonds"]
+  - [ira, "IRA"]
+  - [keough, "Keough"]
+  - [profit_sharing, "Profit sharing"]
+  - [deferred_comp, "Deferred compensation"]
+  - [other_retirement, "Other retirement plan"]
+  - [annuity, "Annuity"]
+  - [life_insurance_cash, "Life insurance cash value"]
+  - [judgments_liens, "Judgments or liens"]
+  - [pending_inheritance, "Pending legacies or inheritances"]
+  - [jewelry, "Jewelry"]
+  - [safe_deposit, "Safe or safe deposit box contents"]
+  - [firearms, "Firearms"]
+  - [collections, "Collections"]
+  - [tools_equipment, "Tools or equipment"]
+  - [crops_livestock, "Crops or livestock"]
+  - [home_furnishings, "Home furnishings"]
+  - [arts_antiques, "Arts and antiques"]
+  - [other, "Other (specify)"]
+---
+objects:
+  - motor_vehicles: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - pensions: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - other_assets: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - liabilities: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - schedule_a_expenses: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - schedule_b_expenses: DAList.using(object_type=DAObject, complete_attribute="complete")
+---
+code: |
+  if not defined("debug_log"):
+    debug_log = []
+---
+id: fs_intro
+continue button field: fs_intro
+question: |
+  Financial Statement
+subquestion: |
+  This interview helps you prepare a Massachusetts financial statement.
+  You will answer questions about your income, expenses, assets, and debts.
+---
+id: gross_annual_income
+question: |
+  Gross annual income
+subquestion: |
+  Enter your gross annual income before taxes.
+fields:
+  - Gross annual income: gross_annual_income
+    datatype: currency
+    min: 0
+---
+id: docket_number
+question: |
+  Docket number
+fields:
+  - Docket number: docket_number
+    required: False
+---
+id: user_and_other_party_names
+sets:
+  - user_and_other_party_names
+question: |
+  Party names
+fields:
+  - Your first name: users[0].name.first
+  - Your last name: users[0].name.last
+  - Other party first name: other_parties[0].name.first
+  - Other party last name: other_parties[0].name.last
+---
+id: user_personal_info
+sets:
+  - user_personal_info
+question: |
+  Personal information
+fields:
+  - Social Security number: user_ssn
+    required: False
+  - Date of birth: users[0].birthdate
+    datatype: date
+  - Number of children living with you: children_living_with_user_count
+    datatype: integer
+    required: False
+    min: 0
+  - Occupation: user_occupation
+    required: False
+---
+id: user_contact_info
+sets:
+  - user_contact_info
+question: |
+  Contact information
+fields:
+  - Phone number: users[0].phone_number
+    required: False
+  - Email address: users[0].email
+    required: False
+---
+id: user_address
+sets:
+  - user_address
+question: |
+  Address
+fields:
+  - Street address: users[0].address.address
+    address autocomplete: True
+  - City/Town: users[0].address.city
+  - State: users[0].address.state
+    default: MA
+  - ZIP: users[0].address.zip
+---
+id: user_employment
+sets:
+  - user_employment
+question: |
+  Employment
+fields:
+  - Employer name: user_employer_name
+    required: False
+  - Job title: user_job_title
+    required: False
+---
+id: user_employer_address
+question: |
+  Employer address
+fields:
+  - Street address: user_employer_address.address
+    address autocomplete: True
+    required: False
+  - City/Town: user_employer_address.city
+    required: False
+  - State: user_employer_address.state
+    default: MA
+    required: False
+  - ZIP: user_employer_address.zip
+    required: False
+  - Employer phone number: user_employer_phone
+    required: False
+---
+id: user_health_insurance
+sets:
+  - user_health_insurance
+question: |
+  Health insurance
+fields:
+  - Do you have health insurance coverage?: user_has_health_insurance
+    datatype: yesno
+  - Name of health insurance provider: user_health_insurance_provider
+    show if:
+      variable: user_has_health_insurance
+      is: True
+    required: False
+---
+id: financial_cadence_default
+question: |
+  Default cadence
+subquestion: |
+  Choose the cadence you want to use for most money amounts.
+  If you already know weekly amounts, choose weekly.
+fields:
+  - Cadence: financial_cadence_default
+    input type: radio
+    code: |
+      cadence_choices
+    default: weekly
+---
+id: income_part_1
+sets:
+  - income_part_1
+question: |
+  Gross income (part 1)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Base pay from salary/wages: income_base_pay_amount
+    datatype: currency
+    required: False
+  - Overtime: income_overtime_amount
+    datatype: currency
+    required: False
+  - Part-time job: income_part_time_amount
+    datatype: currency
+    required: False
+  - Tips: income_tips_amount
+    datatype: currency
+    required: False
+  - Commissions/bonuses: income_commissions_amount
+    datatype: currency
+    required: False
+  - Dividends/interest: income_dividends_amount
+    datatype: currency
+    required: False
+  - Trusts/annuities: income_trusts_amount
+    datatype: currency
+    required: False
+  - Do you have self-employment or business income?: has_self_employment_income
+    datatype: yesno
+---
+id: income_part_2
+sets:
+  - income_part_2
+question: |
+  Gross income (part 2)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Pensions/retirement funds: income_pensions_amount
+    datatype: currency
+    required: False
+  - Social Security: income_social_security_amount
+    datatype: currency
+    required: False
+  - Disability, unemployment, or worker's compensation: income_disability_amount
+    datatype: currency
+    required: False
+  - Public assistance (TAFDC, SNAP, etc.): income_public_assistance_amount
+    datatype: currency
+    required: False
+  - Child support or alimony received: income_support_received_amount
+    datatype: currency
+    required: False
+  - Do you have rental income from property?: has_rental_income
+    datatype: yesno
+  - Royalties and other rights: income_royalties_amount
+    datatype: currency
+    required: False
+  - Contributions from household members: income_household_contrib_amount
+    datatype: currency
+    required: False
+---
+id: income_part_3
+sets:
+  - income_part_3
+question: |
+  Gross income (part 3)
+subquestion: |
+  Enter amounts using your chosen cadence (${ financial_cadence_default }).
+fields:
+  - Other income description: income_other_description
+    required: False
+  - Other income amount: income_other_amount
+    datatype: currency
+    required: False
+---
+id: income_totals
+continue button field: income_totals
+question: |
+  Income summary
+subquestion: |
+  We will convert your amounts to weekly values for the financial statement.
+
+  Total gross weekly income (current): ${ currency(income_total_weekly) }
+---
+code: |
+  fs_log("Calculating weekly income totals.")
+  income_base_pay_weekly = to_weekly(value("income_base_pay_amount"), financial_cadence_default)
+  income_overtime_weekly = to_weekly(value("income_overtime_amount"), financial_cadence_default)
+  income_part_time_weekly = to_weekly(value("income_part_time_amount"), financial_cadence_default)
+  income_tips_weekly = to_weekly(value("income_tips_amount"), financial_cadence_default)
+  income_commissions_weekly = to_weekly(value("income_commissions_amount"), financial_cadence_default)
+  income_dividends_weekly = to_weekly(value("income_dividends_amount"), financial_cadence_default)
+  income_trusts_weekly = to_weekly(value("income_trusts_amount"), financial_cadence_default)
+  income_pensions_weekly = to_weekly(value("income_pensions_amount"), financial_cadence_default)
+  income_social_security_weekly = to_weekly(value("income_social_security_amount"), financial_cadence_default)
+  income_disability_weekly = to_weekly(value("income_disability_amount"), financial_cadence_default)
+  income_public_assistance_weekly = to_weekly(value("income_public_assistance_amount"), financial_cadence_default)
+  income_support_received_weekly = to_weekly(value("income_support_received_amount"), financial_cadence_default)
+  income_royalties_weekly = to_weekly(value("income_royalties_amount"), financial_cadence_default)
+  income_household_contrib_weekly = to_weekly(value("income_household_contrib_amount"), financial_cadence_default)
+  income_other_weekly = to_weekly(value("income_other_amount"), financial_cadence_default)
+
+  if defined("schedule_a_weekly_business_income"):
+    income_self_employment_weekly = schedule_a_weekly_business_income
+  else:
+    income_self_employment_weekly = 0
+
+  if defined("schedule_b_weekly_rental_income"):
+    income_rental_weekly = schedule_b_weekly_rental_income
+  else:
+    income_rental_weekly = 0
+
+  income_total_weekly = (
+    income_base_pay_weekly
+    + income_overtime_weekly
+    + income_part_time_weekly
+    + income_self_employment_weekly
+    + income_tips_weekly
+    + income_commissions_weekly
+    + income_dividends_weekly
+    + income_trusts_weekly
+    + income_pensions_weekly
+    + income_social_security_weekly
+    + income_disability_weekly
+    + income_public_assistance_weekly
+    + income_support_received_weekly
+    + income_rental_weekly
+    + income_royalties_weekly
+    + income_household_contrib_weekly
+    + income_other_weekly
+  )
+---
+id: fs_review
+continue button field: fs_review
+question: |
+  Review
+subquestion: |
+  Form type: ${ financial_form_type.upper() }
+
+  Gross weekly income: ${ currency(income_total_weekly) }
+
+  You can review each section before downloading your forms.
+  % if defined("debug_log") and debug_log:
+  ---
+  ### Debug log (last 5)
+  % for entry in debug_log[-5:]:
+  - ${ entry }
+  % endfor
+  % endif
+---
+id: fs_download
+continue button field: fs_download
+question: |
+  Download
+subquestion: |
+  Your answers are ready. PDF templates and field mapping will be connected in a later step.
+---
+id: motor_vehicles
+question: |
+  Motor vehicles
+fields:
+  - Do you have motor vehicles to list?: motor_vehicles.there_are_any
+    datatype: yesno
+---
+id: motor_vehicle_item
+generic object: motor_vehicles
+question: |
+  Motor vehicle details
+fields:
+  - Type: motor_vehicles[i].vehicle_type
+    required: False
+  - Make: motor_vehicles[i].make
+    required: False
+  - Model: motor_vehicles[i].model
+    required: False
+  - Purchase price: motor_vehicles[i].purchase_price
+    datatype: currency
+    required: False
+  - Year of purchase: motor_vehicles[i].purchase_year
+    datatype: integer
+    required: False
+  - Fair market value: motor_vehicles[i].fair_market_value
+    datatype: currency
+    required: False
+  - Outstanding loan: motor_vehicles[i].outstanding_loan
+    datatype: currency
+    required: False
+  - Equity: motor_vehicles[i].equity
+    datatype: currency
+    required: False
+---
+code: |
+  motor_vehicles[i].complete = True
+---
+id: motor_vehicles_more
+question: |
+  Do you have another motor vehicle to add?
+fields:
+  - Do you have another motor vehicle to add?: motor_vehicles.there_is_another
+    datatype: yesno
+---
+id: pensions
+question: |
+  Pensions and retirement plans
+fields:
+  - Do you have pensions or retirement plans to list?: pensions.there_are_any
+    datatype: yesno
+---
+id: pension_item
+generic object: pensions
+question: |
+  Pension or retirement plan
+fields:
+  - Institution: pensions[i].institution
+    required: False
+  - Account number: pensions[i].account_number
+    required: False
+  - Listed beneficiary: pensions[i].beneficiary
+    required: False
+  - Defined benefit plan amount: pensions[i].defined_benefit_amount
+    datatype: currency
+    required: False
+  - Defined contribution plan amount: pensions[i].defined_contribution_amount
+    datatype: currency
+    required: False
+---
+code: |
+  pensions[i].complete = True
+---
+id: pensions_more
+question: |
+  Do you have another pension or retirement plan to add?
+fields:
+  - Do you have another pension or retirement plan to add?: pensions.there_is_another
+    datatype: yesno
+---
+id: other_assets
+question: |
+  Other assets
+fields:
+  - Do you have other assets to list?: other_assets.there_are_any
+    datatype: yesno
+---
+id: other_asset_item
+generic object: other_assets
+question: |
+  Other asset details
+fields:
+  - Asset type: other_assets[i].asset_type
+    code: |
+      other_asset_type_choices
+  - Description or notes: other_assets[i].description
+    required: False
+  - Institution: other_assets[i].institution
+    required: False
+  - Account number: other_assets[i].account_number
+    required: False
+  - Listed beneficiary: other_assets[i].beneficiary
+    required: False
+  - Current balance/value: other_assets[i].current_balance
+    datatype: currency
+    required: False
+---
+code: |
+  other_assets[i].complete = True
+---
+id: other_assets_more
+question: |
+  Do you have another asset to add?
+fields:
+  - Do you have another asset to add?: other_assets.there_is_another
+    datatype: yesno
+---
+id: liabilities
+question: |
+  Liabilities
+fields:
+  - Do you have liabilities to list?: liabilities.there_are_any
+    datatype: yesno
+---
+id: liability_item
+generic object: liabilities
+question: |
+  Liability details
+fields:
+  - Creditor: liabilities[i].creditor
+    required: False
+  - Nature of debt: liabilities[i].debt_type
+    required: False
+  - Date incurred: liabilities[i].date_incurred
+    required: False
+  - Amount due: liabilities[i].amount_due
+    datatype: currency
+    required: False
+  - Weekly payment: liabilities[i].weekly_payment
+    datatype: currency
+    required: False
+---
+code: |
+  liabilities[i].complete = True
+---
+id: liabilities_more
+question: |
+  Do you have another liability to add?
+fields:
+  - Do you have another liability to add?: liabilities.there_is_another
+    datatype: yesno
+---
+id: attorney_statement
+sets:
+  - attorney_statement
+continue button field: attorney_statement
+question: |
+  Attorney statement
+fields:
+  - Do you have an attorney?: has_attorney
+    datatype: yesno
+  - Attorney signature date: attorney_signature_date
+    show if:
+      variable: has_attorney
+      is: True
+    datatype: date
+    required: False
+  - Attorney signature: attorney_signature
+    show if:
+      variable: has_attorney
+      is: True
+    required: False
+  - Attorney printed name: attorney_print_name
+    show if:
+      variable: has_attorney
+      is: True
+    required: False
+  - Attorney address: attorney_address
+    show if:
+      variable: has_attorney
+      is: True
+    required: False
+  - Attorney phone: attorney_phone
+    show if:
+      variable: has_attorney
+      is: True
+    required: False
+  - Attorney BBO number: attorney_bbo
+    show if:
+      variable: has_attorney
+      is: True
+    required: False
