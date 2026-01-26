@@ -44,16 +44,16 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MATC1AUncontestedDivorce',
-      version='1.18',
-      description=('Joint Divorce Petition'),
-      long_description='# docassemble.Cjd101A\r\n\r\nJoint Divorce Petition\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n\r\n',
+      version='1.0',
+      description=('Uncontested Divorce Joint Petition'),
+      long_description='# docassemble.Divorcefilings\r\n\r\nUncontested Divorce Joint Petition\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n\r\n',
       long_description_content_type='text/markdown',
       author='Court Forms Online',
-      author_email='litlab@suffolk.edu',
-      license='',
+      author_email='wkh06781@su.suffolk.edu',
+      license='MIT',
       url='https://courtformsonline.org',
       packages=find_namespace_packages(),
-      install_requires=['docassemble.ALMassachusetts>=0.1.2', 'docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main'],
+      install_requires=['docassemble.ALMassachusetts>=0.1.2', 'docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main', 'docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/MATC1AUncontestedDivorce/', package='docassemble.MATC1AUncontestedDivorce'),
      )
