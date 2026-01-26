@@ -45,10 +45,10 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
 
 setup(name='docassemble.MATC1AUncontestedDivorce',
       version='1.0',
-      description=('Uncontested Divorce Joint Petition'),
-      long_description='# docassemble.Divorcefilings\r\n\r\nUncontested Divorce Joint Petition\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n\r\n',
+      description=('Childcarecustodydisclosure'),
+      long_description='# docassemble.Childcarecustodydisclosure\r\n\r\nChildcarecustodydisclosure\r\n\r\n## Author\r\n\r\nKP Hunsinger\r\n\r\n',
       long_description_content_type='text/markdown',
-      author='Court Forms Online',
+      author='KP Hunsinger',
       author_email='wkh06781@su.suffolk.edu',
       license='MIT',
       url='https://courtformsonline.org',

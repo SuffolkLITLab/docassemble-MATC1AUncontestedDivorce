@@ -7,10 +7,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "docassemble.MATC1AUncontestedDivorce"
 version = "1.0"
-description = "Uncontested Divorce Joint Petition"
+description = "Childcarecustodydisclosure"
 readme = "README.md"
 authors = [
-    { name = "Court Forms Online", email = "wkh06781@su.suffolk.edu" },
+    { name = "KP Hunsinger", email = "wkh06781@su.suffolk.edu" },
 ]
 dependencies = [
     "docassemble.ALMassachusetts>=0.1.2",
