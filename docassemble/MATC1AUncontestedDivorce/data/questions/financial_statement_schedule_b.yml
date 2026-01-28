@@ -51,6 +51,8 @@ fields:
   - Annual rent received: schedule_b_annual_rent_received
     datatype: currency
     required: False
+    help: |
+      Enter the total rent you receive in a typical year before expenses.
 ---
 id: schedule_b_expenses_list
 sets:
@@ -80,6 +82,8 @@ fields:
   - Annual amount: schedule_b_expenses[i].value
     datatype: currency
     required: False
+    help: |
+      Enter the total amount you pay in a typical year for this category.
 ---
 code: |
   schedule_b_expenses[i].times_per_year = 1

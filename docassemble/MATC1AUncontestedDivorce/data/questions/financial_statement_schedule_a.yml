@@ -71,6 +71,8 @@ fields:
   - Gross monthly receipts: schedule_a_gross_monthly_receipts
     datatype: currency
     required: False
+    help: |
+      Enter total monthly receipts before expenses.
 ---
 id: schedule_a_expenses_list
 sets:
@@ -100,6 +102,8 @@ fields:
   - Monthly amount: schedule_a_expenses[i].value
     datatype: currency
     required: False
+    help: |
+      Enter the total amount you pay in a typical month for this category.
 ---
 code: |
   schedule_a_expenses[i].times_per_year = 12
@@ -149,6 +153,8 @@ subquestion: |
 fields:
   - Describe the nature of the business: schedule_a_business_nature
     required: False
+    help: |
+      Examples: consulting, delivery, childcare, online sales.
 ---
 id: schedule_a_seasonal
 sets:
