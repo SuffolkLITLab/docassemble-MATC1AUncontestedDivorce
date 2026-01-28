@@ -6,14 +6,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.MATC1AUncontestedDivorce"
-version = "1.0"
-description = "Childcarecustodydisclosure"
+version = "1.20"
+description = "An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)"
 readme = "README.md"
 authors = [
     { name = "KP Hunsinger", email = "wkh06781@su.suffolk.edu" },
 ]
 dependencies = [
     "docassemble.ALMassachusetts>=0.1.2",
+    "docassemble.ALToolbox @ git+https://github.com/SuffolkLITLab/docassemble-ALToolbox.git@main",
     "docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main",
     "docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main",
 ]

@@ -30,6 +30,19 @@ code: |
     if cadence == "annual":
       return value / 52
     return value
+
+  def cadence_to_times_per_year(cadence):
+    if cadence == "weekly":
+      return 52
+    if cadence == "biweekly":
+      return 26
+    if cadence == "semimonthly":
+      return 24
+    if cadence == "monthly":
+      return 12
+    if cadence == "annual":
+      return 1
+    return 52
 ---
 variable name: cadence_choices
 data:
@@ -73,13 +86,57 @@ data:
   - [arts_antiques, "Arts and antiques"]
   - [other, "Other (specify)"]
 ---
+variable name: fs_income_terms
+data: !!omap
+  - wages: "Salary or wages"
+  - overtime: "Overtime"
+  - part_time: "Part-time job"
+  - tips: "Tips"
+  - commissions: "Commissions/bonuses"
+  - dividends: "Dividends/interest"
+  - trusts: "Trusts/annuities"
+  - pensions: "Pensions/retirement funds"
+  - social_security: "Social Security"
+  - disability: "Disability, unemployment, or worker's compensation"
+  - public_assistance: "Public assistance (TAFDC, SNAP, etc.)"
+  - support_received: "Child support or alimony received"
+  - royalties: "Royalties and other rights"
+  - household_contrib: "Contributions from household members"
+  - other: "Other income"
+---
+variable name: fs_expense_terms
+data: !!omap
+  - rent: "Rent or mortgage (PIT)"
+  - home_insurance: "Homeowners/tenant insurance"
+  - maintenance: "Maintenance and repair"
+  - heat: "Heat"
+  - electric: "Electricity and/or gas"
+  - phone: "Telephone"
+  - water: "Water/sewer"
+  - food: "Food"
+  - supplies: "House supplies"
+  - laundry: "Laundry and cleaning"
+  - clothing: "Clothing"
+  - life_insurance: "Life insurance"
+  - medical_insurance: "Medical insurance"
+  - uninsured_medical: "Uninsured medicals"
+  - incidentals: "Incidentals and toiletries"
+  - motor_vehicle: "Motor vehicle expenses"
+  - motor_vehicle_payment: "Motor vehicle payment"
+  - child_care: "Child care"
+  - other: "Other"
+---
 objects:
+  - income_list: ALIncomeList.using(complete_attribute="complete", auto_gather=False)
+  - expense_list: ALExpenseList.using(auto_gather=False)
+  - fs_income_terms_ordered: DAOrderedDict.using(elements=fs_income_terms, auto_gather=False, gathered=True)
+  - fs_expense_terms_ordered: DAOrderedDict.using(elements=fs_expense_terms, auto_gather=False, gathered=True)
   - motor_vehicles: DAList.using(object_type=DAObject, complete_attribute="complete")
   - pensions: DAList.using(object_type=DAObject, complete_attribute="complete")
   - other_assets: DAList.using(object_type=DAObject, complete_attribute="complete")
   - liabilities: DAList.using(object_type=DAObject, complete_attribute="complete")
-  - schedule_a_expenses: DAList.using(object_type=DAObject, complete_attribute="complete")
-  - schedule_b_expenses: DAList.using(object_type=DAObject, complete_attribute="complete")
+  - schedule_a_expenses: ALExpenseList.using(complete_attribute="complete")
+  - schedule_b_expenses: ALExpenseList.using(complete_attribute="complete")
 ---
 code: |
   if not defined("debug_log"):
@@ -91,13 +148,16 @@ question: |
   Financial Statement
 subquestion: |
   This interview helps you prepare a Massachusetts financial statement.
-  You will answer questions about your income, expenses, assets, and debts.
+  You will answer questions about your income, deductions, expenses, assets,
+  and debts. If you have pay stubs, benefit statements, or recent bills, keep
+  them nearby for quicker entry.
 ---
 id: gross_annual_income
 question: |
   Gross annual income
 subquestion: |
-  Enter your gross annual income before taxes.
+  Enter your total income before taxes for the last 12 months.
+  If you are not sure, provide your best estimate.
 fields:
   - Gross annual income: gross_annual_income
     datatype: currency
@@ -106,6 +166,9 @@ fields:
 id: docket_number
 question: |
   Docket number
+subquestion: |
+  If the court has already assigned a docket number, enter it here.
+  Otherwise, you can leave this blank.
 fields:
   - Docket number: docket_number
     required: False
@@ -115,6 +178,8 @@ sets:
   - user_and_other_party_names
 question: |
   Party names
+subquestion: |
+  Use legal names as they appear on court paperwork.
 fields:
   - Your first name: users[0].name.first
   - Your last name: users[0].name.last
@@ -126,23 +191,37 @@ sets:
   - user_personal_info
 question: |
   Personal information
+subquestion: |
+  We ask about children to match the court form. If you do not have children,
+  leave the count at 0. Your Social Security number is optional.
 fields:
   - Social Security number: user_ssn
     required: False
   - Date of birth: users[0].birthdate
     datatype: date
+  - Do you have any children?: user_has_children
+    datatype: yesno
   - Number of children living with you: children_living_with_user_count
     datatype: integer
     required: False
     min: 0
+    show if:
+      variable: user_has_children
+      is: True
   - Occupation: user_occupation
     required: False
+---
+code: |
+  if defined("user_has_children") and not user_has_children:
+    children_living_with_user_count = 0
 ---
 id: user_contact_info
 sets:
   - user_contact_info
 question: |
   Contact information
+subquestion: |
+  Provide contact details where you can reliably receive court-related notices.
 fields:
   - Phone number: users[0].phone_number
     required: False
@@ -154,6 +233,8 @@ sets:
   - user_address
 question: |
   Address
+subquestion: |
+  Use your current mailing address.
 fields:
   - Street address: users[0].address.address
     address autocomplete: True
@@ -167,6 +248,9 @@ sets:
   - user_employment
 question: |
   Employment
+subquestion: |
+  If you are unemployed or self-employed, you can leave these blank or enter
+  your business name and role.
 fields:
   - Employer name: user_employer_name
     required: False
@@ -176,6 +260,8 @@ fields:
 id: user_employer_address
 question: |
   Employer address
+subquestion: |
+  Add your employer's address and phone if you have an employer and know it.
 fields:
   - Street address: user_employer_address.address
     address autocomplete: True
@@ -195,6 +281,8 @@ sets:
   - user_health_insurance
 question: |
   Health insurance
+subquestion: |
+  Include any health coverage you currently have.
 fields:
   - Do you have health insurance coverage?: user_has_health_insurance
     datatype: yesno
@@ -209,13 +297,189 @@ question: |
   Default cadence
 subquestion: |
   Choose the cadence you want to use for most money amounts.
-  If you already know weekly amounts, choose weekly.
+  Enter amounts for one pay period (or one payment) and we will convert them
+  to weekly values for the form.
 fields:
   - Cadence: financial_cadence_default
     input type: radio
     code: |
       cadence_choices
     default: weekly
+---
+code: |
+  fs_default_times_per_year = cadence_to_times_per_year(
+    value("financial_cadence_default") if defined("financial_cadence_default") else "weekly"
+  )
+---
+id: fs_income_sources
+generic object: ALIncomeList
+question: |
+  Gross income sources
+subquestion: |
+  Select all income sources you receive. You will enter amounts and how often
+  you receive them. If a category is missing, choose "Other income."
+fields:
+  - no label: x.selected_types
+    datatype: checkboxes
+    code: |
+      fs_income_terms_ordered
+---
+generic object: ALIncomeList
+code: |
+  x.selected_types
+  x.move_checks_to_list(selected_terms=fs_income_terms)
+  x.moved = True
+---
+id: fs_income_item
+generic object: ALIncomeList
+question: |
+  Income details
+subquestion: |
+  Tell us about your ${ ordinal(i) } income. Enter the amount for a single
+  pay period and choose how often you receive it. We will convert everything
+  to a weekly amount for the court form.
+fields:
+  - Type of income: x[i].source
+    code: |
+      fs_income_terms_ordered
+    default: other
+  - Other income type: x[i].source
+    show if:
+      variable: x[i].source
+      is: other
+  - Amount: x[i].value
+    datatype: currency
+  - How often do you receive this income?: x[i].times_per_year
+    input type: radio
+    code: |
+      times_per_year_list
+    default: fs_default_times_per_year
+validation code: |
+  x[i].display_name = fs_income_terms.get(x[i].source, x[i].source)
+---
+generic object: ALIncomeList
+code: |
+  x.moved
+  for income_item in x.elements:
+    income_item.complete
+  x.revisit = True
+  x.gathered = True
+---
+generic object: ALIncomeList
+table: x.table
+rows: x
+columns:
+  - Type: |
+      row_item.display_name if hasattr(row_item, "display_name") else row_item.source
+  - Amount per month: |
+      currency(row_item.total(times_per_year=12))
+edit:
+  - source
+  - value
+  - times_per_year
+---
+id: fs_income_revisit
+generic object: ALIncomeList
+continue button field: x.revisit
+question: |
+  Edit income
+subquestion: |
+  ${ x.table }
+
+  Review your entries. Use "Add another" to include more income sources.
+
+  ${ x.add_action() }
+---
+id: fs_expense_sources
+generic object: ALExpenseList
+question: |
+  Expense categories
+subquestion: |
+  Select the expense categories that apply to your household. You will add
+  amounts and how often you pay them. If a category is missing, choose "Other."
+fields:
+  - no label: x.selected_types
+    datatype: checkboxes
+    code: |
+      fs_expense_terms_ordered
+---
+generic object: ALExpenseList
+code: |
+  x.selected_types
+  x.move_checks_to_list(selected_terms=fs_expense_terms)
+  x.moved = True
+---
+id: fs_expense_item
+generic object: ALExpenseList
+question: |
+  Expense details
+subquestion: |
+  Tell us about your ${ ordinal(i) } expense. Enter the amount for a single
+  payment and how often you pay it. We will convert everything to weekly totals.
+fields:
+  - Type of expense: x[i].source
+    code: |
+      fs_expense_terms_ordered
+    default: other
+  - Other expense type: x[i].source
+    show if:
+      variable: x[i].source
+      is: other
+  - Amount: x[i].value
+    datatype: currency
+  - How often do you pay this amount?: x[i].times_per_year
+    input type: radio
+    code: |
+      times_per_year_for_expenses
+    default: fs_default_times_per_year
+validation code: |
+  x[i].display_name = fs_expense_terms.get(x[i].source, x[i].source)
+---
+generic object: ALExpenseList
+code: |
+  x.moved
+  for expense in x.elements:
+    expense.value
+  x.revisit = True
+  x.gathered = True
+---
+generic object: ALExpenseList
+table: x.table
+rows: x
+columns:
+  - Type: |
+      row_item.display_name if hasattr(row_item, "display_name") else row_item.source
+  - Amount per month: |
+      currency(row_item.total(times_per_year=12))
+edit:
+  - source
+  - value
+  - times_per_year
+---
+id: fs_expense_revisit
+generic object: ALExpenseList
+continue button field: x.revisit
+question: |
+  Edit expenses
+subquestion: |
+  ${ x.table }
+
+  Review your entries. Use "Add another" to include more expenses.
+
+  ${ x.add_action() }
+---
+id: income_schedule_triggers
+continue button field: income_schedule_triggers
+question: |
+  Self-employment and rental income
+subquestion: |
+  These answers determine whether Schedule A (self-employment) and Schedule B
+  (rental income) are included with your financial statement.
+fields:
+  - Do you have self-employment or business income?: has_self_employment_income
+    datatype: yesno
+  - Do you have rental income from property?: has_rental_income
+    datatype: yesno
 ---
 id: income_part_1
 sets:
@@ -224,6 +488,7 @@ question: |
   Gross income (part 1)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Base pay from salary/wages: income_base_pay_amount
     datatype: currency
@@ -256,6 +521,7 @@ question: |
   Gross income (part 2)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Pensions/retirement funds: income_pensions_amount
     datatype: currency
@@ -288,6 +554,7 @@ question: |
   Gross income (part 3)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Other income description: income_other_description
     required: False
@@ -301,26 +568,13 @@ question: |
   Income summary
 subquestion: |
   We will convert your amounts to weekly values for the financial statement.
+  You can go back to edit any income source if needed.
 
   Total gross weekly income (current): ${ currency(income_total_weekly) }
 ---
 code: |
   fs_log("Calculating weekly income totals.")
-  income_base_pay_weekly = to_weekly(value("income_base_pay_amount"), financial_cadence_default)
-  income_overtime_weekly = to_weekly(value("income_overtime_amount"), financial_cadence_default)
-  income_part_time_weekly = to_weekly(value("income_part_time_amount"), financial_cadence_default)
-  income_tips_weekly = to_weekly(value("income_tips_amount"), financial_cadence_default)
-  income_commissions_weekly = to_weekly(value("income_commissions_amount"), financial_cadence_default)
-  income_dividends_weekly = to_weekly(value("income_dividends_amount"), financial_cadence_default)
-  income_trusts_weekly = to_weekly(value("income_trusts_amount"), financial_cadence_default)
-  income_pensions_weekly = to_weekly(value("income_pensions_amount"), financial_cadence_default)
-  income_social_security_weekly = to_weekly(value("income_social_security_amount"), financial_cadence_default)
-  income_disability_weekly = to_weekly(value("income_disability_amount"), financial_cadence_default)
-  income_public_assistance_weekly = to_weekly(value("income_public_assistance_amount"), financial_cadence_default)
-  income_support_received_weekly = to_weekly(value("income_support_received_amount"), financial_cadence_default)
-  income_royalties_weekly = to_weekly(value("income_royalties_amount"), financial_cadence_default)
-  income_household_contrib_weekly = to_weekly(value("income_household_contrib_amount"), financial_cadence_default)
-  income_other_weekly = to_weekly(value("income_other_amount"), financial_cadence_default)
+  income_total_weekly = income_list.total(times_per_year=52)
 
   if defined("schedule_a_weekly_business_income"):
     income_self_employment_weekly = schedule_a_weekly_business_income
@@ -333,23 +587,9 @@ code: |
     income_rental_weekly = 0
 
   income_total_weekly = (
-    income_base_pay_weekly
-    + income_overtime_weekly
-    + income_part_time_weekly
+    income_total_weekly
     + income_self_employment_weekly
-    + income_tips_weekly
-    + income_commissions_weekly
-    + income_dividends_weekly
-    + income_trusts_weekly
-    + income_pensions_weekly
-    + income_social_security_weekly
-    + income_disability_weekly
-    + income_public_assistance_weekly
-    + income_support_received_weekly
     + income_rental_weekly
-    + income_royalties_weekly
-    + income_household_contrib_weekly
-    + income_other_weekly
   )
 ---
 id: fs_review
@@ -361,7 +601,7 @@ subquestion: |
 
   Gross weekly income: ${ currency(income_total_weekly) }
 
-  You can review each section before downloading your forms.
+  Review each section to confirm totals and details.
   % if defined("debug_log") and debug_log:
   ---
   ### Debug log (last 5)
@@ -375,11 +615,14 @@ continue button field: fs_download
 question: |
   Download
 subquestion: |
-  Your answers are ready. PDF templates and field mapping will be connected in a later step.
+  Your answers are ready. PDF templates and field mapping will be connected in
+  a later step. You can return later to finish or revise.
 ---
 id: motor_vehicles
 question: |
   Motor vehicles
+subquestion: |
+  Include cars, trucks, motorcycles, and other motor vehicles you own.
 fields:
   - Do you have motor vehicles to list?: motor_vehicles.there_are_any
     datatype: yesno
@@ -388,6 +631,9 @@ id: motor_vehicle_item
 generic object: motor_vehicles
 question: |
   Motor vehicle details
+subquestion: |
+  Provide the best information you have. Estimates are fine if exact values
+  are not available.
 fields:
   - Type: motor_vehicles[i].vehicle_type
     required: False
@@ -417,6 +663,8 @@ code: |
 id: motor_vehicles_more
 question: |
   Do you have another motor vehicle to add?
+subquestion: |
+  If you have listed all vehicles, choose "No."
 fields:
   - Do you have another motor vehicle to add?: motor_vehicles.there_is_another
     datatype: yesno
@@ -424,6 +672,8 @@ fields:
 id: pensions
 question: |
   Pensions and retirement plans
+subquestion: |
+  Include 401(k)s, IRAs, pensions, and other retirement accounts.
 fields:
   - Do you have pensions or retirement plans to list?: pensions.there_are_any
     datatype: yesno
@@ -432,6 +682,8 @@ id: pension_item
 generic object: pensions
 question: |
   Pension or retirement plan
+subquestion: |
+  Enter the most recent values you have access to.
 fields:
   - Institution: pensions[i].institution
     required: False
@@ -452,6 +704,8 @@ code: |
 id: pensions_more
 question: |
   Do you have another pension or retirement plan to add?
+subquestion: |
+  If you have listed all plans, choose "No."
 fields:
   - Do you have another pension or retirement plan to add?: pensions.there_is_another
     datatype: yesno
@@ -459,6 +713,8 @@ fields:
 id: other_assets
 question: |
   Other assets
+subquestion: |
+  List other assets you own that are not real estate or vehicles.
 fields:
   - Do you have other assets to list?: other_assets.there_are_any
     datatype: yesno
@@ -467,6 +723,8 @@ id: other_asset_item
 generic object: other_assets
 question: |
   Other asset details
+subquestion: |
+  You can include notes to clarify ownership or the type of asset.
 fields:
   - Asset type: other_assets[i].asset_type
     code: |
@@ -489,6 +747,8 @@ code: |
 id: other_assets_more
 question: |
   Do you have another asset to add?
+subquestion: |
+  If you have listed all assets, choose "No."
 fields:
   - Do you have another asset to add?: other_assets.there_is_another
     datatype: yesno
@@ -496,6 +756,8 @@ fields:
 id: liabilities
 question: |
   Liabilities
+subquestion: |
+  Include credit cards, loans, tax debt, and other outstanding obligations.
 fields:
   - Do you have liabilities to list?: liabilities.there_are_any
     datatype: yesno
@@ -504,6 +766,8 @@ id: liability_item
 generic object: liabilities
 question: |
   Liability details
+subquestion: |
+  Provide the creditor and current balance if known.
 fields:
   - Creditor: liabilities[i].creditor
     required: False
@@ -524,6 +788,8 @@ code: |
 id: liabilities_more
 question: |
   Do you have another liability to add?
+subquestion: |
+  If you have listed all liabilities, choose "No."
 fields:
   - Do you have another liability to add?: liabilities.there_is_another
     datatype: yesno
@@ -534,6 +800,8 @@ sets:
 continue button field: attorney_statement
 question: |
   Attorney statement
+subquestion: |
+  If you do not have an attorney, choose "No" and skip the rest of this page.
 fields:
   - Do you have an attorney?: has_attorney
     datatype: yesno

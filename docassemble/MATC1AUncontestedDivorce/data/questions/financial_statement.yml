@@ -5,6 +5,7 @@ modules:
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALMassachusetts:al_massachusetts.yml
+  - docassemble.ALToolbox:al_income.yml
   - financial_statement_shared.yml
   - financial_statement_short.yml
   - financial_statement_long.yml
@@ -24,6 +25,10 @@ metadata:
   jurisdiction: NAM-US-US+MA
   typical_role: plaintiff
   maturity: draft
+---
+initial: True
+code: |
+  interview_short_title = "Financial Statement (MA Probate and Family Court)"
 ---
 code: |
   # Default court context
@@ -71,9 +76,8 @@ code: |
   financial_cadence_default
 
   nav.set_section("Income")
-  income_base_pay_amount
-  income_pensions_amount
-  income_other_description
+  income_list.gathered
+  income_schedule_triggers
 
   if has_self_employment_income:
     schedule_a_sections

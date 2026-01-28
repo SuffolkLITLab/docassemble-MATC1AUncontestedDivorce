@@ -11,8 +11,7 @@ code: |
   short_other_deductions
   short_net_income
   short_prior_year
-  short_expenses_part_1
-  short_expenses_part_2
+  expense_list.gathered
   short_expenses_total
   short_counsel_fees
   short_assets_real_estate
@@ -34,6 +33,7 @@ question: |
   Itemized deductions from gross income
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  These are amounts withheld from your gross pay.
 fields:
   - Federal income tax deductions: short_deduction_federal
     datatype: currency
@@ -80,6 +80,7 @@ question: |
   Other deductions from salary or wages
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  Include deductions not listed on the previous page.
 fields:
   - Credit union loan repayment: short_other_deduction_credit_union_loan
     datatype: currency
@@ -110,6 +111,8 @@ question: |
   Net weekly income
 subquestion: |
   Net weekly income: ${ currency(short_adjusted_net_weekly_income - short_other_deductions_total_weekly) }
+
+  This is your income after deductions.
 ---
 code: |
   short_net_weekly_income = short_adjusted_net_weekly_income - short_other_deductions_total_weekly
@@ -120,6 +123,8 @@ sets:
 continue button field: short_prior_year
 question: |
   Prior year income
+subquestion: |
+  Use your most recent tax year or best estimate.
 fields:
   - Gross yearly income from prior year: prior_year_gross_amount
     datatype: currency
@@ -137,6 +142,7 @@ question: |
   Weekly expenses (part 1)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  Include regular household expenses.
 fields:
   - Rent or mortgage (PIT): short_expense_rent
     datatype: currency
@@ -177,6 +183,7 @@ question: |
   Weekly expenses (part 2)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  Include transportation and child-related expenses.
 fields:
   - Clothing: short_expense_clothing
     datatype: currency
@@ -209,27 +216,7 @@ fields:
     required: False
 ---
 code: |
-  short_expenses_total_weekly = (
-    to_weekly(value("short_expense_rent"), financial_cadence_default)
-    + to_weekly(value("short_expense_home_insurance"), financial_cadence_default)
-    + to_weekly(value("short_expense_maintenance"), financial_cadence_default)
-    + to_weekly(value("short_expense_heat"), financial_cadence_default)
-    + to_weekly(value("short_expense_electric"), financial_cadence_default)
-    + to_weekly(value("short_expense_phone"), financial_cadence_default)
-    + to_weekly(value("short_expense_water"), financial_cadence_default)
-    + to_weekly(value("short_expense_food"), financial_cadence_default)
-    + to_weekly(value("short_expense_supplies"), financial_cadence_default)
-    + to_weekly(value("short_expense_laundry"), financial_cadence_default)
-    + to_weekly(value("short_expense_clothing"), financial_cadence_default)
-    + to_weekly(value("short_expense_life_insurance"), financial_cadence_default)
-    + to_weekly(value("short_expense_medical_insurance"), financial_cadence_default)
-    + to_weekly(value("short_expense_uninsured_medical"), financial_cadence_default)
-    + to_weekly(value("short_expense_incidentals"), financial_cadence_default)
-    + to_weekly(value("short_expense_motor_vehicle"), financial_cadence_default)
-    + to_weekly(value("short_expense_motor_vehicle_payment"), financial_cadence_default)
-    + to_weekly(value("short_expense_child_care"), financial_cadence_default)
-    + to_weekly(value("short_expense_other_amount"), financial_cadence_default)
-  )
+  short_expenses_total_weekly = expense_list.total(times_per_year=52)
 ---
 id: short_expenses_total
 continue button field: short_expenses_total
@@ -237,6 +224,8 @@ question: |
   Weekly expenses total
 subquestion: |
   Total weekly expenses: ${ currency(short_expenses_total_weekly) }
+
+  You can go back to edit expenses if needed.
 ---
 id: short_counsel_fees
 sets:
@@ -244,6 +233,8 @@ sets:
 continue button field: short_counsel_fees
 question: |
   Counsel fees
+subquestion: |
+  Only complete this section if you have an attorney.
 fields:
   - Retainer amount(s) paid to your attorney(s): short_counsel_retainer
     datatype: currency
@@ -264,6 +255,8 @@ sets:
 continue button field: short_assets_real_estate
 question: |
   Assets - real estate
+subquestion: |
+  If you do not own real estate, you can leave these blank.
 fields:
   - Real estate location: short_real_estate_location
     required: False
@@ -285,6 +278,7 @@ question: |
   Assets summary
 subquestion: |
   Motor vehicles, retirement plans, and other assets were collected in the previous steps.
+  Review and confirm before continuing.
 ---
 id: short_liabilities_total
 continue button field: short_liabilities_total
@@ -292,6 +286,8 @@ question: |
   Liabilities summary
 subquestion: |
   Liabilities collected: ${ len(liabilities) if defined('liabilities') else 0 }
+
+  If this count is not correct, go back to edit liabilities.
 ---
 id: short_certification
 sets:
@@ -299,6 +295,9 @@ sets:
 continue button field: short_certification
 question: |
   Certification
+subquestion: |
+  Sign to certify that the information you provided is true to the best of
+  your knowledge.
 fields:
   - Signature: user_signature
     required: False

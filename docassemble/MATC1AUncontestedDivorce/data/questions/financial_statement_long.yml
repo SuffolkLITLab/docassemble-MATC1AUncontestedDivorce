@@ -2,6 +2,55 @@
 modules:
   - docassemble.base.util
 ---
+variable name: long_expense_terms
+data: !!omap
+  - rent: "Rent"
+  - mortgage: "Mortgage (principal, interest, taxes, insurance if escrowed)"
+  - property_tax: "Property taxes and assessments"
+  - home_insurance: "Homeowner/tenant insurance"
+  - maintenance_fees: "Maintenance fees or condo fees"
+  - heat: "Heat"
+  - electric: "Electricity"
+  - gas: "Propane or natural gas"
+  - phone: "Telephone"
+  - water: "Water/sewer"
+  - food: "Food"
+  - supplies: "House supplies"
+  - laundry: "Laundry"
+  - dry_cleaning: "Dry cleaning"
+  - clothing: "Clothing"
+  - life_insurance: "Life insurance"
+  - medical_insurance: "Medical insurance"
+  - dental_insurance: "Dental insurance"
+  - vision_insurance: "Vision insurance"
+  - uninsured_medical: "Uninsured medical"
+  - uninsured_dental: "Uninsured dental"
+  - motor_vehicle: "Motor vehicle expenses"
+  - fuel: "Fuel"
+  - vehicle_insurance: "Motor vehicle insurance"
+  - vehicle_maintenance: "Motor vehicle maintenance"
+  - loan_payments: "Loan payment(s)"
+  - entertainment: "Entertainment"
+  - vacation: "Vacation"
+  - cable: "Cable TV"
+  - child_support: "Child support (attach order if from different court)"
+  - child_day_care: "Child(ren)'s day care expense"
+  - child_education: "Child(ren)'s education"
+  - education_self: "Education (self)"
+  - uniforms: "Employment-related uniforms"
+  - employment_travel: "Employment-related travel"
+  - continuing_education: "Employment continuing education"
+  - employment_other: "Employment expenses (other)"
+  - lottery: "Lottery tickets"
+  - charity: "Charitable contributions"
+  - child_allowance: "Child(ren)'s allowance"
+  - visitation_travel: "Extraordinary travel for visitation"
+  - other: "Other"
+---
+objects:
+  - long_expense_list: ALExpenseList.using(auto_gather=False)
+  - long_expense_terms_ordered: DAOrderedDict.using(elements=long_expense_terms, auto_gather=False, gathered=True)
+---
 id: long_form_sections
 sets:
   - long_form_sections
@@ -9,9 +58,7 @@ code: |
   long_deductions
   long_net_income
   long_prior_year
-  long_expenses_part_1
-  long_expenses_part_2
-  long_expenses_part_3
+  long_expense_list.gathered
   long_expenses_total
   long_counsel_fees
   long_real_estate_primary
@@ -27,6 +74,84 @@ code: |
   attorney_statement
   long_form_sections = True
 ---
+id: long_expense_sources
+generic object: ALExpenseList
+question: |
+  Expense categories
+subquestion: |
+  Select the expense categories that apply to your household. You will enter
+  amounts and how often you pay them. If a category is missing, choose "Other."
+fields:
+  - no label: x.selected_types
+    datatype: checkboxes
+    code: |
+      long_expense_terms_ordered
+---
+generic object: ALExpenseList
+code: |
+  x.selected_types
+  x.move_checks_to_list(selected_terms=long_expense_terms)
+  x.moved = True
+---
+id: long_expense_item
+generic object: ALExpenseList
+question: |
+  Expense details
+subquestion: |
+  Tell us about your ${ ordinal(i) } expense. Enter the amount for a single
+  payment and how often you pay it. We will convert everything to weekly totals.
+fields:
+  - Type of expense: x[i].source
+    code: |
+      long_expense_terms_ordered
+    default: other
+  - Other expense type: x[i].source
+    show if:
+      variable: x[i].source
+      is: other
+  - Amount: x[i].value
+    datatype: currency
+  - How often do you pay this amount?: x[i].times_per_year
+    input type: radio
+    code: |
+      times_per_year_for_expenses
+    default: fs_default_times_per_year
+validation code: |
+  x[i].display_name = long_expense_terms.get(x[i].source, x[i].source)
+---
+generic object: ALExpenseList
+code: |
+  x.moved
+  for expense in x.elements:
+    expense.value
+  x.revisit = True
+  x.gathered = True
+---
+generic object: ALExpenseList
+table: x.table
+rows: x
+columns:
+  - Type: |
+      row_item.display_name if hasattr(row_item, "display_name") else row_item.source
+  - Amount per month: |
+      currency(row_item.total(times_per_year=12))
+edit:
+  - source
+  - value
+  - times_per_year
+---
+id: long_expense_revisit
+generic object: ALExpenseList
+continue button field: x.revisit
+question: |
+  Edit expenses
+subquestion: |
+  ${ x.table }
+
+  Review your entries. Use "Add another" to include more expenses.
+
+  ${ x.add_action() }
+---
 id: long_deductions
 sets:
   - long_deductions
@@ -35,6 +160,7 @@ question: |
   Weekly deductions from gross income
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  These are amounts withheld from your gross pay.
 fields:
   - Federal tax withholding/estimated payments: long_deduction_federal
     datatype: currency
@@ -133,6 +259,8 @@ subquestion: |
   Total weekly deductions: ${ currency(long_deductions_total_weekly) }
 
   Net weekly income: ${ currency(income_total_weekly - long_deductions_total_weekly) }
+
+  This is your income after deductions.
 ---
 code: |
   long_net_weekly_income = income_total_weekly - long_deductions_total_weekly
@@ -143,6 +271,8 @@ sets:
 continue button field: long_prior_year
 question: |
   Prior year income
+subquestion: |
+  Use your most recent tax year or best estimate.
 fields:
   - Gross income from prior year: prior_year_gross_amount
     datatype: currency
@@ -160,6 +290,7 @@ question: |
   Weekly expenses (part 1)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Rent: long_expense_rent
     datatype: currency
@@ -206,6 +337,7 @@ question: |
   Weekly expenses (part 2)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Laundry: long_expense_laundry
     datatype: currency
@@ -267,6 +399,7 @@ question: |
   Weekly expenses (part 3)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
+  If a line does not apply, leave it blank.
 fields:
   - Child support (attach order if from different court): long_expense_child_support
     datatype: currency
@@ -313,50 +446,7 @@ fields:
     required: False
 ---
 code: |
-  long_expenses_total_weekly = (
-    to_weekly(value("long_expense_rent"), financial_cadence_default)
-    + to_weekly(value("long_expense_mortgage"), financial_cadence_default)
-    + to_weekly(value("long_expense_property_tax"), financial_cadence_default)
-    + to_weekly(value("long_expense_home_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_maintenance_fees"), financial_cadence_default)
-    + to_weekly(value("long_expense_heat"), financial_cadence_default)
-    + to_weekly(value("long_expense_electric"), financial_cadence_default)
-    + to_weekly(value("long_expense_gas"), financial_cadence_default)
-    + to_weekly(value("long_expense_phone"), financial_cadence_default)
-    + to_weekly(value("long_expense_water"), financial_cadence_default)
-    + to_weekly(value("long_expense_food"), financial_cadence_default)
-    + to_weekly(value("long_expense_supplies"), financial_cadence_default)
-    + to_weekly(value("long_expense_laundry"), financial_cadence_default)
-    + to_weekly(value("long_expense_dry_cleaning"), financial_cadence_default)
-    + to_weekly(value("long_expense_clothing"), financial_cadence_default)
-    + to_weekly(value("long_expense_life_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_medical_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_dental_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_vision_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_uninsured_medical"), financial_cadence_default)
-    + to_weekly(value("long_expense_uninsured_dental"), financial_cadence_default)
-    + to_weekly(value("long_expense_motor_vehicle"), financial_cadence_default)
-    + to_weekly(value("long_expense_fuel"), financial_cadence_default)
-    + to_weekly(value("long_expense_vehicle_insurance"), financial_cadence_default)
-    + to_weekly(value("long_expense_vehicle_maintenance"), financial_cadence_default)
-    + to_weekly(value("long_expense_loan_payments"), financial_cadence_default)
-    + to_weekly(value("long_expense_entertainment"), financial_cadence_default)
-    + to_weekly(value("long_expense_vacation"), financial_cadence_default)
-    + to_weekly(value("long_expense_cable"), financial_cadence_default)
-    + to_weekly(value("long_expense_child_support"), financial_cadence_default)
-    + to_weekly(value("long_expense_child_day_care"), financial_cadence_default)
-    + to_weekly(value("long_expense_child_education"), financial_cadence_default)
-    + to_weekly(value("long_expense_education_self"), financial_cadence_default)
-    + to_weekly(value("long_expense_uniforms"), financial_cadence_default)
-    + to_weekly(value("long_expense_employment_travel"), financial_cadence_default)
-    + to_weekly(value("long_expense_continuing_education"), financial_cadence_default)
-    + to_weekly(value("long_expense_employment_other_amount"), financial_cadence_default)
-    + to_weekly(value("long_expense_lottery"), financial_cadence_default)
-    + to_weekly(value("long_expense_charity"), financial_cadence_default)
-    + to_weekly(value("long_expense_child_allowance"), financial_cadence_default)
-    + to_weekly(value("long_expense_visitation_travel"), financial_cadence_default)
-    + to_weekly(value("long_expense_other_amount"), financial_cadence_default)
-  )
+  long_expenses_total_weekly = long_expense_list.total(times_per_year=52)
 ---
 id: long_expenses_total
 continue button field: long_expenses_total
@@ -364,6 +454,8 @@ question: |
   Weekly expenses total
 subquestion: |
   Total weekly expenses: ${ currency(long_expenses_total_weekly) }
+
+  You can go back to edit expenses if needed.
 ---
 id: long_counsel_fees
 sets:
@@ -371,6 +463,8 @@ sets:
 continue button field: long_counsel_fees
 question: |
   Counsel fees
+subquestion: |
+  Only complete this section if you have an attorney.
 fields:
   - Retainer amount(s) paid to your attorney(s): long_counsel_retainer
     datatype: currency
@@ -391,6 +485,8 @@ sets:
 continue button field: long_real_estate_primary
 question: |
   Real estate - primary residence
+subquestion: |
+  If you do not own real estate, you can leave these blank.
 fields:
   - Address (street, city/town, state): long_primary_real_estate_address
     required: False
@@ -427,6 +523,8 @@ sets:
 continue button field: long_real_estate_secondary
 question: |
   Real estate - vacation or second home
+subquestion: |
+  Leave blank if you do not own a vacation home or second property.
 fields:
   - Address (street, city/town, state): long_secondary_real_estate_address
     required: False
@@ -463,6 +561,7 @@ question: |
   Assets summary
 subquestion: |
   Motor vehicles, pensions, and other assets were collected in the previous steps.
+  Review and confirm before continuing.
 ---
 id: long_liabilities_total
 continue button field: long_liabilities_total
@@ -470,6 +569,8 @@ question: |
   Liabilities summary
 subquestion: |
   Liabilities collected: ${ len(liabilities) if defined('liabilities') else 0 }
+
+  If this count is not correct, go back to edit liabilities.
 ---
 id: long_certification
 sets:
@@ -477,6 +578,9 @@ sets:
 continue button field: long_certification
 question: |
   Certification
+subquestion: |
+  Sign to certify that the information you provided is true to the best of
+  your knowledge.
 fields:
   - Signature: user_signature
     required: False
@@ -490,6 +594,8 @@ sets:
 continue button field: long_notary
 question: |
   Notary
+subquestion: |
+  If you plan to have the statement notarized now, provide the notary details.
 fields:
   - Will you have this notarized now?: will_notarize_now
     datatype: yesno
