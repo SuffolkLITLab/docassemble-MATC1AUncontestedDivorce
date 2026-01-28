@@ -55,11 +55,18 @@ id: long_form_sections
 sets:
   - long_form_sections
 code: |
+  nav.set_section("Deductions")
+  set_progress(60)
   long_deductions
   long_net_income
   long_prior_year
+  nav.set_section("Expenses")
+  set_progress(70)
   long_expense_list.gathered
   long_expenses_total
+  confirm_no_expenses_long
+  nav.set_section("Assets")
+  set_progress(80)
   long_counsel_fees
   long_real_estate_primary
   long_real_estate_secondary
@@ -67,6 +74,8 @@ code: |
   pensions.gather()
   other_assets.gather()
   long_assets_total
+  nav.set_section("Liabilities")
+  set_progress(90)
   liabilities.gather()
   long_liabilities_total
   long_certification
@@ -100,6 +109,8 @@ question: |
 subquestion: |
   Tell us about your ${ ordinal(i) } expense. Enter the amount for a single
   payment and how often you pay it. We will convert everything to weekly totals.
+
+  **Example:** If your electricity is $120 monthly, enter 120 and choose "Monthly."
 fields:
   - Type of expense: x[i].source
     code: |
@@ -161,6 +172,8 @@ question: |
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
   These are amounts withheld from your gross pay.
+
+  **Tip:** If you do not know an exact amount, enter your best estimate.
 fields:
   - Federal tax withholding/estimated payments: long_deduction_federal
     datatype: currency
@@ -456,6 +469,19 @@ subquestion: |
   Total weekly expenses: ${ currency(long_expenses_total_weekly) }
 
   You can go back to edit expenses if needed.
+---
+id: confirm_no_expenses_long
+if: long_expenses_total_weekly == 0
+continue button field: confirm_no_expenses_long
+question: |
+  Confirm no expenses
+subquestion: |
+  You entered $0 for expenses.
+
+  If this is correct, choose "Yes" to continue. If not, click "Back" to edit.
+fields:
+  - Yes, I have no expenses to report: confirm_no_expenses_long
+    datatype: yesno
 ---
 id: long_counsel_fees
 sets:

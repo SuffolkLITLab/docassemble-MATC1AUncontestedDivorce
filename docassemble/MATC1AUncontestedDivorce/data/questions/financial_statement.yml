@@ -14,7 +14,7 @@ include:
 ---
 metadata:
   title: |
-    Financial Statement (Short or Long)
+    Financial Statement (MA Probate and Family Court)
   short title: |
     Financial Statement
   description: |
@@ -34,6 +34,23 @@ code: |
   # Default court context
   allowed_courts = ["Probate and Family Court"]
 ---
+code: |
+  enable_al_nav_sections = True
+  al_nav_sections = [
+    "Introduction",
+    "Eligibility",
+    "Court and parties",
+    "Personal information",
+    "Cadence",
+    "Income",
+    "Deductions",
+    "Expenses",
+    "Assets",
+    "Liabilities",
+    "Review",
+    "Download",
+  ]
+---
 objects:
   - users: ALPeopleList.using(target_number=1)
   - other_parties: ALPeopleList.using(target_number=1)
@@ -50,20 +67,25 @@ code: |
 ---
 id: interview_order_financial_statement
 code: |
+  nav.set_sections(al_nav_sections)
   nav.set_section("Introduction")
+  set_progress(5)
   fs_intro
 
   nav.set_section("Eligibility")
+  set_progress(15)
   gross_annual_income
   financial_form_type
 
   nav.set_section("Court and parties")
+  set_progress(25)
   trial_court
   docket_number
   users[0].name.first
   other_parties[0].name.first
 
   nav.set_section("Personal information")
+  set_progress(35)
   users[0].birthdate
   users[0].phone_number
   users[0].address.address
@@ -73,9 +95,11 @@ code: |
   user_has_health_insurance
 
   nav.set_section("Cadence")
+  set_progress(45)
   financial_cadence_default
 
   nav.set_section("Income")
+  set_progress(55)
   income_list.gathered
   income_schedule_triggers
 
@@ -84,6 +108,7 @@ code: |
   if has_rental_income:
     schedule_b_sections
   income_totals
+  confirm_no_income
 
   if financial_form_type == "short":
     short_form_sections
@@ -91,9 +116,11 @@ code: |
     long_form_sections
 
   nav.set_section("Review")
+  set_progress(95)
   fs_review
 
   nav.set_section("Download")
+  set_progress(100)
   fs_download
 
   interview_order_financial_statement = True

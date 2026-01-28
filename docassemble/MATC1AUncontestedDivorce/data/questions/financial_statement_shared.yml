@@ -149,19 +149,56 @@ question: |
 subquestion: |
   This interview helps you prepare a Massachusetts financial statement.
   You will answer questions about your income, deductions, expenses, assets,
-  and debts. If you have pay stubs, benefit statements, or recent bills, keep
-  them nearby for quicker entry.
+  and debts.
+
+  **What you will do**
+  - Enter amounts for one pay period or payment.
+  - Choose how often you receive or pay each amount.
+  - Review totals that the interview calculates for you.
+
+  **What to gather (if available)**
+  - Recent pay stubs or benefit statements
+  - Recent bills or statements for recurring expenses
+  - Account balances for assets and debts
+
+  **Save your progress**
+  Your work is saved as you go. You can return later to continue.
+
+  **Tip:** Estimates are OK if you are not sure. Aim for your best, good-faith
+  numbers so the court gets a clear picture.
 ---
 id: gross_annual_income
 question: |
   Gross annual income
 subquestion: |
   Enter your total income before taxes for the last 12 months.
+
+  **Include:** wages, tips, overtime, benefits, rental income, and other income.
   If you are not sure, provide your best estimate.
 fields:
+  - I do not know my gross annual income: gross_annual_income_unknown
+    datatype: yesno
   - Gross annual income: gross_annual_income
     datatype: currency
     min: 0
+    show if:
+      variable: gross_annual_income_unknown
+      is: False
+    help: |
+      Use your best estimate if you are unsure.
+  - Best estimate of gross annual income: gross_annual_income_estimate
+    datatype: currency
+    min: 0
+    required: True
+    show if:
+      variable: gross_annual_income_unknown
+      is: True
+    help: |
+      This estimate helps the court decide whether the short or long form applies.
+---
+code: |
+  if defined("gross_annual_income_unknown") and gross_annual_income_unknown:
+    gross_annual_income = value("gross_annual_income_estimate") or 0
 ---
 id: docket_number
 question: |
@@ -172,6 +209,8 @@ subquestion: |
 fields:
   - Docket number: docket_number
     required: False
+    help: |
+      A docket number is assigned after a case is filed.
 ---
 id: user_and_other_party_names
 sets:
@@ -180,6 +219,7 @@ question: |
   Party names
 subquestion: |
   Use legal names as they appear on court paperwork.
+  If you do not know the other party's information yet, leave it blank for now.
 fields:
   - Your first name: users[0].name.first
   - Your last name: users[0].name.last
@@ -193,12 +233,18 @@ question: |
   Personal information
 subquestion: |
   We ask about children to match the court form. If you do not have children,
-  leave the count at 0. Your Social Security number is optional.
+  leave the count at 0.
+
+  Your Social Security number is optional.
 fields:
   - Social Security number: user_ssn
     required: False
+    help: |
+      Optional. Only provide if you are comfortable.
   - Date of birth: users[0].birthdate
     datatype: date
+    help: |
+      Use month/day/year format.
   - Do you have any children?: user_has_children
     datatype: yesno
   - Number of children living with you: children_living_with_user_count
@@ -222,11 +268,16 @@ question: |
   Contact information
 subquestion: |
   Provide contact details where you can reliably receive court-related notices.
+  If you prefer not to share an email, you can leave it blank.
 fields:
   - Phone number: users[0].phone_number
     required: False
+    help: |
+      Use a number where you can receive calls or texts.
   - Email address: users[0].email
     required: False
+    help: |
+      Use an email you check regularly.
 ---
 id: user_address
 sets:
@@ -235,6 +286,7 @@ question: |
   Address
 subquestion: |
   Use your current mailing address.
+  If you receive mail elsewhere, enter that address instead.
 fields:
   - Street address: users[0].address.address
     address autocomplete: True
@@ -262,6 +314,7 @@ question: |
   Employer address
 subquestion: |
   Add your employer's address and phone if you have an employer and know it.
+  If you do not have this information, leave it blank.
 fields:
   - Street address: user_employer_address.address
     address autocomplete: True
@@ -283,6 +336,7 @@ question: |
   Health insurance
 subquestion: |
   Include any health coverage you currently have.
+  If you are covered through someone else, list the provider name.
 fields:
   - Do you have health insurance coverage?: user_has_health_insurance
     datatype: yesno
@@ -297,14 +351,17 @@ question: |
   Default cadence
 subquestion: |
   Choose the cadence you want to use for most money amounts.
-  Enter amounts for one pay period (or one payment) and we will convert them
-  to weekly values for the form.
+
+  **Example:** If you are paid every 2 weeks and your pay is $900 per check,
+  select "Every 2 weeks" and enter 900.
 fields:
   - Cadence: financial_cadence_default
     input type: radio
     code: |
       cadence_choices
     default: weekly
+    help: |
+      Choose the schedule that matches most of your income or bills.
 ---
 code: |
   fs_default_times_per_year = cadence_to_times_per_year(
@@ -316,8 +373,10 @@ generic object: ALIncomeList
 question: |
   Gross income sources
 subquestion: |
-  Select all income sources you receive. You will enter amounts and how often
-  you receive them. If a category is missing, choose "Other income."
+  Select all income sources you receive.
+
+  You will enter amounts and how often you receive them. If a category is
+  missing, choose "Other income."
 fields:
   - no label: x.selected_types
     datatype: checkboxes
@@ -338,6 +397,8 @@ subquestion: |
   Tell us about your ${ ordinal(i) } income. Enter the amount for a single
   pay period and choose how often you receive it. We will convert everything
   to a weekly amount for the court form.
+
+  **Example:** If you receive $300 monthly, enter 300 and choose "Monthly."
 fields:
   - Type of income: x[i].source
     code: |
@@ -349,13 +410,21 @@ fields:
       is: other
   - Amount: x[i].value
     datatype: currency
+  - Use my default cadence (${ financial_cadence_default }): x[i].use_default_cadence
+    datatype: yesno
+    default: True
   - How often do you receive this income?: x[i].times_per_year
     input type: radio
     code: |
       times_per_year_list
     default: fs_default_times_per_year
+    show if:
+      variable: x[i].use_default_cadence
+      is: False
 validation code: |
   x[i].display_name = fs_income_terms.get(x[i].source, x[i].source)
+  if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
+    x[i].times_per_year = fs_default_times_per_year
 ---
 generic object: ALIncomeList
 code: |
@@ -395,8 +464,10 @@ generic object: ALExpenseList
 question: |
   Expense categories
 subquestion: |
-  Select the expense categories that apply to your household. You will add
-  amounts and how often you pay them. If a category is missing, choose "Other."
+  Select the expense categories that apply to your household.
+
+  You will add amounts and how often you pay them. If a category is missing,
+  choose "Other."
 fields:
   - no label: x.selected_types
     datatype: checkboxes
@@ -416,6 +487,8 @@ question: |
 subquestion: |
   Tell us about your ${ ordinal(i) } expense. Enter the amount for a single
   payment and how often you pay it. We will convert everything to weekly totals.
+
+  **Example:** If your rent is $1,200 per month, enter 1200 and choose "Monthly."
 fields:
   - Type of expense: x[i].source
     code: |
@@ -427,13 +500,21 @@ fields:
       is: other
   - Amount: x[i].value
     datatype: currency
+  - Use my default cadence (${ financial_cadence_default }): x[i].use_default_cadence
+    datatype: yesno
+    default: True
   - How often do you pay this amount?: x[i].times_per_year
     input type: radio
     code: |
       times_per_year_for_expenses
     default: fs_default_times_per_year
+    show if:
+      variable: x[i].use_default_cadence
+      is: False
 validation code: |
   x[i].display_name = fs_expense_terms.get(x[i].source, x[i].source)
+  if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
+    x[i].times_per_year = fs_default_times_per_year
 ---
 generic object: ALExpenseList
 code: |
@@ -475,11 +556,18 @@ question: |
 subquestion: |
   These answers determine whether Schedule A (self-employment) and Schedule B
   (rental income) are included with your financial statement.
+
+  **Self-employment examples:** gig work, freelance, small business, side jobs.
+  **Rental income examples:** rent from a house, apartment, or room.
 fields:
   - Do you have self-employment or business income?: has_self_employment_income
     datatype: yesno
+    help: |
+      Examples: gig work, freelance, or small business income.
   - Do you have rental income from property?: has_rental_income
     datatype: yesno
+    help: |
+      Examples: rent from a house, apartment, or room.
 ---
 id: income_part_1
 sets:
@@ -592,6 +680,19 @@ code: |
     + income_rental_weekly
   )
 ---
+id: confirm_no_income
+if: income_total_weekly == 0
+continue button field: confirm_no_income
+question: |
+  Confirm no income
+subquestion: |
+  You entered $0 for all income sources.
+
+  If this is correct, choose "Yes" to continue. If not, click "Back" to add income.
+fields:
+  - Yes, I have no income to report: confirm_no_income
+    datatype: yesno
+---
 id: fs_review
 continue button field: fs_review
 question: |
@@ -602,6 +703,16 @@ subquestion: |
   Gross weekly income: ${ currency(income_total_weekly) }
 
   Review each section to confirm totals and details.
+
+  **Things to check**
+  - Your income sources and amounts
+  - Whether Schedule A or B applies
+  - Expenses, assets, and liabilities
+
+  **Jump to a section**
+  % for section in section_links(nav):
+  * ${ section }
+  % endfor
   % if defined("debug_log") and debug_log:
   ---
   ### Debug log (last 5)
@@ -617,6 +728,16 @@ question: |
 subquestion: |
   Your answers are ready. PDF templates and field mapping will be connected in
   a later step. You can return later to finish or revise.
+
+  ${ collapse_template(fs_attachment_checklist, collapsed=False) }
+---
+template: fs_attachment_checklist
+content: |
+  **Attachment checklist**
+  - Recent pay stubs or benefit statements
+  - Proof of child care or medical costs (if applicable)
+  - Business records for Schedule A
+  - Rental records for Schedule B
 ---
 id: motor_vehicles
 question: |
