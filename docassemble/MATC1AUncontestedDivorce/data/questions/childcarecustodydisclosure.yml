@@ -1,0 +1,1745 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALMassachusetts:al_massachusetts.yml
+  - docassemble.MassAccess:massaccess.yml
+---
+metadata:
+  title: >-
+    Childcarecustodydisclosure
+  short title: >-
+    Childcarecustodydisclosur
+  description: |-
+    metadata place
+  can_I_use_this_form: |
+    divorce
+  before_you_start: |
+    before you start info
+  maturity: production
+  estimated_completion_minutes: 10
+  estimated_completion_delta: 5
+  LIST_topics: 
+    - "FA-00-00-00-00"
+    - "FA-04-00-00-00"
+    - "FA-06-00-00-00"
+  tags:
+    - "FA-00-00-00-00"
+    - "FA-04-00-00-00"
+    - "FA-06-00-00-00"
+  authors:
+    - KP Hunsinger
+    - Alara Akisik
+    - Sam Darkwa Jr.
+  original_form: []
+  original_form_published_on: ""
+  allowed_courts: 
+    - "Probate and Family Court"
+  typical_role: "plaintiff"
+  al_weaver_version: "1.11.0"
+  generated_on: "2026-01-22"
+  languages:
+    - en
+  jurisdiction: NAM-US-US+MA
+  review_date: 2026-01-22
+  form_titles:
+    - Childcarecustodydisclosure
+  form_numbers: []
+  update_notes: |
+---
+code: |
+  # This controls the default country and list of states in address field questions
+  AL_DEFAULT_COUNTRY = "US"
+---
+code: |
+  # This controls the default state in address field questions
+  AL_DEFAULT_STATE = "MA"
+---
+code: |
+  github_repo_name =  'docassemble-Childcarecustodydisclosure'
+---
+code: |
+  interview_short_title = "Ask the court for a divorce"
+---
+code: |
+  al_form_type = "starts_case" 
+---
+objects:
+  - custody2_other_partiees: ALPeopleList
+  - users: ALPeopleList.using(ask_number=True,target_number=1)
+---
+sections:
+  - review_childcarecustodydisclosure: Review your answers
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_childcarecustodydisclosure
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = ['Probate and Family Court']
+  nav.set_section("review_childcarecustodydisclosure")
+  user_role = "plaintiff"
+  user_ask_role = "plaintiff"
+  users.gather()
+  set_parts(subtitle=str(users))
+  trial_court_department_is_district
+  number_children_is_5plus
+  impoundment_is_true_danger_statement_applies
+  children1_address_from_date
+  set_progress(16)
+  trial_court.division
+  docket_number
+  children.gather()
+  children[0].address.address
+  children[1].address.address
+  set_progress(32)
+  children[2].address.address
+  children[3].address.address
+  users[0].address.address
+  users[0].phone_number
+  users[0].email
+  set_progress(48)
+  signature_date
+  attorneys.gather()
+  children[4].address.address
+  children[5].address.address
+  set_progress(64)
+  children[6].address.address
+  children[7].address.address
+  interview_order_childcarecustodydisclosure = True
+---
+###################### Main order ######################
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  childcarecustodydisclosure_intro
+  interview_order_childcarecustodydisclosure
+  signature_date
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "zip": showifdef("users[0].address.zip"),
+          "reached_interview_end": True,
+      },
+  )
+  childcarecustodydisclosure_download
+---
+id: Childcarecustodydisclosure
+continue button field: childcarecustodydisclosure_intro
+question: |
+  Childcarecustodydisclosure
+subquestion: |
+  before you start info
+
+  divorce
+
+  Most people take about 10 minutes to complete this interview.
+---
+id: Case Information
+question: |
+  Case Information
+fields:
+  - "Trial court department is district": trial_court_department_is_district
+    datatype: yesno
+  - "Trial court department is boston municipal": trial_court_department_is_boston_municipal
+    datatype: yesno
+  - "Trial court department is probate family": trial_court_department_is_probate_family
+    datatype: yesno
+  - "Trial court department is juvenile": trial_court_department_is_juvenile
+    datatype: yesno
+  - "Trial court department is superior": trial_court_department_is_superior
+    datatype: yesno
+  - "Case style": case_style
+    maxlength: 84
+  - "Is party": is_party
+    input type: radio
+    choices:
+      - 1: 1
+  - "Is attorney": is_attorney
+    input type: radio
+    choices:
+      - 1: 1
+      - 1: 1
+---
+id: Number of Children
+question: |
+  Number of Children
+fields:
+  - "Number children is 5plus": number_children_is_5plus
+    input type: radio
+    choices:
+      - 1: 1
+---
+id: Impoundment
+question: |
+  Impoundment
+fields:
+  - "Impoundment is true danger statement applies": impoundment_is_true_danger_statement_applies
+    datatype: yesno
+  - "Impoundment is true adoption": impoundment_is_true_adoption
+    datatype: yesno
+  - "Impoundment is false": impoundment_is_false
+    datatype: yesno
+---
+id: Children
+question: |
+  Children
+fields:
+  - "Date of children1 address from": children1_address_from_date
+    datatype: date
+  - "Children1 adults lives with names": children1_adults_lives_with_names
+    maxlength: 32
+  - "Children1 relationship": children1_relationship
+    maxlength: 32
+  - "Date of children1 previous address from": children1_previous_address_from_date
+    datatype: date
+  - "Children1 previous adults lives with names": children1_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children1 previous address to": children1_previous_address_to_date
+    datatype: date
+  - "Children1 previous address block": children1_previous_address_block
+    maxlength: 87
+  - "Children1 previous relationship": children1_previous_relationship
+    maxlength: 32
+  - "Date of children2 address from": children2_address_from_date
+    datatype: date
+  - "Children2 adults lives with names": children2_adults_lives_with_names
+    maxlength: 32
+  - "Date of children2 address to": children2_address_to_date
+    datatype: date
+  - "Children2 address is same": children2_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children2 relationship": children2_relationship
+    maxlength: 32
+  - "Date of children2 previous address from": children2_previous_address_from_date
+    datatype: date
+  - "Children2 previous adults lives with names": children2_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children2 previous address to": children2_previous_address_to_date
+    datatype: date
+  - "Children2 previous address block": children2_previous_address_block
+    maxlength: 87
+  - "Children2 previous relationship": children2_previous_relationship
+    maxlength: 32
+  - "Date of children3 address from": children3_address_from_date
+    datatype: date
+  - "Children3 adults lives with names": children3_adults_lives_with_names
+    maxlength: 32
+  - "Date of children3 address to": children3_address_to_date
+    datatype: date
+  - "Children3 address is same": children3_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children3 relationship": children3_relationship
+    maxlength: 32
+  - "Children3 address source": children3_address_source
+    maxlength: 1
+  - "Date of children3 previous address from": children3_previous_address_from_date
+    datatype: date
+  - "Children3 previous adults lives with names": children3_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children3 previous address to": children3_previous_address_to_date
+    datatype: date
+  - "Children3 previous address block": children3_previous_address_block
+    maxlength: 87
+  - "Children3 previous relationship": children3_previous_relationship
+    maxlength: 32
+  - "Date of children4 address from": children4_address_from_date
+    datatype: date
+  - "Children4 adults lives with names": children4_adults_lives_with_names
+    maxlength: 32
+  - "Date of children4 address to": children4_address_to_date
+    datatype: date
+  - "Children4 address is same": children4_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children4 relationship": children4_relationship
+    maxlength: 32
+  - "Children4 address source": children4_address_source
+    maxlength: 1
+  - "Date of children4 previous address from": children4_previous_address_from_date
+    datatype: date
+  - "Children4 previous adults lives with names": children4_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children4 previous address to": children4_previous_address_to_date
+    datatype: date
+  - "Children4 previous relationship": children4_previous_relationship
+    maxlength: 32
+  - "Children4 previous address block": children4_previous_address_block
+    maxlength: 87
+  - "Other cases is": other_cases_is_no
+    datatype: yesno
+  - "Other cases is yes participation is": other_cases_is_yes_participation_is_no
+    datatype: yesno
+  - "Other cases participation is": other_cases_participation_is_yes
+    datatype: yesno
+  - "Cases1 trial court department": cases1_trial_court_department
+    maxlength: 22
+  - "Cases1 docket number": cases1_docket_number
+    maxlength: 20
+  - "Cases1 status": cases1_status
+    maxlength: 15
+  - "Cases1 role": cases1_role
+    maxlength: 17
+  - "Cases1 children involved": cases1_children_involved
+    maxlength: 2
+  - "Cases2 docket number": cases2_docket_number
+    maxlength: 20
+  - "Cases2 status": cases2_status
+    maxlength: 15
+  - "Cases2 role": cases2_role
+    maxlength: 17
+  - "Cases2 trial court department": cases2_trial_court_department
+    maxlength: 22
+  - "Cases2 children involved": cases2_children_involved
+    maxlength: 2
+  - "Cases3 trial court department": cases3_trial_court_department
+    maxlength: 22
+  - "Cases3 docket number": cases3_docket_number
+    maxlength: 20
+  - "Cases3 status": cases3_status
+    maxlength: 15
+  - "Cases3 role": cases3_role
+    maxlength: 17
+  - "Cases3 children involved": cases3_children_involved
+    maxlength: 2
+  - "Cases4 trial court department": cases4_trial_court_department
+    maxlength: 22
+  - "Cases4 docket number": cases4_docket_number
+    maxlength: 20
+  - "Cases4 status": cases4_status
+    maxlength: 15
+  - "Cases4 role": cases4_role
+    maxlength: 17
+  - "Cases4 children involved": cases4_children_involved
+    maxlength: 2
+  - "Children1 appointee is": children1_appointee_is
+    datatype: yesno
+  - "Children1 appointee name plus title": children1_appointee_name_plus_title
+    maxlength: 52
+  - "Children1 appointee is unknown": children1_appointee_is_unknown
+    datatype: yesno
+  - "Children2 appointee name plus title": children2_appointee_name_plus_title
+    maxlength: 52
+  - "Children2 appointee is": children2_appointee_is
+    datatype: yesno
+  - "Children2 appointee is unknown": children2_appointee_is_unknown
+    datatype: yesno
+  - "Children3 appointee name plus title": children3_appointee_name_plus_title
+    maxlength: 52
+  - "Children3 appointee is": children3_appointee_is
+    datatype: yesno
+  - "Children3 appointee is unknown": children3_appointee_is_unknown
+    datatype: yesno
+  - "Children4 appointee name plus title": children4_appointee_name_plus_title
+    maxlength: 52
+  - "Children4 appointee is": children4_appointee_is
+    datatype: yesno
+  - "Children4 appointee is unknown": children4_appointee_is_unknown
+    datatype: yesno
+  - "Custody1 children involved": custody1_children_involved
+    maxlength: 2
+  - "Custody1 other parties name": custody1_other_parties_name
+    maxlength: 26
+  - "Custody1 other parties address on one line": custody1_other_parties_address_on_one_line
+    maxlength: 52
+  - "Custody2 children involved": custody2_children_involved
+    maxlength: 2
+  - "Custody2 other partiees name": custody2_other_partiees_name
+    maxlength: 26
+  - "Custody2 other parties address on one line": custody2_other_parties_address_on_one_line
+    maxlength: 52
+  - "Custody3 other parties name": custody3_other_parties_name
+    maxlength: 26
+  - "Custody3 other parties address on one line": custody3_other_parties_address_on_one_line
+    maxlength: 52
+  - "Custody3 children involved": custody3_children_involved
+    maxlength: 2
+  - "Custody4 children involved": custody4_children_involved
+    maxlength: 2
+  - "Custody4 other parties name": custody4_other_parties_name
+    maxlength: 26
+  - "Custody4 other parties address on one line": custody4_other_parties_address_on_one_line
+    maxlength: 52
+  - "Date of attorney signature": attorney_signature_date
+    datatype: date
+  - "Attorney bar number": attorney_bar_number
+    maxlength: 19
+  - "Date of children5 address from": children5_address_from_date
+    datatype: date
+  - "Children5 adults lives with names": children5_adults_lives_with_names
+    maxlength: 32
+  - "Children5 relationship": children5_relationship
+    maxlength: 32
+  - "Date of children5 previous address from": children5_previous_address_from_date
+    datatype: date
+  - "Children5 previous adults lives with names": children5_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children5 previous address to": children5_previous_address_to_date
+    datatype: date
+  - "Children5 previous address block": children5_previous_address_block
+    maxlength: 87
+  - "Children5 previous relationship": children5_previous_relationship
+    maxlength: 32
+  - "Date of children6 address from": children6_address_from_date
+    datatype: date
+  - "Children6 adults lives with names": children6_adults_lives_with_names
+    maxlength: 32
+  - "Date of children6 address to": children6_address_to_date
+    datatype: date
+  - "Children6 address is same": children6_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children6 relationship": children6_relationship
+    maxlength: 32
+  - "Date of children6 previous address from": children6_previous_address_from_date
+    datatype: date
+  - "Children6 previous adults lives with names": children6_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children6 previous address to": children6_previous_address_to_date
+    datatype: date
+  - "Children6 previous address block": children6_previous_address_block
+    maxlength: 87
+  - "Children6 previous relationship": children6_previous_relationship
+    maxlength: 32
+  - "Date of children7 address from": children7_address_from_date
+    datatype: date
+  - "Children7 adults lives with names": children7_adults_lives_with_names
+    maxlength: 32
+  - "Date of children7 address to": children7_address_to_date
+    datatype: date
+  - "Children7 address is same": children7_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children7 relationship": children7_relationship
+    maxlength: 32
+  - "Children7 address source": children7_address_source
+    maxlength: 1
+  - "Date of children7 previous address from": children7_previous_address_from_date
+    datatype: date
+  - "Children7 previous adults lives with names": children7_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children7 previous address to": children7_previous_address_to_date
+    datatype: date
+  - "Children7 previous address block": children7_previous_address_block
+    maxlength: 87
+  - "Children7 previous relationship": children7_previous_relationship
+    maxlength: 32
+  - "Date of children8 address from": children8_address_from_date
+    datatype: date
+  - "Children8 adults lives with names": children8_adults_lives_with_names
+    maxlength: 32
+  - "Date of children8 address to": children8_address_to_date
+    datatype: date
+  - "Children8 address is same": children8_address_is_same
+    input type: radio
+    choices:
+      - 1: 1
+  - "Children8 relationship": children8_relationship
+    maxlength: 32
+  - "Children8 address source": children8_address_source
+    maxlength: 1
+  - "Date of children8 previous address from": children8_previous_address_from_date
+    datatype: date
+  - "Children8 previous adults lives with names": children8_previous_adults_lives_with_names
+    maxlength: 32
+  - "Date of children8 previous address to": children8_previous_address_to_date
+    datatype: date
+  - "Children8 previous relationship": children8_previous_relationship
+    maxlength: 32
+  - "Children8 previous address block": children8_previous_address_block
+    maxlength: 87
+  - "Cases5 children involved": cases5_children_involved
+    maxlength: 4
+  - "Cases5 trial court department": cases5_trial_court_department
+    maxlength: 44
+  - "Cases5 docket number": cases5_docket_number
+    maxlength: 44
+  - "Cases5 status": cases5_status
+    maxlength: 30
+  - "Cases5 role": cases5_role
+    maxlength: 34
+  - "Cases6 children involved": cases6_children_involved
+    maxlength: 4
+  - "Cases6 trial court department": cases6_trial_court_department
+    maxlength: 44
+  - "Cases6 docket number": cases6_docket_number
+    maxlength: 44
+  - "Cases6 status": cases6_status
+    maxlength: 30
+  - "Cases6 role": cases6_role
+    maxlength: 34
+  - "Cases7 children involved": cases7_children_involved
+    maxlength: 4
+  - "Cases7 trial court department": cases7_trial_court_department
+    maxlength: 44
+  - "Cases7 docket number": cases7_docket_number
+    maxlength: 44
+  - "Cases7 status": cases7_status
+    maxlength: 30
+  - "Cases7 role": cases7_role
+    maxlength: 34
+  - "Cases8 role": cases8_role
+    maxlength: 16
+  - "Cases8 children involved": cases8_children_involved
+    maxlength: 4
+  - "Cases8 trial court department": cases8_trial_court_department
+    maxlength: 44
+  - "Cases8 docket number": cases8_docket_number
+    maxlength: 44
+  - "Cases8 status": cases8_status
+    maxlength: 30
+  - "Children5 appointee is": children5_appointee_is
+    datatype: yesno
+  - "Children5 appointee is unknown": children5_appointee_is_unknown
+    datatype: yesno
+  - "Children5 appointee name plus title": children5_appointee_name_plus_title
+    input type: area
+    maxlength: 106
+  - "Children6 appointee is": children6_appointee_is
+    datatype: yesno
+  - "Children6 appointee is unknown": children6_appointee_is_unknown
+    datatype: yesno
+  - "Children6 appointee name plus title": children6_appointee_name_plus_title
+    input type: area
+    maxlength: 106
+  - "Children7 appointee is": children7_appointee_is
+    datatype: yesno
+  - "Children7 appointee is unknown": children7_appointee_is_unknown
+    datatype: yesno
+  - "Children7 appointee name plus title": children7_appointee_name_plus_title
+    input type: area
+    maxlength: 106
+  - "Children8 appointee is unknown": children8_appointee_is_unknown
+    datatype: yesno
+  - "Children8 appointee is": children8_appointee_is
+    datatype: yesno
+  - "Children8 appointee name plus title": children8_appointee_name_plus_title
+    input type: area
+    maxlength: 106
+  - "Custody5 children involved": custody5_children_involved
+    maxlength: 4
+  - "Custody5 other parties name": custody5_other_parties_name
+    maxlength: 54
+  - "Custody5 other parties address on one line": custody5_other_parties_address_on_one_line
+    input type: area
+    maxlength: 104
+  - "Custody6 children involved": custody6_children_involved
+    maxlength: 4
+  - "Custody6 other parties name": custody6_other_parties_name
+    maxlength: 54
+  - "Custody6 other parties address on one line": custody6_other_parties_address_on_one_line
+    input type: area
+    maxlength: 104
+  - "Custody7 children involved": custody7_children_involved
+    maxlength: 2
+  - "Custody7 other parties name": custody7_other_parties_name
+    maxlength: 54
+  - "Custody7 other parties address on one line": custody7_other_parties_address_on_one_line
+    input type: area
+    maxlength: 104
+  - "Custody8 other parties name": custody8_other_parties_name
+    maxlength: 54
+  - "Custody8 other parties address on one line": custody8_other_parties_address_on_one_line
+    input type: area
+    maxlength: 104
+  - "Custody8 children involved": custody8_children_involved
+    maxlength: 4
+---
+id: preview childcarecustodydisclosure
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Edit answers" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_childcarecustodydisclosure'), label='Edit answers', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: childcarecustodydisclosure_preview_question    
+---
+code: |
+  signature_fields = ['users[0].signature', 'attorneys[0].signature']
+---
+code: |
+  # This is a placeholder for the addresses that will be searched
+  # for matching address to court. Edit if court venue is based on 
+  # a different address than the user's
+  [user.address.address for user in users.complete_elements()]
+  addresses_to_search = [user.address for user in users.complete_elements()]
+---
+id: childcarecustodydisclosure review screen
+event: review_childcarecustodydisclosure
+question: |
+  Review your answers
+review:
+  - Edit: trial_court_department_is_district
+    button: |
+      **Trial court department is district**:
+      ${ word(yesno(trial_court_department_is_district)) }
+  - Edit: trial_court
+    button: |
+      **Trial court**
+  
+      % if defined("trial_court.division"):
+      * division: ${ trial_court.division }
+      % endif
+  - Edit: trial_court_department_is_boston_municipal
+    button: |
+      **Trial court department is boston municipal**:
+      ${ word(yesno(trial_court_department_is_boston_municipal)) }
+  - Edit: trial_court_department_is_probate_family
+    button: |
+      **Trial court department is probate family**:
+      ${ word(yesno(trial_court_department_is_probate_family)) }
+  - Edit: trial_court_department_is_juvenile
+    button: |
+      **Trial court department is juvenile**:
+      ${ word(yesno(trial_court_department_is_juvenile)) }
+  - Edit: docket_number
+    button: |
+      **Docket number**:
+      ${ docket_number }
+  - Edit: trial_court_department_is_superior
+    button: |
+      **Trial court department is superior**:
+      ${ word(yesno(trial_court_department_is_superior)) }
+  - Edit: case_style
+    button: |
+      **Case style**:
+      ${ case_style }
+  - Edit: is_party
+    button: |
+      **Is party**:
+      ${ is_party }
+  - Edit: users.revisit
+    button: |
+      **Users**
+
+      % for item in users:
+        * ${ item }
+      % endfor
+  - Edit: is_attorney
+    button: |
+      **Is attorney**:
+      ${ is_attorney }
+  - Edit: children.revisit
+    button: |
+      **Children**
+
+      % for item in children:
+        * ${ item }
+      % endfor
+  - Edit: number_children_is_5plus
+    button: |
+      **Number children is 5plus**:
+      ${ number_children_is_5plus }
+  - Edit: impoundment_is_true_danger_statement_applies
+    button: |
+      **Impoundment is true danger statement applies**:
+      ${ word(yesno(impoundment_is_true_danger_statement_applies)) }
+  - Edit: impoundment_is_true_adoption
+    button: |
+      **Impoundment is true adoption**:
+      ${ word(yesno(impoundment_is_true_adoption)) }
+  - Edit: impoundment_is_false
+    button: |
+      **Impoundment is false**:
+      ${ word(yesno(impoundment_is_false)) }
+  - Edit: children1_address_from_date
+    button: |
+      **Date of children1 address from**:
+      ${ children1_address_from_date }
+  - Edit: children1_adults_lives_with_names
+    button: |
+      **Children1 adults lives with names**:
+      ${ children1_adults_lives_with_names }
+  - Edit: children1_relationship
+    button: |
+      **Children1 relationship**:
+      ${ children1_relationship }
+  - Edit: children1_previous_address_from_date
+    button: |
+      **Date of children1 previous address from**:
+      ${ children1_previous_address_from_date }
+  - Edit: children1_previous_adults_lives_with_names
+    button: |
+      **Children1 previous adults lives with names**:
+      ${ children1_previous_adults_lives_with_names }
+  - Edit: children1_previous_address_to_date
+    button: |
+      **Date of children1 previous address to**:
+      ${ children1_previous_address_to_date }
+  - Edit: children1_previous_address_block
+    button: |
+      **Children1 previous address block**:
+      ${ children1_previous_address_block }
+  - Edit: children1_previous_relationship
+    button: |
+      **Children1 previous relationship**:
+      ${ children1_previous_relationship }
+  - Edit: children2_address_from_date
+    button: |
+      **Date of children2 address from**:
+      ${ children2_address_from_date }
+  - Edit: children2_adults_lives_with_names
+    button: |
+      **Children2 adults lives with names**:
+      ${ children2_adults_lives_with_names }
+  - Edit: children2_address_to_date
+    button: |
+      **Date of children2 address to**:
+      ${ children2_address_to_date }
+  - Edit: children2_address_is_same
+    button: |
+      **Children2 address is same**:
+      ${ children2_address_is_same }
+  - Edit: children2_relationship
+    button: |
+      **Children2 relationship**:
+      ${ children2_relationship }
+  - Edit: children2_previous_address_from_date
+    button: |
+      **Date of children2 previous address from**:
+      ${ children2_previous_address_from_date }
+  - Edit: children2_previous_adults_lives_with_names
+    button: |
+      **Children2 previous adults lives with names**:
+      ${ children2_previous_adults_lives_with_names }
+  - Edit: children2_previous_address_to_date
+    button: |
+      **Date of children2 previous address to**:
+      ${ children2_previous_address_to_date }
+  - Edit: children2_previous_address_block
+    button: |
+      **Children2 previous address block**:
+      ${ children2_previous_address_block }
+  - Edit: children2_previous_relationship
+    button: |
+      **Children2 previous relationship**:
+      ${ children2_previous_relationship }
+  - Edit: children3_address_from_date
+    button: |
+      **Date of children3 address from**:
+      ${ children3_address_from_date }
+  - Edit: children3_adults_lives_with_names
+    button: |
+      **Children3 adults lives with names**:
+      ${ children3_adults_lives_with_names }
+  - Edit: children3_address_to_date
+    button: |
+      **Date of children3 address to**:
+      ${ children3_address_to_date }
+  - Edit: children3_address_is_same
+    button: |
+      **Children3 address is same**:
+      ${ children3_address_is_same }
+  - Edit: children3_relationship
+    button: |
+      **Children3 relationship**:
+      ${ children3_relationship }
+  - Edit: children3_address_source
+    button: |
+      **Children3 address source**:
+      ${ children3_address_source }
+  - Edit: children3_previous_address_from_date
+    button: |
+      **Date of children3 previous address from**:
+      ${ children3_previous_address_from_date }
+  - Edit: children3_previous_adults_lives_with_names
+    button: |
+      **Children3 previous adults lives with names**:
+      ${ children3_previous_adults_lives_with_names }
+  - Edit: children3_previous_address_to_date
+    button: |
+      **Date of children3 previous address to**:
+      ${ children3_previous_address_to_date }
+  - Edit: children3_previous_address_block
+    button: |
+      **Children3 previous address block**:
+      ${ children3_previous_address_block }
+  - Edit: children3_previous_relationship
+    button: |
+      **Children3 previous relationship**:
+      ${ children3_previous_relationship }
+  - Edit: children4_address_from_date
+    button: |
+      **Date of children4 address from**:
+      ${ children4_address_from_date }
+  - Edit: children4_adults_lives_with_names
+    button: |
+      **Children4 adults lives with names**:
+      ${ children4_adults_lives_with_names }
+  - Edit: children4_address_to_date
+    button: |
+      **Date of children4 address to**:
+      ${ children4_address_to_date }
+  - Edit: children4_address_is_same
+    button: |
+      **Children4 address is same**:
+      ${ children4_address_is_same }
+  - Edit: children4_relationship
+    button: |
+      **Children4 relationship**:
+      ${ children4_relationship }
+  - Edit: children4_address_source
+    button: |
+      **Children4 address source**:
+      ${ children4_address_source }
+  - Edit: children4_previous_address_from_date
+    button: |
+      **Date of children4 previous address from**:
+      ${ children4_previous_address_from_date }
+  - Edit: children4_previous_adults_lives_with_names
+    button: |
+      **Children4 previous adults lives with names**:
+      ${ children4_previous_adults_lives_with_names }
+  - Edit: children4_previous_address_to_date
+    button: |
+      **Date of children4 previous address to**:
+      ${ children4_previous_address_to_date }
+  - Edit: children4_previous_relationship
+    button: |
+      **Children4 previous relationship**:
+      ${ children4_previous_relationship }
+  - Edit: children4_previous_address_block
+    button: |
+      **Children4 previous address block**:
+      ${ children4_previous_address_block }
+  - Edit: other_cases_is_no
+    button: |
+      **Other cases is**:
+      ${ word(yesno(other_cases_is_no)) }
+  - Edit: other_cases_is_yes_participation_is_no
+    button: |
+      **Other cases is yes participation is**:
+      ${ word(yesno(other_cases_is_yes_participation_is_no)) }
+  - Edit: other_cases_participation_is_yes
+    button: |
+      **Other cases participation is**:
+      ${ word(yesno(other_cases_participation_is_yes)) }
+  - Edit: cases1_trial_court_department
+    button: |
+      **Cases1 trial court department**:
+      ${ cases1_trial_court_department }
+  - Edit: cases1_docket_number
+    button: |
+      **Cases1 docket number**:
+      ${ cases1_docket_number }
+  - Edit: cases1_status
+    button: |
+      **Cases1 status**:
+      ${ cases1_status }
+  - Edit: cases1_role
+    button: |
+      **Cases1 role**:
+      ${ cases1_role }
+  - Edit: cases1_children_involved
+    button: |
+      **Cases1 children involved**:
+      ${ cases1_children_involved }
+  - Edit: cases2_docket_number
+    button: |
+      **Cases2 docket number**:
+      ${ cases2_docket_number }
+  - Edit: cases2_status
+    button: |
+      **Cases2 status**:
+      ${ cases2_status }
+  - Edit: cases2_role
+    button: |
+      **Cases2 role**:
+      ${ cases2_role }
+  - Edit: cases2_trial_court_department
+    button: |
+      **Cases2 trial court department**:
+      ${ cases2_trial_court_department }
+  - Edit: cases2_children_involved
+    button: |
+      **Cases2 children involved**:
+      ${ cases2_children_involved }
+  - Edit: cases3_trial_court_department
+    button: |
+      **Cases3 trial court department**:
+      ${ cases3_trial_court_department }
+  - Edit: cases3_docket_number
+    button: |
+      **Cases3 docket number**:
+      ${ cases3_docket_number }
+  - Edit: cases3_status
+    button: |
+      **Cases3 status**:
+      ${ cases3_status }
+  - Edit: cases3_role
+    button: |
+      **Cases3 role**:
+      ${ cases3_role }
+  - Edit: cases3_children_involved
+    button: |
+      **Cases3 children involved**:
+      ${ cases3_children_involved }
+  - Edit: cases4_trial_court_department
+    button: |
+      **Cases4 trial court department**:
+      ${ cases4_trial_court_department }
+  - Edit: cases4_docket_number
+    button: |
+      **Cases4 docket number**:
+      ${ cases4_docket_number }
+  - Edit: cases4_status
+    button: |
+      **Cases4 status**:
+      ${ cases4_status }
+  - Edit: cases4_role
+    button: |
+      **Cases4 role**:
+      ${ cases4_role }
+  - Edit: cases4_children_involved
+    button: |
+      **Cases4 children involved**:
+      ${ cases4_children_involved }
+  - Edit: children1_appointee_is
+    button: |
+      **Children1 appointee is**:
+      ${ word(yesno(children1_appointee_is)) }
+  - Edit: children1_appointee_name_plus_title
+    button: |
+      **Children1 appointee name plus title**:
+      ${ children1_appointee_name_plus_title }
+  - Edit: children1_appointee_is_unknown
+    button: |
+      **Children1 appointee is unknown**:
+      ${ word(yesno(children1_appointee_is_unknown)) }
+  - Edit: children2_appointee_name_plus_title
+    button: |
+      **Children2 appointee name plus title**:
+      ${ children2_appointee_name_plus_title }
+  - Edit: children2_appointee_is
+    button: |
+      **Children2 appointee is**:
+      ${ word(yesno(children2_appointee_is)) }
+  - Edit: children2_appointee_is_unknown
+    button: |
+      **Children2 appointee is unknown**:
+      ${ word(yesno(children2_appointee_is_unknown)) }
+  - Edit: children3_appointee_name_plus_title
+    button: |
+      **Children3 appointee name plus title**:
+      ${ children3_appointee_name_plus_title }
+  - Edit: children3_appointee_is
+    button: |
+      **Children3 appointee is**:
+      ${ word(yesno(children3_appointee_is)) }
+  - Edit: children3_appointee_is_unknown
+    button: |
+      **Children3 appointee is unknown**:
+      ${ word(yesno(children3_appointee_is_unknown)) }
+  - Edit: children4_appointee_name_plus_title
+    button: |
+      **Children4 appointee name plus title**:
+      ${ children4_appointee_name_plus_title }
+  - Edit: children4_appointee_is
+    button: |
+      **Children4 appointee is**:
+      ${ word(yesno(children4_appointee_is)) }
+  - Edit: children4_appointee_is_unknown
+    button: |
+      **Children4 appointee is unknown**:
+      ${ word(yesno(children4_appointee_is_unknown)) }
+  - Edit: custody1_children_involved
+    button: |
+      **Custody1 children involved**:
+      ${ custody1_children_involved }
+  - Edit: custody1_other_parties_name
+    button: |
+      **Custody1 other parties name**:
+      ${ custody1_other_parties_name }
+  - Edit: custody1_other_parties_address_on_one_line
+    button: |
+      **Custody1 other parties address on one line**:
+      ${ custody1_other_parties_address_on_one_line }
+  - Edit: custody2_children_involved
+    button: |
+      **Custody2 children involved**:
+      ${ custody2_children_involved }
+  - Edit: custody2_other_partiees_name
+    button: |
+      **Custody2 other partiees name**:
+      ${ custody2_other_partiees_name }
+  - Edit: custody2_other_parties_address_on_one_line
+    button: |
+      **Custody2 other parties address on one line**:
+      ${ custody2_other_parties_address_on_one_line }
+  - Edit: custody3_other_parties_name
+    button: |
+      **Custody3 other parties name**:
+      ${ custody3_other_parties_name }
+  - Edit: custody3_other_parties_address_on_one_line
+    button: |
+      **Custody3 other parties address on one line**:
+      ${ custody3_other_parties_address_on_one_line }
+  - Edit: custody3_children_involved
+    button: |
+      **Custody3 children involved**:
+      ${ custody3_children_involved }
+  - Edit: custody4_children_involved
+    button: |
+      **Custody4 children involved**:
+      ${ custody4_children_involved }
+  - Edit: custody4_other_parties_name
+    button: |
+      **Custody4 other parties name**:
+      ${ custody4_other_parties_name }
+  - Edit: custody4_other_parties_address_on_one_line
+    button: |
+      **Custody4 other parties address on one line**:
+      ${ custody4_other_parties_address_on_one_line }
+  - Edit: signature_date
+    button: |
+      **Date of signature**:
+      ${ signature_date }
+  - Edit: attorneys.revisit
+    button: |
+      **Attorneys**
+
+      % for item in attorneys:
+        * ${ item }
+      % endfor
+  - Edit: attorney_signature_date
+    button: |
+      **Date of attorney signature**:
+      ${ attorney_signature_date }
+  - Edit: attorney_bar_number
+    button: |
+      **Attorney bar number**:
+      ${ attorney_bar_number }
+  - Edit: children5_address_from_date
+    button: |
+      **Date of children5 address from**:
+      ${ children5_address_from_date }
+  - Edit: children5_adults_lives_with_names
+    button: |
+      **Children5 adults lives with names**:
+      ${ children5_adults_lives_with_names }
+  - Edit: children5_relationship
+    button: |
+      **Children5 relationship**:
+      ${ children5_relationship }
+  - Edit: children5_previous_address_from_date
+    button: |
+      **Date of children5 previous address from**:
+      ${ children5_previous_address_from_date }
+  - Edit: children5_previous_adults_lives_with_names
+    button: |
+      **Children5 previous adults lives with names**:
+      ${ children5_previous_adults_lives_with_names }
+  - Edit: children5_previous_address_to_date
+    button: |
+      **Date of children5 previous address to**:
+      ${ children5_previous_address_to_date }
+  - Edit: children5_previous_address_block
+    button: |
+      **Children5 previous address block**:
+      ${ children5_previous_address_block }
+  - Edit: children5_previous_relationship
+    button: |
+      **Children5 previous relationship**:
+      ${ children5_previous_relationship }
+  - Edit: children6_address_from_date
+    button: |
+      **Date of children6 address from**:
+      ${ children6_address_from_date }
+  - Edit: children6_adults_lives_with_names
+    button: |
+      **Children6 adults lives with names**:
+      ${ children6_adults_lives_with_names }
+  - Edit: children6_address_to_date
+    button: |
+      **Date of children6 address to**:
+      ${ children6_address_to_date }
+  - Edit: children6_address_is_same
+    button: |
+      **Children6 address is same**:
+      ${ children6_address_is_same }
+  - Edit: children6_relationship
+    button: |
+      **Children6 relationship**:
+      ${ children6_relationship }
+  - Edit: children6_previous_address_from_date
+    button: |
+      **Date of children6 previous address from**:
+      ${ children6_previous_address_from_date }
+  - Edit: children6_previous_adults_lives_with_names
+    button: |
+      **Children6 previous adults lives with names**:
+      ${ children6_previous_adults_lives_with_names }
+  - Edit: children6_previous_address_to_date
+    button: |
+      **Date of children6 previous address to**:
+      ${ children6_previous_address_to_date }
+  - Edit: children6_previous_address_block
+    button: |
+      **Children6 previous address block**:
+      ${ children6_previous_address_block }
+  - Edit: children6_previous_relationship
+    button: |
+      **Children6 previous relationship**:
+      ${ children6_previous_relationship }
+  - Edit: children7_address_from_date
+    button: |
+      **Date of children7 address from**:
+      ${ children7_address_from_date }
+  - Edit: children7_adults_lives_with_names
+    button: |
+      **Children7 adults lives with names**:
+      ${ children7_adults_lives_with_names }
+  - Edit: children7_address_to_date
+    button: |
+      **Date of children7 address to**:
+      ${ children7_address_to_date }
+  - Edit: children7_address_is_same
+    button: |
+      **Children7 address is same**:
+      ${ children7_address_is_same }
+  - Edit: children7_relationship
+    button: |
+      **Children7 relationship**:
+      ${ children7_relationship }
+  - Edit: children7_address_source
+    button: |
+      **Children7 address source**:
+      ${ children7_address_source }
+  - Edit: children7_previous_address_from_date
+    button: |
+      **Date of children7 previous address from**:
+      ${ children7_previous_address_from_date }
+  - Edit: children7_previous_adults_lives_with_names
+    button: |
+      **Children7 previous adults lives with names**:
+      ${ children7_previous_adults_lives_with_names }
+  - Edit: children7_previous_address_to_date
+    button: |
+      **Date of children7 previous address to**:
+      ${ children7_previous_address_to_date }
+  - Edit: children7_previous_address_block
+    button: |
+      **Children7 previous address block**:
+      ${ children7_previous_address_block }
+  - Edit: children7_previous_relationship
+    button: |
+      **Children7 previous relationship**:
+      ${ children7_previous_relationship }
+  - Edit: children8_address_from_date
+    button: |
+      **Date of children8 address from**:
+      ${ children8_address_from_date }
+  - Edit: children8_adults_lives_with_names
+    button: |
+      **Children8 adults lives with names**:
+      ${ children8_adults_lives_with_names }
+  - Edit: children8_address_to_date
+    button: |
+      **Date of children8 address to**:
+      ${ children8_address_to_date }
+  - Edit: children8_address_is_same
+    button: |
+      **Children8 address is same**:
+      ${ children8_address_is_same }
+  - Edit: children8_relationship
+    button: |
+      **Children8 relationship**:
+      ${ children8_relationship }
+  - Edit: children8_address_source
+    button: |
+      **Children8 address source**:
+      ${ children8_address_source }
+  - Edit: children8_previous_address_from_date
+    button: |
+      **Date of children8 previous address from**:
+      ${ children8_previous_address_from_date }
+  - Edit: children8_previous_adults_lives_with_names
+    button: |
+      **Children8 previous adults lives with names**:
+      ${ children8_previous_adults_lives_with_names }
+  - Edit: children8_previous_address_to_date
+    button: |
+      **Date of children8 previous address to**:
+      ${ children8_previous_address_to_date }
+  - Edit: children8_previous_relationship
+    button: |
+      **Children8 previous relationship**:
+      ${ children8_previous_relationship }
+  - Edit: children8_previous_address_block
+    button: |
+      **Children8 previous address block**:
+      ${ children8_previous_address_block }
+  - Edit: cases5_children_involved
+    button: |
+      **Cases5 children involved**:
+      ${ cases5_children_involved }
+  - Edit: cases5_trial_court_department
+    button: |
+      **Cases5 trial court department**:
+      ${ cases5_trial_court_department }
+  - Edit: cases5_docket_number
+    button: |
+      **Cases5 docket number**:
+      ${ cases5_docket_number }
+  - Edit: cases5_status
+    button: |
+      **Cases5 status**:
+      ${ cases5_status }
+  - Edit: cases5_role
+    button: |
+      **Cases5 role**:
+      ${ cases5_role }
+  - Edit: cases6_children_involved
+    button: |
+      **Cases6 children involved**:
+      ${ cases6_children_involved }
+  - Edit: cases6_trial_court_department
+    button: |
+      **Cases6 trial court department**:
+      ${ cases6_trial_court_department }
+  - Edit: cases6_docket_number
+    button: |
+      **Cases6 docket number**:
+      ${ cases6_docket_number }
+  - Edit: cases6_status
+    button: |
+      **Cases6 status**:
+      ${ cases6_status }
+  - Edit: cases6_role
+    button: |
+      **Cases6 role**:
+      ${ cases6_role }
+  - Edit: cases7_children_involved
+    button: |
+      **Cases7 children involved**:
+      ${ cases7_children_involved }
+  - Edit: cases7_trial_court_department
+    button: |
+      **Cases7 trial court department**:
+      ${ cases7_trial_court_department }
+  - Edit: cases7_docket_number
+    button: |
+      **Cases7 docket number**:
+      ${ cases7_docket_number }
+  - Edit: cases7_status
+    button: |
+      **Cases7 status**:
+      ${ cases7_status }
+  - Edit: cases7_role
+    button: |
+      **Cases7 role**:
+      ${ cases7_role }
+  - Edit: cases8_role
+    button: |
+      **Cases8 role**:
+      ${ cases8_role }
+  - Edit: cases8_children_involved
+    button: |
+      **Cases8 children involved**:
+      ${ cases8_children_involved }
+  - Edit: cases8_trial_court_department
+    button: |
+      **Cases8 trial court department**:
+      ${ cases8_trial_court_department }
+  - Edit: cases8_docket_number
+    button: |
+      **Cases8 docket number**:
+      ${ cases8_docket_number }
+  - Edit: cases8_status
+    button: |
+      **Cases8 status**:
+      ${ cases8_status }
+  - Edit: children5_appointee_is
+    button: |
+      **Children5 appointee is**:
+      ${ word(yesno(children5_appointee_is)) }
+  - Edit: children5_appointee_is_unknown
+    button: |
+      **Children5 appointee is unknown**:
+      ${ word(yesno(children5_appointee_is_unknown)) }
+  - Edit: children5_appointee_name_plus_title
+    button: |
+      **Children5 appointee name plus title**:
+      > ${ single_paragraph(children5_appointee_name_plus_title) }
+  - Edit: children6_appointee_is
+    button: |
+      **Children6 appointee is**:
+      ${ word(yesno(children6_appointee_is)) }
+  - Edit: children6_appointee_is_unknown
+    button: |
+      **Children6 appointee is unknown**:
+      ${ word(yesno(children6_appointee_is_unknown)) }
+  - Edit: children6_appointee_name_plus_title
+    button: |
+      **Children6 appointee name plus title**:
+      > ${ single_paragraph(children6_appointee_name_plus_title) }
+  - Edit: children7_appointee_is
+    button: |
+      **Children7 appointee is**:
+      ${ word(yesno(children7_appointee_is)) }
+  - Edit: children7_appointee_is_unknown
+    button: |
+      **Children7 appointee is unknown**:
+      ${ word(yesno(children7_appointee_is_unknown)) }
+  - Edit: children7_appointee_name_plus_title
+    button: |
+      **Children7 appointee name plus title**:
+      > ${ single_paragraph(children7_appointee_name_plus_title) }
+  - Edit: children8_appointee_is_unknown
+    button: |
+      **Children8 appointee is unknown**:
+      ${ word(yesno(children8_appointee_is_unknown)) }
+  - Edit: children8_appointee_is
+    button: |
+      **Children8 appointee is**:
+      ${ word(yesno(children8_appointee_is)) }
+  - Edit: children8_appointee_name_plus_title
+    button: |
+      **Children8 appointee name plus title**:
+      > ${ single_paragraph(children8_appointee_name_plus_title) }
+  - Edit: custody5_children_involved
+    button: |
+      **Custody5 children involved**:
+      ${ custody5_children_involved }
+  - Edit: custody5_other_parties_name
+    button: |
+      **Custody5 other parties name**:
+      ${ custody5_other_parties_name }
+  - Edit: custody5_other_parties_address_on_one_line
+    button: |
+      **Custody5 other parties address on one line**:
+      > ${ single_paragraph(custody5_other_parties_address_on_one_line) }
+  - Edit: custody6_children_involved
+    button: |
+      **Custody6 children involved**:
+      ${ custody6_children_involved }
+  - Edit: custody6_other_parties_name
+    button: |
+      **Custody6 other parties name**:
+      ${ custody6_other_parties_name }
+  - Edit: custody6_other_parties_address_on_one_line
+    button: |
+      **Custody6 other parties address on one line**:
+      > ${ single_paragraph(custody6_other_parties_address_on_one_line) }
+  - Edit: custody7_children_involved
+    button: |
+      **Custody7 children involved**:
+      ${ custody7_children_involved }
+  - Edit: custody7_other_parties_name
+    button: |
+      **Custody7 other parties name**:
+      ${ custody7_other_parties_name }
+  - Edit: custody7_other_parties_address_on_one_line
+    button: |
+      **Custody7 other parties address on one line**:
+      > ${ single_paragraph(custody7_other_parties_address_on_one_line) }
+  - Edit: custody8_other_parties_name
+    button: |
+      **Custody8 other parties name**:
+      ${ custody8_other_parties_name }
+  - Edit: custody8_other_parties_address_on_one_line
+    button: |
+      **Custody8 other parties address on one line**:
+      > ${ single_paragraph(custody8_other_parties_address_on_one_line) }
+  - Edit: custody8_children_involved
+    button: |
+      **Custody8 children involved**:
+      ${ custody8_children_involved }
+---
+continue button field: users.revisit
+question: |
+  Edit users
+subquestion: |
+  ${ users.table }
+
+  ${ users.add_action() }
+---
+table: users.table
+rows: users
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+  - Phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+  - Email: |
+      row_item.email if defined("row_item.email") else ""
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+edit:
+  - name.first
+  - address.address
+  - phone_number
+  - email
+  - signature
+confirm: True
+
+---
+continue button field: children.revisit
+question: |
+  Edit children
+subquestion: |
+  ${ children.table }
+
+  ${ children.add_action() }
+---
+table: children.table
+rows: children
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+edit:
+  - name.first
+  - address.address
+confirm: True
+
+---
+continue button field: attorneys.revisit
+question: |
+  Edit attorneys
+subquestion: |
+  ${ attorneys.table }
+
+  ${ attorneys.add_action() }
+---
+table: attorneys.table
+rows: attorneys
+columns:
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - signature
+  - name.first
+confirm: True
+
+---
+id: download childcarecustodydisclosure
+event: childcarecustodydisclosure_download
+question: |
+  All done
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_childcarecustodydisclosure'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+progress: 100
+---
+# ALDocument objects specify the metadata for each template
+objects:
+  - childcarecustodydisclosure: ALDocument.using(title="Childcarecustodydisclosure", filename="childcarecustodydisclosure", enabled=True, has_addendum=False, )
+  - childcarecustodydisclosureSUPP: ALDocument.using(title="Childcarecustodydisclosuresupp", filename="childcarecustodydisclosureSUPP", enabled=True, has_addendum=False, )
+---
+# Bundles group the ALDocuments into separate downloads, such as for court and for the user
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[childcarecustodydisclosure, childcarecustodydisclosureSUPP], filename="childcarecustodydisclosure", title="All forms to download for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[childcarecustodydisclosure, childcarecustodydisclosureSUPP],  filename="childcarecustodydisclosure", title="All forms to deliver to court", enabled=True)
+---
+# Each attachment defines a key in an ALDocument. We use `i` as the placeholder here so the same template is 
+# used for "preview" and "final" keys, and logic in the template checks the value of 
+# `i` to show or hide the user's signature
+---
+attachment:
+  name: childcarecustodydisclosure
+  filename: childcarecustodydisclosure
+  variable name: childcarecustodydisclosure[i]
+  skip undefined: True
+  pdf template file: childcarecustodydisclosure.pdf
+  fields:
+      - "trial_court_department_is_district": ${ trial_court_department_is_district }
+      - "trial_court_department_is_district": ${ trial_court_department_is_district }
+      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_department_is_boston_municipal": ${ trial_court_department_is_boston_municipal }
+      - "trial_court_department_is_boston_municipal": ${ trial_court_department_is_boston_municipal }
+      - "trial_court_department_is_probate_family": ${ trial_court_department_is_probate_family }
+      - "trial_court_department_is_probate_family": ${ trial_court_department_is_probate_family }
+      - "trial_court_department_is_juvenile": ${ trial_court_department_is_juvenile }
+      - "trial_court_department_is_juvenile": ${ trial_court_department_is_juvenile }
+      - "docket_number": ${ docket_number }
+      - "docket_number": ${ docket_number }
+      - "trial_court_department_is_superior": ${ trial_court_department_is_superior }
+      - "trial_court_department_is_superior": ${ trial_court_department_is_superior }
+      - "case_style": ${ case_style }
+      - "case_style": ${ case_style }
+      - "is_party": ${ is_party }
+      - "users1_name_full__1": ${ users[0] }
+      - "users1_name_full__2": ${ users[0] }
+      - "users1_name_full__3": ${ users[0] }
+      - "users1_name_full": ${ users[0] }
+      - "is_attorney__1": ${ is_attorney }
+      - "children1_name_full": ${ children[0] }
+      - "children2_name_full": ${ children[1] }
+      - "children3_name_full": ${ children[2] }
+      - "children4_name_full": ${ children[3] }
+      - "number_children_is_5plus": ${ number_children_is_5plus }
+      - "impoundment_is_true_danger_statement_applies": ${ impoundment_is_true_danger_statement_applies }
+      - "impoundment_is_true_adoption": ${ impoundment_is_true_adoption }
+      - "impoundment_is_false": ${ impoundment_is_false }
+      - "children1_address_from_date": ${ children1_address_from_date.format() }
+      - "children1_adults_lives_with_names": ${ children1_adults_lives_with_names }
+      - "children1_relationship": ${ children1_relationship }
+      - "children1_address_block": ${ children[0].address.block() }
+      - "children1_previous_address_from_date": ${ children1_previous_address_from_date.format() }
+      - "children1_previous_adults_lives_with_names": ${ children1_previous_adults_lives_with_names }
+      - "children1_previous_address_to_date": ${ children1_previous_address_to_date.format() }
+      - "children1_previous_address_block": ${ children1_previous_address_block }
+      - "children1_previous_relationship": ${ children1_previous_relationship }
+      - "children2_address_from_date": ${ children2_address_from_date.format() }
+      - "children2_adults_lives_with_names": ${ children2_adults_lives_with_names }
+      - "children2_address_to_date": ${ children2_address_to_date.format() }
+      - "children2_address_is_same": ${ children2_address_is_same }
+      - "children2_address_block": ${ children[1].address.block() }
+      - "children2_relationship": ${ children2_relationship }
+      - "children2_previous_address_from_date": ${ children2_previous_address_from_date.format() }
+      - "children2_previous_adults_lives_with_names": ${ children2_previous_adults_lives_with_names }
+      - "children2_previous_address_to_date": ${ children2_previous_address_to_date.format() }
+      - "children2_previous_address_block": ${ children2_previous_address_block }
+      - "children2_previous_relationship": ${ children2_previous_relationship }
+      - "children3_address_from_date": ${ children3_address_from_date.format() }
+      - "children3_adults_lives_with_names": ${ children3_adults_lives_with_names }
+      - "children3_address_to_date": ${ children3_address_to_date.format() }
+      - "children3_address_is_same": ${ children3_address_is_same }
+      - "children3_address_block": ${ children[2].address.block() }
+      - "children3_relationship": ${ children3_relationship }
+      - "children3_address_source": ${ children3_address_source }
+      - "children3_previous_address_from_date": ${ children3_previous_address_from_date.format() }
+      - "children3_previous_adults_lives_with_names": ${ children3_previous_adults_lives_with_names }
+      - "children3_previous_address_to_date": ${ children3_previous_address_to_date.format() }
+      - "children3_previous_address_block": ${ children3_previous_address_block }
+      - "children3_previous_relationship": ${ children3_previous_relationship }
+      - "children4_address_from_date": ${ children4_address_from_date.format() }
+      - "children4_adults_lives_with_names": ${ children4_adults_lives_with_names }
+      - "children4_address_to_date": ${ children4_address_to_date.format() }
+      - "children4_address_is_same": ${ children4_address_is_same }
+      - "children4_address_block": ${ children[3].address.block() }
+      - "children4_relationship": ${ children4_relationship }
+      - "children4_address_source": ${ children4_address_source }
+      - "children4_previous_address_from_date": ${ children4_previous_address_from_date.format() }
+      - "children4_previous_adults_lives_with_names": ${ children4_previous_adults_lives_with_names }
+      - "children4_previous_address_to_date": ${ children4_previous_address_to_date.format() }
+      - "children4_previous_relationship": ${ children4_previous_relationship }
+      - "children4_previous_address_block": ${ children4_previous_address_block }
+      - "other_cases_is_no": ${ other_cases_is_no }
+      - "other_cases_is_yes_participation_is_no": ${ other_cases_is_yes_participation_is_no }
+      - "other_cases_participation_is_yes": ${ other_cases_participation_is_yes }
+      - "cases1_trial_court_department": ${ cases1_trial_court_department }
+      - "cases1_docket_number": ${ cases1_docket_number }
+      - "cases1_status": ${ cases1_status }
+      - "cases1_role": ${ cases1_role }
+      - "cases1_children_involved": ${ cases1_children_involved }
+      - "cases2_docket_number": ${ cases2_docket_number }
+      - "cases2_status": ${ cases2_status }
+      - "cases2_role": ${ cases2_role }
+      - "cases2_trial_court_department": ${ cases2_trial_court_department }
+      - "cases2_children_involved": ${ cases2_children_involved }
+      - "cases3_trial_court_department": ${ cases3_trial_court_department }
+      - "cases3_docket_number": ${ cases3_docket_number }
+      - "cases3_status": ${ cases3_status }
+      - "cases3_role": ${ cases3_role }
+      - "cases3_children_involved": ${ cases3_children_involved }
+      - "cases4_trial_court_department": ${ cases4_trial_court_department }
+      - "cases4_docket_number": ${ cases4_docket_number }
+      - "cases4_status": ${ cases4_status }
+      - "cases4_role": ${ cases4_role }
+      - "cases4_children_involved": ${ cases4_children_involved }
+      - "children1_appointee_is_yes": ${ children1_appointee_is }
+      - "children1_appointee_is_no": ${ not children1_appointee_is }
+      - "children1_appointee_name_plus_title": ${ children1_appointee_name_plus_title }
+      - "children1_appointee_is_unknown": ${ children1_appointee_is_unknown }
+      - "children2_appointee_name_plus_title": ${ children2_appointee_name_plus_title }
+      - "children2_appointee_is_yes": ${ children2_appointee_is }
+      - "children2_appointee_is_no": ${ not children2_appointee_is }
+      - "children2_appointee_is_unknown": ${ children2_appointee_is_unknown }
+      - "children3_appointee_name_plus_title": ${ children3_appointee_name_plus_title }
+      - "children3_appointee_is_yes": ${ children3_appointee_is }
+      - "children3_appointee_is_no": ${ not children3_appointee_is }
+      - "children3_appointee_is_unknown": ${ children3_appointee_is_unknown }
+      - "children4_appointee_name_plus_title": ${ children4_appointee_name_plus_title }
+      - "children4_appointee_is_yes": ${ children4_appointee_is }
+      - "children4_appointee_is_no": ${ not children4_appointee_is }
+      - "children4_appointee_is_unknown": ${ children4_appointee_is_unknown }
+      - "custody1_children_involved": ${ custody1_children_involved }
+      - "custody1_other_parties_name": ${ custody1_other_parties_name }
+      - "custody1_other_parties_address_on_one_line": ${ custody1_other_parties_address_on_one_line }
+      - "custody2_children_involved": ${ custody2_children_involved }
+      - "custody2_other_partiees_name": ${ custody2_other_partiees_name }
+      - "custody2_other_parties_address_on_one_line": ${ custody2_other_parties_address_on_one_line }
+      - "custody3_other_parties_name": ${ custody3_other_parties_name }
+      - "custody3_other_parties_address_on_one_line": ${ custody3_other_parties_address_on_one_line }
+      - "custody3_children_involved": ${ custody3_children_involved }
+      - "custody4_children_involved": ${ custody4_children_involved }
+      - "custody4_other_parties_name": ${ custody4_other_parties_name }
+      - "custody4_other_parties_address_on_one_line": ${ custody4_other_parties_address_on_one_line }
+      - "users1_address_block": ${ users[0].address.block() }
+      - "users1_phone_number": ${ users[0].phone_number }
+      - "users1_email": ${ users[0].email }
+      - "signature_date": ${ signature_date }
+      - "signature_date": ${ signature_date }
+      - "users1_signature": ${ users[0].signature_if_final(i) }
+      - "users1_signature": ${ users[0].signature_if_final(i) }
+      - "attorney_signature": ${ attorneys[0].signature_if_final(i) }
+      - "attorney_name": ${ attorneys[0] }
+      - "attorney_signature_date": ${ attorney_signature_date.format() }
+      - "attorney_bar_number": ${ attorney_bar_number }
+---
+attachment:
+  name: childcarecustodydisclosureSUPP
+  filename: childcarecustodydisclosureSUPP
+  variable name: childcarecustodydisclosureSUPP[i]
+  skip undefined: True
+  pdf template file: childcarecustodydisclosureSUPP.pdf
+  fields:
+      - "trial_court_department_is_district": ${ trial_court_department_is_district }
+      - "trial_court_department_is_district": ${ trial_court_department_is_district }
+      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_department_is_boston_municipal": ${ trial_court_department_is_boston_municipal }
+      - "trial_court_department_is_boston_municipal": ${ trial_court_department_is_boston_municipal }
+      - "trial_court_department_is_probate_family": ${ trial_court_department_is_probate_family }
+      - "trial_court_department_is_probate_family": ${ trial_court_department_is_probate_family }
+      - "trial_court_department_is_juvenile": ${ trial_court_department_is_juvenile }
+      - "trial_court_department_is_juvenile": ${ trial_court_department_is_juvenile }
+      - "docket_number": ${ docket_number }
+      - "docket_number": ${ docket_number }
+      - "trial_court_department_is_superior": ${ trial_court_department_is_superior }
+      - "trial_court_department_is_superior": ${ trial_court_department_is_superior }
+      - "case_style": ${ case_style }
+      - "case_style": ${ case_style }
+      - "users1_name_full__1": ${ users[0] }
+      - "users1_name_full__2": ${ users[0] }
+      - "users1_name_full__3": ${ users[0] }
+      - "users1_name_full": ${ users[0] }
+      - "signature_date": ${ signature_date }
+      - "signature_date": ${ signature_date }
+      - "users1_signature": ${ users[0].signature_if_final(i) }
+      - "users1_signature": ${ users[0].signature_if_final(i) }
+      - "children5_name_full": ${ children[4] }
+      - "children6_name_full": ${ children[5] }
+      - "children7_name_full": ${ children[6] }
+      - "children8_name_full": ${ children[7] }
+      - "children5_address_from_date": ${ children5_address_from_date.format() }
+      - "children5_adults_lives_with_names": ${ children5_adults_lives_with_names }
+      - "children5_relationship": ${ children5_relationship }
+      - "children5_address_block": ${ children[4].address.block() }
+      - "children5_previous_address_from_date": ${ children5_previous_address_from_date.format() }
+      - "children5_previous_adults_lives_with_names": ${ children5_previous_adults_lives_with_names }
+      - "children5_previous_address_to_date": ${ children5_previous_address_to_date.format() }
+      - "children5_previous_address_block": ${ children5_previous_address_block }
+      - "children5_previous_relationship": ${ children5_previous_relationship }
+      - "children6_address_from_date": ${ children6_address_from_date.format() }
+      - "children6_adults_lives_with_names": ${ children6_adults_lives_with_names }
+      - "children6_address_to_date": ${ children6_address_to_date.format() }
+      - "children6_address_is_same": ${ children6_address_is_same }
+      - "children6_address_block": ${ children[5].address.block() }
+      - "children6_relationship": ${ children6_relationship }
+      - "children6_previous_address_from_date": ${ children6_previous_address_from_date.format() }
+      - "children6_previous_adults_lives_with_names": ${ children6_previous_adults_lives_with_names }
+      - "children6_previous_address_to_date": ${ children6_previous_address_to_date.format() }
+      - "children6_previous_address_block": ${ children6_previous_address_block }
+      - "children6_previous_relationship": ${ children6_previous_relationship }
+      - "children7_address_from_date": ${ children7_address_from_date.format() }
+      - "children7_adults_lives_with_names": ${ children7_adults_lives_with_names }
+      - "children7_address_to_date": ${ children7_address_to_date.format() }
+      - "children7_address_is_same": ${ children7_address_is_same }
+      - "children7_address_block": ${ children[6].address.block() }
+      - "children7_relationship": ${ children7_relationship }
+      - "children7_address_source": ${ children7_address_source }
+      - "children7_previous_address_from_date": ${ children7_previous_address_from_date.format() }
+      - "children7_previous_adults_lives_with_names": ${ children7_previous_adults_lives_with_names }
+      - "children7_previous_address_to_date": ${ children7_previous_address_to_date.format() }
+      - "children7_previous_address_block": ${ children7_previous_address_block }
+      - "children7_previous_relationship": ${ children7_previous_relationship }
+      - "children8_address_from_date": ${ children8_address_from_date.format() }
+      - "children8_adults_lives_with_names": ${ children8_adults_lives_with_names }
+      - "children8_address_to_date": ${ children8_address_to_date.format() }
+      - "children8_address_is_same": ${ children8_address_is_same }
+      - "children8_address_block": ${ children[7].address.block() }
+      - "children8_relationship": ${ children8_relationship }
+      - "children8_address_source": ${ children8_address_source }
+      - "children8_previous_address_from_date": ${ children8_previous_address_from_date.format() }
+      - "children8_previous_adults_lives_with_names": ${ children8_previous_adults_lives_with_names }
+      - "children8_previous_address_to_date": ${ children8_previous_address_to_date.format() }
+      - "children8_previous_relationship": ${ children8_previous_relationship }
+      - "children8_previous_address_block": ${ children8_previous_address_block }
+      - "cases5_children_involved": ${ cases5_children_involved }
+      - "cases5_trial_court_department": ${ cases5_trial_court_department }
+      - "cases5_docket_number": ${ cases5_docket_number }
+      - "cases5_status": ${ cases5_status }
+      - "cases5_role": ${ cases5_role }
+      - "cases6_children_involved": ${ cases6_children_involved }
+      - "cases6_trial_court_department": ${ cases6_trial_court_department }
+      - "cases6_docket_number": ${ cases6_docket_number }
+      - "cases6_status": ${ cases6_status }
+      - "cases6_role": ${ cases6_role }
+      - "cases7_children_involved": ${ cases7_children_involved }
+      - "cases7_trial_court_department": ${ cases7_trial_court_department }
+      - "cases7_docket_number": ${ cases7_docket_number }
+      - "cases7_status": ${ cases7_status }
+      - "cases7_role": ${ cases7_role }
+      - "cases8_role": ${ cases8_role }
+      - "cases8_children_involved": ${ cases8_children_involved }
+      - "cases8_trial_court_department": ${ cases8_trial_court_department }
+      - "cases8_docket_number": ${ cases8_docket_number }
+      - "cases8_status": ${ cases8_status }
+      - "children5_appointee_is_yes": ${ children5_appointee_is }
+      - "children5_appointee_is_no": ${ not children5_appointee_is }
+      - "children5_appointee_is_unknown": ${ children5_appointee_is_unknown }
+      - "children5_appointee_name_plus_title": ${ children5_appointee_name_plus_title }
+      - "children6_appointee_is_yes": ${ children6_appointee_is }
+      - "children6_appointee_is_no": ${ not children6_appointee_is }
+      - "children6_appointee_is_unknown": ${ children6_appointee_is_unknown }
+      - "children6_appointee_name_plus_title": ${ children6_appointee_name_plus_title }
+      - "children7_appointee_is_yes": ${ children7_appointee_is }
+      - "children7_appointee_is_no": ${ not children7_appointee_is }
+      - "children7_appointee_is_unknown": ${ children7_appointee_is_unknown }
+      - "children7_appointee_name_plus_title": ${ children7_appointee_name_plus_title }
+      - "children8_appointee_is_unknown": ${ children8_appointee_is_unknown }
+      - "children8_appointee_is_yes": ${ children8_appointee_is }
+      - "children8_appointee_is_no": ${ not children8_appointee_is }
+      - "children8_appointee_name_plus_title": ${ children8_appointee_name_plus_title }
+      - "custody5_children_involved": ${ custody5_children_involved }
+      - "custody5_other_parties_name": ${ custody5_other_parties_name }
+      - "custody5_other_parties_address_on_one_line": ${ custody5_other_parties_address_on_one_line }
+      - "custody6_children_involved": ${ custody6_children_involved }
+      - "custody6_other_parties_name": ${ custody6_other_parties_name }
+      - "custody6_other_parties_address_on_one_line": ${ custody6_other_parties_address_on_one_line }
+      - "custody7_children_involved": ${ custody7_children_involved }
+      - "custody7_other_parties_name": ${ custody7_other_parties_name }
+      - "custody7_other_parties_address_on_one_line": ${ custody7_other_parties_address_on_one_line }
+      - "custody8_other_parties_name": ${ custody8_other_parties_name }
+      - "custody8_other_parties_address_on_one_line": ${ custody8_other_parties_address_on_one_line }
+      - "custody8_children_involved": ${ custody8_children_involved }
+
+
+

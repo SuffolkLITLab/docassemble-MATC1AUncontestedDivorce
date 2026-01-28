@@ -10,12 +10,15 @@ version = "1.24"
 description = "An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)"
 readme = "README.md"
 authors = [
-    { name = "Court Forms Online", email = "litlab@suffolk.edu" },
+    { name = "", email = "alara.akisik@su.suffolk.edu" },
 ]
 dependencies = [
     "docassemble.ALMassachusetts>=0.1.2",
-    "docassemble.ALToolbox @ git+https://github.com/SuffolkLITLab/docassemble-ALToolbox.git@main",
     "docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main",
+]
+license = "MIT"
+license-files = [
+    "LICENSE",
 ]
 
 [project.urls]
