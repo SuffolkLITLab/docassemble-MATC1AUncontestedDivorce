@@ -37,6 +37,7 @@ question: |
   Schedule B - rental income
 subquestion: |
   You indicated that you have rental income.
+  This schedule captures rental receipts and expenses.
 ---
 id: schedule_b_rent_received
 sets:
@@ -44,6 +45,8 @@ sets:
 continue button field: schedule_b_rent_received
 question: |
   Annual rent received
+subquestion: |
+  Enter the total rent you receive in a typical year before expenses.
 fields:
   - Annual rent received: schedule_b_annual_rent_received
     datatype: currency
@@ -56,7 +59,8 @@ continue button field: schedule_b_expenses_list
 question: |
   Annual rental expenses
 subquestion: |
-  Add each expense line item and its annual amount.
+  Add each expense line item and its annual amount. If you are not sure,
+  provide your best estimate.
 fields:
   - Do you have rental expenses to list?: schedule_b_expenses.there_are_any
     datatype: yesno
@@ -65,31 +69,36 @@ id: schedule_b_expense_item
 generic object: schedule_b_expenses
 question: |
   Rental expense
+subquestion: |
+  Enter the annual amount for this category.
 fields:
-  - Expense category: schedule_b_expenses[i].category
+  - Expense category: schedule_b_expenses[i].source
     code: |
       schedule_b_expense_choices
   - Expense description (if needed): schedule_b_expenses[i].description
     required: False
-  - Annual amount: schedule_b_expenses[i].amount
+  - Annual amount: schedule_b_expenses[i].value
     datatype: currency
     required: False
 ---
 code: |
+  schedule_b_expenses[i].times_per_year = 1
+  schedule_b_expenses[i].display_name = dict(schedule_b_expense_choices).get(
+    schedule_b_expenses[i].source, schedule_b_expenses[i].source
+  )
   schedule_b_expenses[i].complete = True
 ---
 id: schedule_b_expenses_more
 question: |
   Do you have another rental expense to add?
+subquestion: |
+  If you have listed all expenses, choose "No."
 fields:
   - Do you have another rental expense to add?: schedule_b_expenses.there_is_another
     datatype: yesno
 ---
 code: |
-  schedule_b_total_annual_expenses = 0
-  if defined("schedule_b_expenses"):
-    for expense in schedule_b_expenses:
-      schedule_b_total_annual_expenses += float(expense.amount or 0)
+  schedule_b_total_annual_expenses = float(schedule_b_expenses.total(times_per_year=1))
 ---
 id: schedule_b_expense_totals
 continue button field: schedule_b_expense_totals

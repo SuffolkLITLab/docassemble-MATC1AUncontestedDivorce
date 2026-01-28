@@ -57,6 +57,7 @@ question: |
   Schedule A - self-employment or business income
 subquestion: |
   You indicated that you have self-employment or business income.
+  This schedule captures business receipts and expenses.
 ---
 id: schedule_a_gross_receipts
 sets:
@@ -64,6 +65,8 @@ sets:
 continue button field: schedule_a_gross_receipts
 question: |
   Gross monthly receipts
+subquestion: |
+  Enter your typical total receipts for one month before expenses.
 fields:
   - Gross monthly receipts: schedule_a_gross_monthly_receipts
     datatype: currency
@@ -76,7 +79,8 @@ continue button field: schedule_a_expenses_list
 question: |
   Monthly business expenses
 subquestion: |
-  Add each expense line item and its monthly amount.
+  Add each expense line item and its monthly amount. If you are not sure,
+  provide your best estimate.
 fields:
   - Do you have business expenses to list?: schedule_a_expenses.there_are_any
     datatype: yesno
@@ -85,31 +89,36 @@ id: schedule_a_expense_item
 generic object: schedule_a_expenses
 question: |
   Business expense
+subquestion: |
+  Enter the monthly amount for this category.
 fields:
-  - Expense category: schedule_a_expenses[i].category
+  - Expense category: schedule_a_expenses[i].source
     code: |
       schedule_a_expense_choices
   - Expense description (if needed): schedule_a_expenses[i].description
     required: False
-  - Monthly amount: schedule_a_expenses[i].amount
+  - Monthly amount: schedule_a_expenses[i].value
     datatype: currency
     required: False
 ---
 code: |
+  schedule_a_expenses[i].times_per_year = 12
+  schedule_a_expenses[i].display_name = dict(schedule_a_expense_choices).get(
+    schedule_a_expenses[i].source, schedule_a_expenses[i].source
+  )
   schedule_a_expenses[i].complete = True
 ---
 id: schedule_a_expenses_more
 question: |
   Do you have another business expense to add?
+subquestion: |
+  If you have listed all expenses, choose "No."
 fields:
   - Do you have another business expense to add?: schedule_a_expenses.there_is_another
     datatype: yesno
 ---
 code: |
-  schedule_a_total_monthly_expenses = 0
-  if defined("schedule_a_expenses"):
-    for expense in schedule_a_expenses:
-      schedule_a_total_monthly_expenses += float(expense.amount or 0)
+  schedule_a_total_monthly_expenses = float(schedule_a_expenses.total(times_per_year=12))
 ---
 id: schedule_a_expense_totals
 continue button field: schedule_a_expense_totals
@@ -135,6 +144,8 @@ id: schedule_a_business_nature
 continue button field: schedule_a_business_nature
 question: |
   Nature of self-employment or business
+subquestion: |
+  Examples: "landscaping", "rideshare driver", or "online retail".
 fields:
   - Describe the nature of the business: schedule_a_business_nature
     required: False
@@ -145,6 +156,9 @@ sets:
 continue button field: schedule_a_seasonal
 question: |
   Seasonal business
+subquestion: |
+  If your business is seasonal, estimate the percentage of income and expenses
+  for each month.
 fields:
   - Is this business seasonal?: schedule_a_is_seasonal
     datatype: yesno
@@ -299,6 +313,8 @@ sets:
 continue button field: schedule_a_accounting
 question: |
   Accounting basis
+subquestion: |
+  Most small businesses use the calendar year.
 fields:
   - Accounting basis: schedule_a_accounting_basis
     input type: radio
@@ -322,6 +338,8 @@ sets:
 continue button field: schedule_a_year_to_date
 question: |
   Year-to-date totals
+subquestion: |
+  Enter totals from the beginning of the year through today, if known.
 fields:
   - Gross receipts year to date: schedule_a_gross_receipts_ytd
     datatype: currency
