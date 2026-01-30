@@ -91,10 +91,15 @@ code: |
   nav.set_section("review_divorcefilings")
   user_role = "plaintiff"
   user_ask_role = "plaintiff"
+  is_agent
+  if is_agent == True:
+    agent_guidance
   purpose_is_divorce
   if purpose_is_divorce == False:
     purpose_mismatch
   legal_marriage
+  if legal_marriage == False:
+    purpose_mismatch
   marriage_breakdown_date
   children2_name_full_plus_birthdate
   previous_action_detail
@@ -167,7 +172,7 @@ subquestion: |
 ---
 id: Purpose Screen 
 question: | 
-  Are you asking the Massachusetts court for a divorce?
+  Are you using this interview to ask the Massachusetts court for a divorce?
 yesno: purpose_is_divorce
 ---
 id: Purpose Screen Offramp
@@ -175,18 +180,61 @@ event: purpose_mismatch
 question: |
   This interview is only for legally married couples jointly filing for an uncontested, no-fault divorce in Massachusetts. 
 Subquestion: |
-  Include Links to Resources
+  Include Links to Resources Here
 buttons: 
   - Exit: exit
 ---
+id: Identity Screen
+question: | 
+  Are you completing this interview for yourself (including your spouse) or for someone else? 
+field: is_agent
+buttons: 
+  - Myself/Ourselves: False
+  - Someone Else: True
+---
+id: Identity Clarification
+event: agent_guidance
+question: |
+  Respond to any questions phrased with "you" as if you are the person for whom you are completing this interview.
+buttons: 
+  - Continue: continue
+---
+id: Party A Name
+question: |
+  What is your name?
+fields:
+  - First: users[0].name.first
+  - Middle: users[0].name.middle
+    required: False
+  - Last: users[0].name.last
+  - Suffix: users[0].name.suffix
+    code: |
+      name_suffix()
+    required: False
+---
+id: Party B Name
+question: |
+  What is your spouse's name?
+fields:
+  - First: users[1].name.first
+  - Middle: users[1].name.middle
+    required: False
+  - Last: users[1].name.last
+  - Suffix: users[1].name.suffix
+    code: |
+      name_suffix()
+    required: False
+---
 id: Marriage Screen
 question: |
-  Are you legally married?
+  Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?
 yesno: legal_marriage
 ---
 id: Divorce Type Screen
 question: |
-  Do you and your spouse both agree that you want to file jointly (together)?
+  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that you both:
+  (1) want to get divorced and 
+  (2) that you want file together?
 yesno: petition_is_joint
 ---
 id: Agreement Screen
@@ -203,9 +251,9 @@ fields:
   - "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     datatype: yesno
 ---
-id: Screen two
+id: Relationship Background
 question: |
-  Screen two
+  Relationship Background
 fields:
   - "When did the marriage breakdown occur?": marriage_breakdown_date
     datatype: date
@@ -649,10 +697,6 @@ review:
     button: |
       **Is your spouse represented by a lawyer?**:
       ${ word(yesno(petitioners2_has_attorney)) }
-  - Edit: confirm_purpose_is_divorce
-    button: |
-      **Are you seeking a divorce in Massachusetts?**:
-      ${ word(yesno(confirm_purpose_is_divorce)) }
   - Edit: massachusetts_residency
     button: |
       **Have one or both spouses lived in Massachusetts for at least one year?**:
