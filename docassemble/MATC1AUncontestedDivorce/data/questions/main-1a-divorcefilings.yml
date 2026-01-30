@@ -91,7 +91,10 @@ code: |
   nav.set_section("review_divorcefilings")
   user_role = "plaintiff"
   user_ask_role = "plaintiff"
-  confirm_purpose_is_divorce
+  purpose_is_divorce
+  if purpose_is_divorce == False:
+    purpose_mismatch
+  legal_marriage
   marriage_breakdown_date
   children2_name_full_plus_birthdate
   previous_action_detail
@@ -162,12 +165,39 @@ subquestion: |
 
   Most people take about 60 minutes to complete this interview.
 ---
-id: Confirm Purpose Jurisdiction
+id: Purpose Screen 
+question: | 
+  Are you asking the Massachusetts court for a divorce?
+yesno: purpose_is_divorce
+---
+id: Purpose Screen Offramp
+event: purpose_mismatch
 question: |
-  Confirm Purpose & Jurisdiction
+  This interview is only for legally married couples jointly filing for an uncontested, no-fault divorce in Massachusetts. 
+Subquestion: |
+  Include Links to Resources
+buttons: 
+  - Exit: exit
+---
+id: Marriage Screen
+question: |
+  Are you legally married?
+yesno: legal_marriage
+---
+id: Divorce Type Screen
+question: |
+  Do you and your spouse both agree that you want to file jointly (together)?
+yesno: petition_is_joint
+---
+id: Agreement Screen
+question: |
+  Have you and your spouse reached agreement on most or all of the major issues, such as property division, child custody, and child support?
+yesno: separation_agreement_reached
+---
+id: Confirm Jurisdiction
+question: |
+  Confirm Jurisdiction
 fields:
-  - "Are you seeking a divorce in Massachusetts?": confirm_purpose_is_divorce
-    datatype: yesno
   - "Have one or both spouses lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesno
   - "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
