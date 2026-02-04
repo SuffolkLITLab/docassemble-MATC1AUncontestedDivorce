@@ -674,14 +674,14 @@ review:
     button: |
       **Are you and your spouse currently living together?**:
       ${ word(yesno(live_together)) }
-  - Edit: last_living_together_date
+  - Edit: petitioners_last_living_together_date
     button: |
       **When did you last live together?**:
-      ${ last_living_together_date }
-  - Edit: marital_home_county
+      ${ petitioners_last_living_together_date }
+  - Edit: petitioners_last_living_together_location
     button: |
       **Where did you last live together? (County)**:
-      ${ marital_home_county }
+      ${ petitioners_last_living_together_location }
   - Edit: children_of_marriage
     button: |
       **Do you have any children of this marriage?**:
