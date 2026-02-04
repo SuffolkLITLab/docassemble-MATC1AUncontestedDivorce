@@ -10,7 +10,7 @@ version = "1.24"
 description = "An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)"
 readme = "README.md"
 authors = [
-    { name = "KP Hunsinger", email = "alara.akisik@su.suffolk.edu" },
+    { name = "KP Hunsinger, Alara Akisik, Sam Darkwa Jr.", email = "litlab@suffolk.edu" },
 ]
 dependencies = [
     "docassemble.ALMassachusetts>=0.1.2",

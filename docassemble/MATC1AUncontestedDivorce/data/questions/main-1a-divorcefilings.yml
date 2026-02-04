@@ -240,7 +240,7 @@ yesno: petition_is_joint
 id: Agreement Screen
 question: |
   Have you and your spouse reached agreement on most or all of the major issues, such as property division, child custody, and child support?
-yesno: separation_agreement_reached
+yesnoradio: separation_agreement_reached
 ---
 id: Confirm Jurisdiction
 question: |
@@ -264,18 +264,17 @@ fields:
     maxlength: 54
   - "When were you married?": marriage_date
     datatype: date
-  - "Where did you last live together?": petitioners_last_living_together_location
-    maxlength: 40
+---
+id: Living Arrangements
+question: |
+  Living Arrangements
+fields: 
+  - "Are you and your spouse currently living together?": live_together
+    datatype: yesnoradio
   - "When did you last live together?": petitioners_last_living_together_date
     datatype: date
-  - "Petitioners2 marriage number": petitioners2_marriage_number
-    maxlength: 10
-  - "Are you and your spouse currently living together?": live_together
-    datatype: yesno
-  - "When did you last live together?": last_living_together_date
-    datatype: date
-  - "Where did you last live together? (County)": marital_home_county
-    input type: dropdown
+  - "Where did you last live together? (County)": petitioners_last_living_together_location
+    input type: radio
     choices:
       - Barnstable
       - Berkshire
@@ -352,7 +351,7 @@ fields:
   - "Petitioners2 name last upon divorce": petitioners2_name_last_upon_divorce
     maxlength: 26
 ---
-id: Screen five
+id: Attorney Information
 question: |
   Screen five
 fields:
@@ -382,6 +381,8 @@ fields:
   - "Petitioners1 ssn": petitioners1_ssn
     maxlength: 23
   - "Petitioners1 marriage number": petitioners1_marriage_number
+    maxlength: 10
+  - "Petitioners2 marriage number": petitioners2_marriage_number
     maxlength: 10
   - "Petitioners2 is plaintiff": petitioners2_is_plaintiff
     datatype: yesno
