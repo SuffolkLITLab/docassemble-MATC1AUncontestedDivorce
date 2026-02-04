@@ -101,7 +101,7 @@ code: |
   if legal_marriage == False:
     purpose_mismatch
   marriage_breakdown_date
-  children2_name_full_plus_birthdate
+  live_together
   previous_action_detail
   attorneys1_bbo_number
   set_progress(14)
@@ -120,6 +120,7 @@ code: |
   petitioners[0].birthdate
   petitioners[1].birthdate
   children[0].birthdate
+  children2_name_full_plus_birthdate
   set_progress(56)
   children.gather()
   children[1].birthdate
@@ -296,14 +297,7 @@ id: Children
 question: |
   Children
 fields:
-  - "Children2 name full plus birthdate": children2_name_full_plus_birthdate
-    maxlength: 39
-  - "Children1 name full plus birthdate": children1_name_full_plus_birthdate
-    maxlength: 39
-  - "Children3 name full plus birthdate": children3_name_full_plus_birthdate
-    maxlength: 39
-  - "Children4 name full plus birthdate": children4_name_full_plus_birthdate
-    maxlength: 39
+
   - "Petitioners1 number of custodial children": petitioners1_number_of_custodial_children
     maxlength: 10
   - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
@@ -364,9 +358,9 @@ fields:
   - "Is your spouse represented by a lawyer?": petitioners2_has_attorney
     datatype: yesno
 ---
-id: Screen six
+id: Petitioner A Information
 question: |
-  Screen six
+  Petitioner A Information
 fields:
   - "Petitioners1 is plaintiff": petitioners1_is_plaintiff
     datatype: yesno
@@ -382,6 +376,12 @@ fields:
     maxlength: 23
   - "Petitioners1 marriage number": petitioners1_marriage_number
     maxlength: 10
+
+---
+id: Petitioner B Information
+question: |
+  Petitioner B Information
+fields:
   - "Petitioners2 marriage number": petitioners2_marriage_number
     maxlength: 10
   - "Petitioners2 is plaintiff": petitioners2_is_plaintiff
@@ -397,9 +397,27 @@ fields:
   - "Petitioners2 ssn": petitioners2_ssn
     maxlength: 23
 ---
-id: Miscellaneous
+id: Miscellaneous Calculated Values
 question: |
-  Miscellaneous
+  Miscellaneous Calculated Values:
+subquestion: |
+  Each of these fields will be calulated from other values/inputs generally in code blocks
+fields: 
+  - "Children2 name full plus birthdate": children2_name_full_plus_birthdate
+    maxlength: 39
+  - "Children1 name full plus birthdate": children1_name_full_plus_birthdate
+    maxlength: 39
+  - "Children3 name full plus birthdate": children3_name_full_plus_birthdate
+    maxlength: 39
+  - "Children4 name full plus birthdate": children4_name_full_plus_birthdate
+    maxlength: 39
+
+---
+id: Miscellaneous Blanks
+question: |
+  Miscellaneous Blanks
+subquestion: |
+  Each of the fields on this screen will be blank 
 fields:
   - "Judgment divorce": judgment_divorce
     datatype: yesno
@@ -413,6 +431,7 @@ fields:
     maxlength: 90
   - "Submitting official fullname": submitting_official_fullname
     maxlength: 88
+
 ---
 id: preview divorcefilings
 question: |
