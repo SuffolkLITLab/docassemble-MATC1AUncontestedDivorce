@@ -77,6 +77,7 @@ code: |
 ---
 objects:
   - users: ALPeopleList.using(there_are_any=True)
+  - children: ALPeopleList.using(there_are_any=True)
 ---
 sections:
   - review_divorcefilings: Review your answers
@@ -194,11 +195,11 @@ buttons:
   - Someone Else: True
 ---
 id: Identity Clarification
-event: agent_guidance
+continue button field: agent_guidance
 question: |
-  Respond to any questions phrased with "you" as if you are the person for whom you are completing this interview.
-buttons: 
-  - Continue: continue
+  Language Clarification
+subquestion: |
+  The questions in this interview are written for individuals preparing paperwork for their own use. If you are completing this interview for someone else, respond to any questions phrased with "you" as if you are the person for whom you are completing this paperwork.
 ---
 id: Party A Name
 question: |
@@ -274,6 +275,7 @@ fields:
     datatype: yesnoradio
   - "When did you last live together?": petitioners_last_living_together_date
     datatype: date
+    show if: live_together == False 
   - "Where did you last live together? (County)": petitioners_last_living_together_location
     input type: radio
     choices:
