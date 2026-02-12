@@ -2,7 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALMassachusetts:al_massachusetts.yml
-  - docassemble.MassAccess:massaccess.yml
+  - docassemble.MassAccess:massaccess.yml #is this necessary?
 ---
 metadata:
   title: >-
@@ -10,7 +10,7 @@ metadata:
   short title: >-
     Joint Divorce Petition
   description: |-
-    This interview helps someone in Massachusetts ask the court for a joint, uncontested divorce.
+    This interview helps someone in Massachusetts ask the court for a joint, uncontested divorce under STATUTE.
   can_I_use_this_form: |
     If you are married, you can use this interview to jointly request an uncontested divorce.
   before_you_start: |
@@ -19,13 +19,14 @@ metadata:
     Before you get started, please gather:
     
     1. Marriage certificate
-    2. 
-    3. 
+    2. Recent pay stub. 
+    3. Bills.
     
     When you are finished, you will need to:
     
     1. 
     2.
+    
   maturity: production
   estimated_completion_minutes: 60
   estimated_completion_delta: 15
@@ -77,7 +78,7 @@ code: |
 ---
 objects:
   - users: ALPeopleList.using(there_are_any=True)
-  - children: ALPeopleList.using(there_are_any=True)
+  - children: ALPeopleList.using(ask_number=True)
 ---
 sections:
   - review_divorcefilings: Review your answers
@@ -101,33 +102,19 @@ code: |
   legal_marriage
   if legal_marriage == False:
     purpose_mismatch
-  marriage_breakdown_date
+  massachusetts_residency
+  if massachusetts_residency == False:
+    purpose_mismatch
+  separation_agreement_reached
+  separation_agreement_format
+  if separation_agreement_format == "wait":
+    cautionary_validation_message
+  marriage_date
   live_together
   previous_action_detail
-  attorneys1_bbo_number
   set_progress(14)
-  petitioners1_is_plaintiff
-  judgment_divorce
-  trial_court.division
-  docket_number
-  petitioners.gather()
-  set_progress(28)
-  signature_date
-  petitioners[1].address.address
-  petitioners[0].address.address
-  set_progress(42)
-  petitioners[0].phone_number
-  petitioners[1].phone_number
-  petitioners[0].birthdate
-  petitioners[1].birthdate
-  children[0].birthdate
-  children2_name_full_plus_birthdate
-  set_progress(56)
+  users.gather()
   children.gather()
-  children[1].birthdate
-  children[2].birthdate
-  children[3].birthdate
-  children[4].birthdate
   interview_order_divorcefilings = True
 ---
 ###################### Main order ######################
@@ -174,110 +161,145 @@ subquestion: |
 ---
 id: Purpose Screen 
 question: | 
-  Are you using this interview to ask the Massachusetts court for a divorce?
+  Joint (1A) Divorce Petition - Massachusetts
+subquestion: |
+  Are you using this interview to ask the Massachusetts courts for a divorce?
 yesno: purpose_is_divorce
 ---
 id: Purpose Screen Offramp
 event: purpose_mismatch
-question: |
+question: | 
+  Joint (1A) Divorce Petition - Massachusetts
+subquestion: |
   This interview is only for legally married couples jointly filing for an uncontested, no-fault divorce in Massachusetts. 
-Subquestion: |
-  Include Links to Resources Here
+
+  Include Links to Resources Here. 
 buttons: 
   - Exit: exit
 ---
-id: Identity Screen
-question: | 
+id: Cautionary validation
+continue button field: cautionary_validation_message
+question: |
+  Confirm information
+subquestion: |
+  You entered blah 1 and blah 2 and that is an unusual combination. Are you sure you want to proceed? Alternative you are allowed to proceed without doing blah, but are you really sure?
+---
+id: Identity screen
+question: |
+  Your role
+subquestion: | 
   Are you completing this interview for yourself (including your spouse) or for someone else? 
 field: is_agent
 buttons: 
   - Myself/Ourselves: False
   - Someone Else: True
 ---
-id: Identity Clarification
+id: Identity language clarification
 continue button field: agent_guidance
 question: |
-  Language Clarification
+  Language clarification
 subquestion: |
-  The questions in this interview are written for individuals preparing paperwork for their own use. If you are completing this interview for someone else, respond to any questions phrased with "you" as if you are the person for whom you are completing this paperwork.
+  The questions in this interview are written for people to facilitate preparation of paperwork for their own use. If you are completing this interview for someone else, respond to questions phrased with "you" as if you are the person for whom you are completing this paperwork - more specifically one spouse of the couple seeking a divorce.
 ---
-id: Party A Name
+id: Users name
+sets:
+  - users.name.first
+  - users.name.last
 question: |
-  What is your name?
+  Spouse name
 fields:
-  - First: users[0].name.first
-  - Middle: users[0].name.middle
-    required: False
-  - Last: users[0].name.last
-  - Suffix: users[0].name.suffix
-    code: |
-      name_suffix()
-    required: False
+  - code: |
+      users.name_fields()
 ---
-id: Party B Name
+id: Legal marriage
 question: |
-  What is your spouse's name?
-fields:
-  - First: users[1].name.first
-  - Middle: users[1].name.middle
-    required: False
-  - Last: users[1].name.last
-  - Suffix: users[1].name.suffix
-    code: |
-      name_suffix()
-    required: False
----
-id: Marriage Screen
-question: |
+  Legal marriage confirmation
+subquestion: |
   Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?
 yesno: legal_marriage
----
-id: Divorce Type Screen
-question: |
-  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that you both:
-  (1) want to get divorced and 
-  (2) that you want file together?
-yesno: petition_is_joint
----
-id: Agreement Screen
-question: |
-  Have you and your spouse reached agreement on most or all of the major issues, such as property division, child custody, and child support?
-yesnoradio: separation_agreement_reached
 ---
 id: Confirm Jurisdiction
 question: |
   Confirm Jurisdiction
 fields:
   - "Have one or both spouses lived in Massachusetts for at least one year?": massachusetts_residency
-    datatype: yesno
-  - "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
-    datatype: yesno
+    datatype: yesnoradio
+  #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
+    #datatype: yesnoradio
+    #showif:
+        #code: |
+          #massachusetts_residency == False
 ---
-id: Relationship Background
+id: Divorce type
 question: |
-  Relationship Background
+  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
+  (1) you want to get divorced and 
+  (2) you want file together?
+yesno: petition_is_joint
+#add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
+---
+id: Agreement status
+question: |
+  Agreement on major issues
+subquestion: |
+  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } agree on how to resolve the major issues, such as property division, child custody, and child support?
+fields: 
+  - "We agree on the major issues": separation_agreement_reached
+    datatype: yesnoradio
+  - "We have a detailed written agreement (digital or physical)": separation_agreement_documented
+    datatype: yesnoradio
+    show if: separation_agreement_reached
+---
+id: Separation agreement format
+question: |
+  Separation agreement format
+subquestion: |
+  Must file a separation agreement within 90 days of filing 1A form. Separation agreement must be notorized and should completely address the major issues such as property division, child custody, and child support. 
+
+  Here we will explain the different options available for filing a separation agreement with a 1A divorce. 
+fields: 
+  - "How would you like to file your separation agreement?": separation_agreement_format
+    input type: radio
+    choices: 
+      - "Upload my complete, notorized separation agreement here": upload
+      - "File my complete, notorized separation agreement with the registry later" : wait
+      - "Create a separation agreement using this interview tool.": interview 
+  #- "Use ODR product": import #connect with API here 
+---
+id: Relationship background
+question: |
+  Relationship background
+subquestion: |
+  ${  users[0].name.full()  } and ${  users[1].name.full()  }
 fields:
+  - "When were you married?": marriage_date
+    datatype: date
+  - "Where were you married? (City, State or City, Country if outside USA)": marriage_location
+    maxlength: 54
   - "When did the marriage breakdown occur?": marriage_breakdown_date
     datatype: date
   - "Briefly explain what caused the marriage breakdown": marriage_breakdown_justification
     input type: area
     maxlength: 810
-  - "Where were you married?": marriage_location
-    maxlength: 54
-  - "When were you married?": marriage_date
-    datatype: date
+#Need to include guidance on how to write this portion of the affidavit effectively
 ---
-id: Living Arrangements
+---
+id: Living arrangements
 question: |
-  Living Arrangements
+  Living arrangements
 fields: 
-  - "Are you and your spouse currently living together?": live_together
-    datatype: yesnoradio
-  - "When did you last live together?": petitioners_last_living_together_date
+  - "Do you currently live together?": live_together
+    datatype: radio
+    choices: 
+      - We live together: True
+      - We live in separate households: False
+  - "When did you last live together?": last_living_together_date
     datatype: date
-    show if: live_together == False 
-  - "Where did you last live together? (County)": petitioners_last_living_together_location
-    input type: radio
+    show if:
+      variable: live_together
+      is: False
+  - "Where did you last live together? (County)": last_living_together_location
+    datatype: radio
     choices:
       - Barnstable
       - Berkshire
@@ -294,26 +316,28 @@ fields:
       - Suffolk
       - Worcester
       - Outside of Massachusetts
----
-id: Children
-question: |
-  Children
-fields:
-
-  - "Petitioners1 number of custodial children": petitioners1_number_of_custodial_children
-    maxlength: 10
-  - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
-    maxlength: 10
-  - "Children of marriage number": children_of_marriage_number
-    maxlength: 14
-  - "R408 addendum": r408_addendum
-    input type: area
-    maxlength: 425
-  - "Do you have any children of this marriage?": children_of_marriage
-    datatype: yesno
-  - "How many children of this marriage?": children_of_marriage_numnber
-    datatype: integer
-    min: 0
+    show if:
+      variable: live_together
+      is: False
+  - "Where do you live together? (County)": petitioners_last_living_together_location
+    datatype: radio
+    choices:
+      - Barnstable
+      - Berkshire
+      - Bristol
+      - Dukes
+      - Essex
+      - Franklin
+      - Hampden
+      - Hampshire
+      - Middlesex
+      - Nantucket
+      - Norfolk
+      - Plymouth
+      - Suffolk
+      - Worcester
+      - Outside of Massachusetts
+    show if: live_together
 ---
 id: requests
 question: |
@@ -399,6 +423,13 @@ fields:
   - "Petitioners2 ssn": petitioners2_ssn
     maxlength: 23
 ---
+id: Eligibility and input confirmation 
+event: Introduction summary 
+question: |
+  Confirm summary
+subquestion: |
+  Provide summary of user inputs and requests to confirm before moving forward. 
+---
 id: Miscellaneous Calculated Values
 question: |
   Miscellaneous Calculated Values:
@@ -434,6 +465,35 @@ fields:
   - "Submitting official fullname": submitting_official_fullname
     maxlength: 88
 
+---
+id: Children of the Marriage
+question: |
+  Children of the Marriage
+subquestion: | 
+  Children of the marriage are defined as... 
+fields: 
+  - "Are there any children of this marriage?": children_of_marriage
+    datatype: yesnoradio
+---
+id: Children
+question: |
+  Children
+fields:
+
+  - "Petitioners1 number of custodial children": petitioners1_number_of_custodial_children
+    maxlength: 10
+  - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
+    maxlength: 10
+  - "Children of marriage number": children_of_marriage_number
+    maxlength: 14
+  - "R408 addendum": r408_addendum
+    input type: area
+    maxlength: 425
+  - "Do you have any children of this marriage?": children_of_marriage
+    datatype: yesno
+  - "How many children of this marriage?": children_of_marriage_numnber
+    datatype: integer
+    min: 0
 ---
 id: preview divorcefilings
 question: |
