@@ -1,0 +1,1171 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALMassachusetts:al_massachusetts.yml
+---
+metadata:
+  title: >-
+    1A Divorce Agreement
+  short title: >-
+    1A Divorce Agreement
+  description: |-
+    This interview helps someone in Massachusetts 1A Divorce Agreement.
+  can_I_use_this_form: |
+    If you are a  co-petitioner, you can use this interview to complete and file a 1A agreement.
+  before_you_start: |
+    This interview will help you draft a 1A Divorce Agreement.
+    
+    Before you get started, please gather:
+    
+    1. 
+    1. 
+    1. 
+    
+    When you are finished, you will need to:
+    
+    1. 
+    1.
+  maturity: production
+  estimated_completion_minutes: 30
+  estimated_completion_delta: 5
+  LIST_topics: 
+    - "BU-00-00-00-00"
+    - "FA-00-00-00-00"
+    - "FA-06-00-00-00"
+  tags:
+    - "BU-00-00-00-00"
+    - "FA-00-00-00-00"
+    - "FA-06-00-00-00"
+  authors:
+  original_form: []
+  original_form_published_on: ""
+  allowed_courts: 
+    - "Probate and Family Court"
+  typical_role: "plaintiff"
+  al_weaver_version: "1.11.0"
+  generated_on: "2026-01-27"
+  languages:
+    - en
+  jurisdiction: NAM-US-US+MA
+  review_date: 2026-01-27
+  form_titles:
+    - 1A Divorce Agreement
+  form_numbers: []
+  update_notes: |
+---
+code: |
+  # This controls the default country and list of states in address field questions
+  AL_DEFAULT_COUNTRY = "US"
+---
+code: |
+  # This controls the default state in address field questions
+  AL_DEFAULT_STATE = "MA"
+---
+code: |
+  github_repo_name =  'docassemble-ADivorceAgreement'
+---
+code: |
+  interview_short_title = "1A Divorce Agreement"
+---
+code: |
+  al_form_type = "starts_case" 
+---
+objects:
+  - other_parties: ALPeopleList.using(ask_number=True,target_number=1)
+  - children: ALPeopleList.using(there_are_any=True)
+  - users: ALPeopleList.using(there_are_any=True)
+---
+sections:
+  - review_a_divorce_agreement: Review your answers
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_a_divorce_agreement
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = ['Probate and Family Court']
+  nav.set_section("review_a_divorce_agreement")
+  user_role = "plaintiff"
+  user_ask_role = "plaintiff"
+  users.gather()
+  set_parts(subtitle=str(users))
+  A_Divorce_Agreement
+  has_no_children
+  custody_custom_terms
+  child_support_wage_assignment
+  set_progress(14)
+  education_cost_based_on_ability
+  health_insurance_self_responsible
+  alimony_waived_all
+  taxes_file_separately
+  no_real_estate
+  set_progress(28)
+  no_marital_debt
+  no_retirement_benefits
+  no_life_insurance
+  agreement_merge_fully
+  users1_initials
+  set_progress(42)
+  trial_court.division
+  children.gather()
+  other_parties[0].address.address
+  other_parties.gather()
+  set_progress(56)
+  users[0].address.address
+  signature_date
+  docket_number
+  interview_order_a_divorce_agreement = True
+---
+###################### Main order ######################
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  a_divorce_agreement_intro
+  interview_order_a_divorce_agreement
+  signature_date
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "zip": showifdef("users[0].address.zip"),
+          "reached_interview_end": True,
+      },
+  )
+  a_divorce_agreement_download
+---
+id: A_Divorce_Agreement
+continue button field: a_divorce_agreement_intro
+question: |
+  1A Divorce Agreement
+subquestion: |
+  This interview will help you 1A Divorce Agreement.
+  
+  Before you get started, please gather:
+  
+  1. 
+  1. 
+  1. 
+  
+  When you are finished, you will need to:
+  
+  1. 
+  1.
+
+  If you are a  co-petitioner, you can use this interview to complete and file a 1A agreement.
+
+  Most people take about 30 minutes to complete this interview.
+---
+id: 1A Divorce Agreement
+question: |
+  1A Divorce Agreement
+continue button field: A_Divorce_Agreement
+---
+id: Children
+question: |
+  Children
+fields:
+  - "You and your spouse have no children together who are minors or dependents": has_no_children
+    datatype: yesno
+  - "Do you and your spouse have any unemancipated  children together?": has_children
+    datatype: yesno
+  - "What is your child's first name?": children1_name_first
+  - "What is your child’s date of birth?": children1_birthdate
+    datatype: date
+---
+id: Child Custody and Parenting Time
+question: |
+  Child Custody and Parenting Time
+fields:
+  - "Do you have custom terms for custody?": custody_custom_terms
+    datatype: yesno
+  - "Describe the parenting time arrangement": parenting_time_description
+  - "Have you and your spouse agreed to share legal custody, but have one parent be the main caretaker (physical custody)?": custody_joint_legal_split_physical
+    datatype: yesno
+  - "Should all the child-related parts of your agreement (like custody, parenting time, and support) be changeable by the court in the future?": merge_child_issues
+    datatype: yesno
+  - "Have you and your spouse agreed that only one of you will have full legal and physical custody of the child or children?": custody_sole
+    datatype: yesno
+  - "The parties shall have joint legal and physical custody of the minor child(ren).": custody_joint_legal_physical
+    datatype: yesno
+  - "Which parent will have scheduled parenting time with the child or children?": parenting_time_recipient
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "Which parent will the child(ren) live with most of the time?": physical_custody_holder
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "Have you and your spouse made a separate schedule for parenting time, holidays, or vacations?": parenting_time_attached_schedule
+  - "Does either Party want sole custody of the child(ren)?": sole_custody_holder
+    input type: dropdown
+    choices:
+      - No
+      - Party A
+      - Party B
+  - "What is the custody arrangement you agreed to?": custody_custom_description
+  - "Have you and your spouse agreed on a parenting time schedule?": parenting_time_assigned
+    datatype: yesno
+---
+id: Child Support
+question: |
+  Child Support
+fields:
+  - "Will child support be paid through a wage assignment handled by the Department of Revenue?": child_support_wage_assignment
+    datatype: yesno
+  - "Who will make child support payments?": child_support_payer
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Who will receive the child support payments?": child_support_recipient
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "How much will be paid for child support?": child_support_amount_value
+    datatype: currency
+    min: 0
+  - "How often will child support payments be made?": child_support_frequency
+  - "If the full child support amount is not paid through wage assignment, please provide who will be making up the difference.": child_support_shortfall_payer
+  - "Child support direct payment": child_support_direct_payment
+  - "Who will pay child support?": child_support_applies_to
+    input type: dropdown
+    choices:
+      - N/A
+      - Party A
+      - Party B
+  - "Do you agree that child support will stop when the child turns 21?": child_support_ends_at_21
+    datatype: yesno
+  - "Are you and your spouse choosing a different child support amount than the state's suggested amount?": child_support_deviation
+    datatype: yesno
+  - "What is the weekly child support amount calculated by the Massachusetts Child Support Guidelines?": child_support_guideline_amount
+    datatype: currency
+    min: 0
+  - "Why are you agreeing to a different child support amount?": child_support_deviation_reason
+---
+id: Education and Extracurriculars Children
+question: |
+  Education and Extracurriculars (Children)
+fields:
+  - "Do you and your pouse agree to contribute to the child(ren)'s college or trade school costs based on what each of you can afford?": education_cost_based_on_ability
+    datatype: yesno
+  - "Do you have custom terms for education?": education_custom_terms
+    datatype: yesno
+  - "How will you divide the cost of college or trade school after high school?": education_custom_description
+  - "Do you have custom terms for extracurriculars?": extracurricular_custom_terms
+    datatype: yesno
+  - "Extracurricular description": extracurricular_description
+---
+id: Health Insurance
+question: |
+  Health Insurance
+fields:
+  - "Will each of you be responsible for your own health insurance?": health_insurance_self_responsible
+    datatype: yesno
+  - "If there is an extra cost to keep one spouse on the other's health insurance, have you agreed that the coverage can continue as long as someone pays the added cost?s": health_insurance_with_cost_allowed
+    datatype: yesno
+  - "Which spouse will provide health insurance for the other?": health_insurance_provider_adult
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "What type of health insurance will be provided for the other spouse?": health_insurance_types_adult
+    datatype: checkboxes
+    choices:
+      - Medical
+      - Dental
+      - Vision
+  - "Type": type
+  - "Who will get the health insurance coverage from the other spouse?": health_insurance_recipient_adult
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "If there’s an extra cost to keep one spouse on health insurance, who will pay that extra cost?": health_insurance_cost_payer_adult
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Will each of you be responsible for paying your own uninsured medical, dental, and vision expenses?": uninsured_expenses_self_responsible
+    datatype: yesno
+  - "Do you have custom terms for either Party's health insurance coverage?": health_insurance_custom_terms_adult
+    datatype: yesno
+  - "What are the specific details of the health insurance agreement between you and your spouse?": health_insurance_custom_description_adult
+  - "Who will provide health insurance for the children?": health_insurance_provided_for_children
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "Which parent will provide health insurance for the child or children?": health_insurance_provider_children
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "What type(s) of health insurance will be provided for the children?": health_insurance_types_children
+    input type: dropdown
+    choices:
+      - MassHealth
+      - Private Plan
+  - "How long will health insurance be provided for the children?": health_insurance_until
+  - "Will you and your spouse split the cost of your children’s uninsured medical or dental bills 50/50?": uninsured_expenses_split_children
+    datatype: yesno
+  - "Do you have custom terms for the child(ren)'s health insurance?": health_insurance_custom_terms_children
+    datatype: yesno
+  - "What is the agreement for the child(ren)'s health insurance coverage?": health_insurance_custom_description_children
+---
+id: Alimony
+question: |
+  Alimony
+fields:
+  - "Have both you and your spouse agreed to give up any right to receive alimony now or in the future?": alimony_waived_all
+    datatype: yesno
+  - "One party will pay alimony to the other": alimony_payment_agreed
+    datatype: yesno
+  - "Who will be paying alimony?": alimony_payer
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Who will receive alimony payments?": alimony_recipient
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Alimony amount value": alimony_amount_value
+    datatype: currency
+    min: 0
+  - "How often will alimony payments be made?": alimony_frequency
+  - "What day will alimony payments be due?": alimony_due_on
+    input type: dropdown
+    choices:
+      - Every Friday
+      - First day of each month
+  - "f alimony will end on a specific date (not just when someone remarries or passes away), what is that date?": alimony_end_date
+    datatype: date
+  - "Past and present alimony is waived. Future alimony is not waived.": alimony_waived_future_only
+    datatype: checkboxes
+    choices:
+      - None
+  - "What is your alimony agreement?": alimony_custom_description
+---
+id: Taxes
+question: |
+  Taxes
+fields:
+  - "Have you and your spouse agreed to file your taxes separately from now on?": taxes_file_separately
+    datatype: yesno
+  - "Tax debt responsibility set": tax_debt_responsibility_set
+  - "Who will be responsible for any unpaid tax debt?": tax_debt_responsible_party
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Have you and your spouse both filed and paid all your taxes during the marriage?": taxes_fully_reported
+    datatype: yesno
+  - "Do you have custom terms for taxes?": taxes_custom_terms
+    datatype: yesno
+  - "What is your agreement for taxes?": taxes_custom_description
+  - "Have you agreed that one parent will claim the child or children on taxes every year? If yes, which parent?": child_tax_claim_single_party
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Which parent will claim the child(ren) on their taxes every year?": child_tax_single_party
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "Have you agreed that each of you will take turns claiming the child or children on taxes in alternating years?": child_tax_claim_split_years
+    datatype: yesno
+  - "Which parent will claim the child or children on their taxes in odd-numbered years?": child_tax_odd_year_party
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Which parent will claim the child or children on their taxes in even-numbered years?": child_tax_even_year_party
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "Do you have custom terms for claiming the child(ren) on taxes?": child_tax_claim_custom_terms
+    datatype: yesno
+  - "What custom agreement have you made about who will claim the child or children on tax returns?": child_tax_claim_custom_description
+---
+id: Marital Property
+question: |
+  Marital Property
+fields:
+  - "Do you and your spouse own any real estate together or separately?": no_real_estate
+    datatype: yesno
+  - "Have you and your spouse agreed that one of you will keep a piece of real estate as part of the divorce?": real_estate_transfer
+    datatype: yesno
+  - "Who will keep the real estate property?": real_estate_owner_name
+    input type: dropdown
+    choices:
+      - N/A
+      - Party A
+      - Party B
+  - "What is the full address of the real estate property involved in your agreement?": real_estate_address
+  - "Whose name is currently on the deed for the real estate property?": real_estate_current_owner
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+      - N/A
+  - "What county is the real estate property located in?": real_estate_county
+    input type: dropdown
+    choices:
+      - Barnstable
+      - Bristol
+      - Essex
+      - Middlesex
+      - Suffolk
+  - "What is the book number where the deed for the real estate is recorded?": real_estate_book
+  - "What is the page number in the Registry of Deeds where the real estate is recorded?": real_estate_page
+  - "Is a party waiving interest in the property?": real_estate_waiver_party
+    input type: dropdown
+    choices:
+      - No
+      - Party A
+      - Party B
+  - "Who will be responsible for paying the costs and expenses for the real estate?": real_estate_cost_responsible
+    input type: dropdown
+    choices:
+      - Party A
+      - Party B
+  - "When will the person taking over the property start being responsible for its costs?": real_estate_start_date
+    datatype: date
+  - "Do you have custom terms for real estate?": real_estate_custom_terms
+    datatype: yesno
+  - "Real estate custom description": real_estate_custom_description
+  - "Personal property already divided": personal_property_already_divided
+  - "Do you and your spouse have a plan for how to divide your personal property?": personal_property_divide_plan
+  - "Date of Personal property divide": personal_property_divide_date
+    datatype: date
+  - "What special terms have you and your spouse agreed to about real estate?": personal_property_divide_description
+---
+id: Debts and Liabilities
+question: |
+  Debts and Liabilities
+fields:
+  - "Do you and your spouse agree that you have no shared debts from the marriage?": no_marital_debt
+    datatype: yesno
+  - "Will each of you be responsible for paying the debts that are in your own name?": individual_debt_responsible_each
+    datatype: yesno
+  - "Does Party A have any debts or liabilities they will be responsible for?": users[0].debt_listed
+    datatype: yesno
+  - "What debts and liabilities will Party A be responsible for?": users[0].debt_description
+  - "Does Party B have any debts or liabilities?": other_parties[0].debt_listed
+    datatype: yesno
+  - "If Party B has debts and liabilities, what are they?": other_parties[0].debt_description
+  - "Do you have custom terms for debt?": debt_custom_terms
+    datatype: yesno
+  - "What is your agreement for debts and liabilities?": debt_custom_description
+---
+id: Pension and Retirement Plans
+question: |
+  Pension and Retirement Plans
+fields:
+  - "The parties have no retirement or pension benefits to be divided": no_retirement_benefits
+    datatype: yesno
+  - "Have you and your spouse agreed to give up any right to each other’s retirement or pension benefits?": retirement_interest_waived
+    datatype: yesno
+  - "Have you and your spouse agreed to divide any retirement or pension benefits?": retirement_benefits_divided
+    datatype: yesno
+  - "How will you and your spouse divide any retirement or pension benefits?": retirement_division_description
+---
+id: Life Insurance
+question: |
+  Life Insurance
+fields:
+  - "Do you and your spouse currently have no life insurance policies?": no_life_insurance
+    datatype: yesno
+  - "Will Party A keep their current life insurance and name the children (or a trust for the children) as the beneficiaries?": users1_life_insurance_required
+    datatype: yesno
+  - "Will Party B shall maintain in full force and effect their present life insurance on their life, with the child(ren) of the parties, or a trust for the benefit of the child(ren) of the parties, as beneficiary?": other_parties1_life_insurance_required
+    datatype: yesno
+  - "Do you have custom terms for life insurance?": life_insurance_custom_terms
+    datatype: yesno
+  - "What special terms have you and your spouse agreed to about life insurance?": life_insurance_custom_description
+---
+id: Merger Survival
+question: |
+  Merger/Survival
+fields:
+  - "Do you want all parts of the agreement to be modifiable by the court in the future, except for property and debts?": agreement_merge_fully
+    datatype: yesno
+  - "Do you want this agreement to stay as a separate contract that the court can’t change later, except in rare cases?": agreement_merge_none
+    datatype: yesno
+  - "Do you want only some parts of this agreement to be changeable by the court in the future, while the rest stays final?": agreement_merge_partial
+    datatype: yesno
+  - "Should the health insurance terms in your agreement be changeable by the court in the future?": merge_health_insurance
+    datatype: yesno
+  - "Should the alimony terms in your agreement be changeable by the court in the future?": merge_alimony
+    datatype: yesno
+  - "What other parts of your agreement should be changeable by the court in the future?": merge_other_description
+---
+id: Initials
+question: |
+  Initials
+fields:
+  - "What are Party A’s initials?": users1_initials
+    input type: area
+  - "Other parties1 initials": other_parties1_initials
+    input type: area
+---
+id: preview a_divorce_agreement
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Edit answers" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_a_divorce_agreement'), label='Edit answers', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: a_divorce_agreement_preview_question    
+---
+code: |
+  signature_fields = ['other_parties[0].signature', 'users[0].signature']
+---
+code: |
+  # This is a placeholder for the addresses that will be searched
+  # for matching address to court. Edit if court venue is based on 
+  # a different address than the user's
+  [user.address.address for user in users.complete_elements()]
+  addresses_to_search = [user.address for user in users.complete_elements()]
+---
+id: a divorce agreement review screen
+event: review_a_divorce_agreement
+question: |
+  Review your answers
+review:
+  - Edit: real_estate_waiver_party
+    button: |
+      **Is a party waiving interest in the property?**:
+      ${ real_estate_waiver_party }
+  - Edit: users1_initials
+    button: |
+      **What are Party A’s initials?**:
+      > ${ single_paragraph(users1_initials) }
+  - Edit: child_support_applies_to
+    button: |
+      **Who will pay child support?**:
+      ${ child_support_applies_to }
+  - Edit: alimony_waived_future_only
+    button: |
+      **Past and present alimony is waived. Future alimony is not waived.**:
+      ${ alimony_waived_future_only }
+  - Edit: health_insurance_types_children
+    button: |
+      **What type(s) of health insurance will be provided for the children?**:
+      ${ health_insurance_types_children }
+  - Edit: sole_custody_holder
+    button: |
+      **Does either Party want sole custody of the child(ren)?**:
+      ${ sole_custody_holder }
+  - Edit: debt_custom_description
+    button: |
+      **What is your agreement for debts and liabilities?**:
+      ${ debt_custom_description }
+  - Edit: other_parties1_life_insurance_required
+    button: |
+      **Will Party B shall maintain in full force and effect their present life insurance on their life, with the child(ren) of the parties, or a trust for the benefit of the child(ren) of the parties, as beneficiary?**:
+      ${ word(yesno(other_parties1_life_insurance_required)) }
+  - Edit: parenting_time_description
+    button: |
+      **Describe the parenting time arrangement**:
+      ${ parenting_time_description }
+  - Edit: type
+    button: |
+      **Type**:
+      ${ type }
+  - Edit: no_retirement_benefits
+    button: |
+      **The parties have no retirement or pension benefits to be divided**:
+      ${ word(yesno(no_retirement_benefits)) }
+  - Edit: child.name.first
+    button: |
+      **What is your child's first name?**:
+      ${ child.name.first }
+  - Edit: custody_custom_terms
+    button: |
+      **Do you have custom terms for custody?**:
+      ${ word(yesno(custody_custom_terms)) }
+  - Edit: alimony_payment_agreed
+    button: |
+      **One party will pay alimony to the other**:
+      ${ word(yesno(alimony_payment_agreed)) }
+  - Edit: child_support_frequency
+    button: |
+      **How often will child support payments be made?**:
+      ${ child_support_frequency }
+  - Edit: alimony_recipient
+    button: |
+      **Who will receive alimony payments?**:
+      ${ alimony_recipient }
+  - Edit: uninsured_expenses_self_responsible
+    button: |
+      **Will each of you be responsible for paying your own uninsured medical, dental, and vision expenses?**:
+      ${ word(yesno(uninsured_expenses_self_responsible)) }
+  - Edit: real_estate_book
+    button: |
+      **What is the book number where the deed for the real estate is recorded?**:
+      ${ real_estate_book }
+  - Edit: parenting_time_assigned
+    button: |
+      **Have you and your spouse agreed on a parenting time schedule?**:
+      ${ word(yesno(parenting_time_assigned)) }
+  - Edit: has_children
+    button: |
+      **Do you and your spouse have any unemancipated  children together?**:
+      ${ word(yesno(has_children)) }
+  - Edit: custody_joint_legal_physical
+    button: |
+      **The parties shall have joint legal and physical custody of the minor child(ren).**:
+      ${ word(yesno(custody_joint_legal_physical)) }
+  - Edit: education_custom_description
+    button: |
+      **How will you divide the cost of college or trade school after high school?**:
+      ${ education_custom_description }
+  - Edit: health_insurance_with_cost_allowed
+    button: |
+      **If there is an extra cost to keep one spouse on the other's health insurance, have you agreed that the coverage can continue as long as someone pays the added cost?s**:
+      ${ word(yesno(health_insurance_with_cost_allowed)) }
+  - Edit: trial_court
+    button: |
+      **Trial court**
+  
+      % if defined("trial_court.division"):
+      * division: ${ trial_court.division }
+      % endif
+  - Edit: child_support_guideline_amount
+    button: |
+      **What is the weekly child support amount calculated by the Massachusetts Child Support Guidelines?**:
+      ${ currency(child_support_guideline_amount) }
+  - Edit: child_tax_claim_custom_description
+    button: |
+      **What custom agreement have you made about who will claim the child or children on tax returns?**:
+      ${ child_tax_claim_custom_description }
+  - Edit: users.revisit
+    button: |
+      **Users**
+
+      % for item in users:
+        * ${ item }
+      % endfor
+  - Edit: child_support_wage_assignment
+    button: |
+      **Will child support be paid through a wage assignment handled by the Department of Revenue?**:
+      ${ word(yesno(child_support_wage_assignment)) }
+  - Edit: merge_other_description
+    button: |
+      **What other parts of your agreement should be changeable by the court in the future?**:
+      ${ merge_other_description }
+  - Edit: real_estate_address
+    button: |
+      **What is the full address of the real estate property involved in your agreement?**:
+      ${ real_estate_address }
+  - Edit: real_estate_transfer
+    button: |
+      **Have you and your spouse agreed that one of you will keep a piece of real estate as part of the divorce?**:
+      ${ word(yesno(real_estate_transfer)) }
+  - Edit: real_estate_cost_responsible
+    button: |
+      **Who will be responsible for paying the costs and expenses for the real estate?**:
+      ${ real_estate_cost_responsible }
+  - Edit: health_insurance_provided_for_children
+    button: |
+      **Who will provide health insurance for the children?**:
+      ${ health_insurance_provided_for_children }
+  - Edit: retirement_division_description
+    button: |
+      **How will you and your spouse divide any retirement or pension benefits?**:
+      ${ retirement_division_description }
+  - Edit: children.revisit
+    button: |
+      **Children**
+
+      % for item in children:
+        * ${ item }
+      % endfor
+  - Edit: education_custom_terms
+    button: |
+      **Do you have custom terms for education?**:
+      ${ word(yesno(education_custom_terms)) }
+  - Edit: retirement_benefits_divided
+    button: |
+      **Have you and your spouse agreed to divide any retirement or pension benefits?**:
+      ${ word(yesno(retirement_benefits_divided)) }
+  - Edit: taxes_custom_terms
+    button: |
+      **Do you have custom terms for taxes?**:
+      ${ word(yesno(taxes_custom_terms)) }
+  - Edit: child_support_deviation
+    button: |
+      **Are you and your spouse choosing a different child support amount than the state's suggested amount?**:
+      ${ word(yesno(child_support_deviation)) }
+  - Edit: child_tax_claim_custom_terms
+    button: |
+      **Do you have custom terms for claiming the child(ren) on taxes?**:
+      ${ word(yesno(child_tax_claim_custom_terms)) }
+  - Edit: taxes_fully_reported
+    button: |
+      **Have you and your spouse both filed and paid all your taxes during the marriage?**:
+      ${ word(yesno(taxes_fully_reported)) }
+  - Edit: debt_custom_terms
+    button: |
+      **Do you have custom terms for debt?**:
+      ${ word(yesno(debt_custom_terms)) }
+  - Edit: tax_debt_responsible_party
+    button: |
+      **Who will be responsible for any unpaid tax debt?**:
+      ${ tax_debt_responsible_party }
+  - Edit: custody_joint_legal_split_physical
+    button: |
+      **Have you and your spouse agreed to share legal custody, but have one parent be the main caretaker (physical custody)?**:
+      ${ word(yesno(custody_joint_legal_split_physical)) }
+  - Edit: users1_life_insurance_required
+    button: |
+      **Will Party A keep their current life insurance and name the children (or a trust for the children) as the beneficiaries?**:
+      ${ word(yesno(users1_life_insurance_required)) }
+  - Edit: life_insurance_custom_description
+    button: |
+      **What special terms have you and your spouse agreed to about life insurance?**:
+      ${ life_insurance_custom_description }
+  - Edit: agreement_merge_partial
+    button: |
+      **Do you want only some parts of this agreement to be changeable by the court in the future, while the rest stays final?**:
+      ${ word(yesno(agreement_merge_partial)) }
+  - Edit: health_insurance_custom_terms_children
+    button: |
+      **Do you have custom terms for the child(ren)'s health insurance?**:
+      ${ word(yesno(health_insurance_custom_terms_children)) }
+  - Edit: other_parties.revisit
+    button: |
+      **Other parties**
+
+      % for item in other_parties:
+        * ${ item }
+      % endfor
+  - Edit: no_real_estate
+    button: |
+      **Do you and your spouse own any real estate together or separately?**:
+      ${ word(yesno(no_real_estate)) }
+  - Edit: parenting_time_attached_schedule
+    button: |
+      **Have you and your spouse made a separate schedule for parenting time, holidays, or vacations?**:
+      ${ parenting_time_attached_schedule }
+  - Edit: uninsured_expenses_split_children
+    button: |
+      **Will you and your spouse split the cost of your children’s uninsured medical or dental bills 50/50?**:
+      ${ word(yesno(uninsured_expenses_split_children)) }
+  - Edit: real_estate_page
+    button: |
+      **What is the page number in the Registry of Deeds where the real estate is recorded?**:
+      ${ real_estate_page }
+  - Edit: health_insurance_custom_terms_adult
+    button: |
+      **Do you have custom terms for either Party's health insurance coverage?**:
+      ${ word(yesno(health_insurance_custom_terms_adult)) }
+  - Edit: alimony_end_date
+    button: |
+      **f alimony will end on a specific date (not just when someone remarries or passes away), what is that date?**:
+      ${ alimony_end_date }
+  - Edit: child_tax_claim_single_party
+    button: |
+      **Have you agreed that one parent will claim the child or children on taxes every year? If yes, which parent?**:
+      ${ child_tax_claim_single_party }
+  - Edit: merge_child_issues
+    button: |
+      **Should all the child-related parts of your agreement (like custody, parenting time, and support) be changeable by the court in the future?**:
+      ${ word(yesno(merge_child_issues)) }
+  - Edit: health_insurance_custom_description_adult
+    button: |
+      **What are the specific details of the health insurance agreement between you and your spouse?**:
+      ${ health_insurance_custom_description_adult }
+  - Edit: merge_alimony
+    button: |
+      **Should the alimony terms in your agreement be changeable by the court in the future?**:
+      ${ word(yesno(merge_alimony)) }
+  - Edit: real_estate_custom_description
+    button: |
+      **Real estate custom description**:
+      ${ real_estate_custom_description }
+  - Edit: personal_property_divide_description
+    button: |
+      **What special terms have you and your spouse agreed to about real estate?**:
+      ${ personal_property_divide_description }
+  - Edit: real_estate_owner_name
+    button: |
+      **Who will keep the real estate property?**:
+      ${ real_estate_owner_name }
+  - Edit: custody_custom_description
+    button: |
+      **What is the custody arrangement you agreed to?**:
+      ${ custody_custom_description }
+  - Edit: parenting_time_recipient
+    button: |
+      **Which parent will have scheduled parenting time with the child or children?**:
+      ${ parenting_time_recipient }
+  - Edit: life_insurance_custom_terms
+    button: |
+      **Do you have custom terms for life insurance?**:
+      ${ word(yesno(life_insurance_custom_terms)) }
+  - Edit: education_cost_based_on_ability
+    button: |
+      **Do you and your pouse agree to contribute to the child(ren)'s college or trade school costs based on what each of you can afford?**:
+      ${ word(yesno(education_cost_based_on_ability)) }
+  - Edit: child_tax_single_party
+    button: |
+      **Which parent will claim the child(ren) on their taxes every year?**:
+      ${ child_tax_single_party }
+  - Edit: health_insurance_provider_children
+    button: |
+      **Which parent will provide health insurance for the child or children?**:
+      ${ health_insurance_provider_children }
+  - Edit: merge_health_insurance
+    button: |
+      **Should the health insurance terms in your agreement be changeable by the court in the future?**:
+      ${ word(yesno(merge_health_insurance)) }
+  - Edit: alimony_due_on
+    button: |
+      **What day will alimony payments be due?**:
+      ${ alimony_due_on }
+  - Edit: physical_custody_holder
+    button: |
+      **Which parent will the child(ren) live with most of the time?**:
+      ${ physical_custody_holder }
+  - Edit: child_support_shortfall_payer
+    button: |
+      **If the full child support amount is not paid through wage assignment, please provide who will be making up the difference.**:
+      ${ child_support_shortfall_payer }
+  - Edit: agreement_merge_fully
+    button: |
+      **Do you want all parts of the agreement to be modifiable by the court in the future, except for property and debts?**:
+      ${ word(yesno(agreement_merge_fully)) }
+  - Edit: child_support_ends_at_21
+    button: |
+      **Do you agree that child support will stop when the child turns 21?**:
+      ${ word(yesno(child_support_ends_at_21)) }
+  - Edit: alimony_custom_description
+    button: |
+      **What is your alimony agreement?**:
+      ${ alimony_custom_description }
+  - Edit: child_support_recipient
+    button: |
+      **Who will receive the child support payments?**:
+      ${ child_support_recipient }
+  - Edit: retirement_interest_waived
+    button: |
+      **Have you and your spouse agreed to give up any right to each other’s retirement or pension benefits?**:
+      ${ word(yesno(retirement_interest_waived)) }
+  - Edit: health_insurance_cost_payer_adult
+    button: |
+      **If there’s an extra cost to keep one spouse on health insurance, who will pay that extra cost?**:
+      ${ health_insurance_cost_payer_adult }
+  - Edit: health_insurance_until
+    button: |
+      **How long will health insurance be provided for the children?**:
+      ${ health_insurance_until }
+  - Edit: has_no_children
+    button: |
+      **Do you and your spouse have no children together who are still minors or dependent?**:
+      ${ word(yesno(has_no_children)) }
+  - Edit: health_insurance_recipient_adult
+    button: |
+      **Who will get the health insurance coverage from the other spouse?**:
+      ${ health_insurance_recipient_adult }
+  - Edit: extracurricular_custom_terms
+    button: |
+      **Do you have custom terms for extracurriculars?**:
+      ${ word(yesno(extracurricular_custom_terms)) }
+  - Edit: signature_date
+    button: |
+      **Date of Signature**:
+      ${ signature_date }
+  - Edit: child_tax_claim_split_years
+    button: |
+      **Have you agreed that each of you will take turns claiming the child or children on taxes in alternating years?**:
+      ${ word(yesno(child_tax_claim_split_years)) }
+  - Edit: child_tax_odd_year_party
+    button: |
+      **Which parent will claim the child or children on their taxes in odd-numbered years?**:
+      ${ child_tax_odd_year_party }
+  - Edit: alimony_frequency
+    button: |
+      **How often will alimony payments be made?**:
+      ${ alimony_frequency }
+  - Edit: other_parties1_initials
+    button: |
+      **Other parties1 initials**:
+      > ${ single_paragraph(other_parties1_initials) }
+  - Edit: child.birthdate
+    button: |
+      **What is your child’s date of birth?**:
+      ${ child.birthdate }
+  - Edit: custody_sole
+    button: |
+      **Have you and your spouse agreed that only one of you will have full legal and physical custody of the child or children?**:
+      ${ word(yesno(custody_sole)) }
+  - Edit: health_insurance_custom_description_children
+    button: |
+      **What is the agreement for the child(ren)'s health insurance coverage?**:
+      ${ health_insurance_custom_description_children }
+  - Edit: taxes_custom_description
+    button: |
+      **What is your agreement for taxes?**:
+      ${ taxes_custom_description }
+  - Edit: extracurricular_description
+    button: |
+      **Extracurricular description**:
+      ${ extracurricular_description }
+  - Edit: personal_property_already_divided
+    button: |
+      **Personal property already divided**:
+      ${ personal_property_already_divided }
+  - Edit: tax_debt_responsibility_set
+    button: |
+      **Tax debt responsibility set**:
+      ${ tax_debt_responsibility_set }
+  - Edit: personal_property_divide_date
+    button: |
+      **Date of Personal property divide**:
+      ${ personal_property_divide_date }
+  - Edit: alimony_amount_value
+    button: |
+      **Alimony amount value**:
+      ${ currency(alimony_amount_value) }
+  - Edit: child_support_direct_payment
+    button: |
+      **Child support direct payment**:
+      ${ child_support_direct_payment }
+  - Edit: child_support_amount_value
+    button: |
+      **How much will be paid for child support?**:
+      ${ currency(child_support_amount_value) }
+  - Edit: real_estate_start_date
+    button: |
+      **When will the person taking over the property start being responsible for its costs?**:
+      ${ real_estate_start_date }
+  - Edit: health_insurance_types_adult
+    button: |
+      **What type of health insurance will be provided for the other spouse?**:
+      ${ health_insurance_types_adult }
+  - Edit: child_support_payer
+    button: |
+      **Who will make child support payments?**:
+      ${ child_support_payer }
+  - Edit: child_support_deviation_reason
+    button: |
+      **Why are you agreeing to a different child support amount?**:
+      ${ child_support_deviation_reason }
+  - Edit: real_estate_county
+    button: |
+      **What county is the real estate property located in?**:
+      ${ real_estate_county }
+  - Edit: agreement_merge_none
+    button: |
+      **Do you want this agreement to stay as a separate contract that the court can’t change later, except in rare cases?**:
+      ${ word(yesno(agreement_merge_none)) }
+  - Edit: health_insurance_provider_adult
+    button: |
+      **Which spouse will provide health insurance for the other?**:
+      ${ health_insurance_provider_adult }
+  - Edit: taxes_file_separately
+    button: |
+      **Have you and your spouse agreed to file your taxes separately from now on?**:
+      ${ word(yesno(taxes_file_separately)) }
+  - Edit: real_estate_current_owner
+    button: |
+      **Whose name is currently on the deed for the real estate property?**:
+      ${ real_estate_current_owner }
+  - Edit: alimony_payer
+    button: |
+      **Who will be paying alimony?**:
+      ${ alimony_payer }
+  - Edit: child_tax_even_year_party
+    button: |
+      **Which parent will claim the child or children on their taxes in even-numbered years?**:
+      ${ child_tax_even_year_party }
+  - Edit: personal_property_divide_plan
+    button: |
+      **Do you and your spouse have a plan for how to divide your personal property?**:
+      ${ personal_property_divide_plan }
+  - Edit: individual_debt_responsible_each
+    button: |
+      **Will each of you be responsible for paying the debts that are in your own name?**:
+      ${ word(yesno(individual_debt_responsible_each)) }
+  - Edit: no_marital_debt
+    button: |
+      **Do you and your spouse agree that you have no shared debts from the marriage?**:
+      ${ word(yesno(no_marital_debt)) }
+  - Edit: health_insurance_self_responsible
+    button: |
+      **Will each of you be responsible for your own health insurance?**:
+      ${ word(yesno(health_insurance_self_responsible)) }
+  - Edit: docket_number
+    button: |
+      **Docket number**:
+      ${ docket_number }
+  - Edit: real_estate_custom_terms
+    button: |
+      **Do you have custom terms for real estate?**:
+      ${ word(yesno(real_estate_custom_terms)) }
+  - Edit: no_life_insurance
+    button: |
+      **Do you and your spouse currently have no life insurance policies?**:
+      ${ word(yesno(no_life_insurance)) }
+  - Edit: alimony_waived_all
+    button: |
+      **Have both you and your spouse agreed to give up any right to receive alimony now or in the future?**:
+      ${ word(yesno(alimony_waived_all)) }
+---
+continue button field: users.revisit
+question: |
+  Edit users
+subquestion: |
+  ${ users.table }
+
+  ${ users.add_action() }
+---
+table: users.table
+rows: users
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+  - Debt listed: |
+      row_item.debt_listed if defined("row_item.debt_listed") else ""
+  - Debt description: |
+      row_item.debt_description if defined("row_item.debt_description") else ""
+edit:
+  - name.first
+  - signature
+  - address.address
+  - debt_listed
+  - debt_description
+confirm: True
+
+---
+continue button field: children.revisit
+question: |
+  Edit children
+subquestion: |
+  ${ children.table }
+
+  ${ children.add_action() }
+---
+table: children.table
+rows: children
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+continue button field: other_parties.revisit
+question: |
+  Edit other_parties
+subquestion: |
+  ${ other_parties.table }
+
+  ${ other_parties.add_action() }
+---
+table: other_parties.table
+rows: other_parties
+columns:
+  - Address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - Debt listed: |
+      row_item.debt_listed if defined("row_item.debt_listed") else ""
+  - Debt description: |
+      row_item.debt_description if defined("row_item.debt_description") else ""
+edit:
+  - address.address
+  - name.first
+  - signature
+  - debt_listed
+  - debt_description
+confirm: True
+
+---
+id: download a_divorce_agreement
+event: a_divorce_agreement_download
+question: |
+  All done
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_a_divorce_agreement'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
+
+progress: 100
+---
+# ALDocument objects specify the metadata for each template
+objects:
+  - a_divorce_agreement_Post_interview_instructions: ALDocument.using(title="Instructions", filename="a_divorce_agreement_next_steps.docx", enabled=True, has_addendum=False)
+  - a_divorce_agreement_attachment: ALDocument.using(title="1A Divorce Agreement", filename="a_divorce_agreement", enabled=True, has_addendum=False, )
+---
+# Bundles group the ALDocuments into separate downloads, such as for court and for the user
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[a_divorce_agreement_Post_interview_instructions, a_divorce_agreement_attachment], filename="a_divorce_agreement", title="All forms to download for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[a_divorce_agreement_attachment],  filename="a_divorce_agreement", title="All forms to deliver to court", enabled=True)
+---
+# Each attachment defines a key in an ALDocument. We use `i` as the placeholder here so the same template is 
+# used for "preview" and "final" keys, and logic in the template checks the value of 
+# `i` to show or hide the user's signature
+attachment:
+  name: Post-interview-Instructions
+  filename: a_divorce_agreement_next_steps
+  docx template file: a_divorce_agreement_next_steps.docx
+  variable name: a_divorce_agreement_Post_interview_instructions[i]
+  skip undefined: True
+  tagged pdf: True
+---
+attachment:
+  name: a divorce agreement
+  filename: a_divorce_agreement
+  variable name: a_divorce_agreement_attachment[i]
+  skip undefined: True
+  docx template file: a_divorce_agreement.docx
+  tagged pdf: True
+
+
+

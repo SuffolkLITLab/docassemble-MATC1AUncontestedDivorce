@@ -1,33 +1,31 @@
 # docassemble.MATC1AUncontestedDivorce
 
-Work-in-progress docassemble package for Massachusetts 1A uncontested divorce
-materials. The goal is to support the full set of forms and supporting
-documents in this process (not just financial statements), including:
+A docassemble package for Massachusetts 1A uncontested divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:
 
 - Joint Divorce Petition (CJD-101A)
 - Separation Agreement
-- Financial Statements (short/long) with Schedules A/B
-- Child custody and related affidavits
-- Other required or commonly filed supporting documents
+- Financial Statements (short & long forms) with Schedules A & B
+- Child Care & Custody Disclosure
+- Other required supporting documents
 
 ## Status
 
-This package is **WIP**. Forms, interview flows, and automation are actively
-evolving. Expect changes and incomplete sections as the project grows.
+The financial statement interview has progressed — it covers both the short and long form variants, includes Schedule A (real estate) and Schedule B (personal property), and has full CI test coverage across 9 scenarios.
 
-## What's here
+## What's Included
 
-- Interviews in `docassemble/MATC1AUncontestedDivorce/data/questions/`
-- Static assets in `docassemble/MATC1AUncontestedDivorce/data/static/`
-- Templates in `docassemble/MATC1AUncontestedDivorce/data/templates/`
+- **Interview YAML files** — the question flows, logic, and PDF field mappings
+- **PDF form templates** — the court forms themselves
+- **ALKiln test files** — `.feature` specs for automated testing
+- **Test scenarios** — JSON definitions covering short form, long form, schedules, and various edge cases
 
-## Notes
+## Testing
 
-If you're reviewing or testing, focus on overall flow, question wording,
-and form mapping gaps. Please flag missing forms or mismatches against current
-court PDFs.
+The package includes a CI pipeline (GitHub Actions) that runs on every push to `main`:
+
+1. Static analysis — YAML syntax and interview logic validation
+2. Runtime tests — spins up a docassemble server, installs the package, and runs all 9 test scenarios against the REST API
 
 ## Author
 
 Court Forms Online
-
