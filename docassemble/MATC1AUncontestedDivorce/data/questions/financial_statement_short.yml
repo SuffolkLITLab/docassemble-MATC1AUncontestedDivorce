@@ -7,19 +7,23 @@ sets:
   - short_form_sections
 code: |
   nav.set_section("Deductions")
-  set_progress(60)
+  set_progress(58)
+  fs_deductions_intro
   short_deductions
   short_adjusted_net_income
   short_other_deductions
   short_net_income
   short_prior_year
   nav.set_section("Expenses")
-  set_progress(70)
+  set_progress(68)
+  fs_expenses_intro
   expense_list.gathered
   short_expenses_total
-  confirm_no_expenses_short
+  if short_expenses_total_weekly == 0:
+    confirm_no_expenses_short
   nav.set_section("Assets")
-  set_progress(80)
+  set_progress(78)
+  fs_assets_intro
   short_counsel_fees
   short_assets_real_estate
   motor_vehicles.gather()
@@ -27,7 +31,8 @@ code: |
   other_assets.gather()
   short_assets_total
   nav.set_section("Liabilities")
-  set_progress(90)
+  set_progress(88)
+  fs_liabilities_intro
   liabilities.gather()
   short_liabilities_total
   short_certification
@@ -41,20 +46,39 @@ continue button field: short_deductions
 question: |
   Itemized deductions from gross income
 subquestion: |
-  Enter amounts using your chosen cadence (${ financial_cadence_default }).
-  These are amounts withheld from your gross pay.
-
-  **Examples:** federal tax, state tax, FICA, union dues.
+  Enter amounts deducted from a single paycheck
+  (${ financial_cadence_default } amounts). These are the withholdings
+  listed on your pay stub.
 fields:
-  - Federal income tax deductions: short_deduction_federal
+  - Federal income tax: short_deduction_federal
     datatype: currency
     required: False
-  - State income tax deductions: short_deduction_state
+    help: |
+      Look for "Federal Tax," "FIT," or "Fed W/H" on your pay stub.
+  - Number of federal exemptions: short_deduction_federal_exemptions
+    datatype: integer
+    required: False
+    help: |
+      The number of allowances or exemptions you claim on your W-4.
+      Check your most recent W-4 or pay stub.
+  - State income tax: short_deduction_state
     datatype: currency
     required: False
+    help: |
+      Look for "State Tax," "SIT," or "MA W/H" on your pay stub.
+  - Number of state exemptions: short_deduction_state_exemptions
+    datatype: integer
+    required: False
+    help: |
+      The number of exemptions you claim on your state M-4 form.
+      Check your most recent M-4 or pay stub.
   - F.I.C.A. and Medicare: short_deduction_fica
     datatype: currency
     required: False
+    help: |
+      Social Security and Medicare tax — look for "FICA," "SS," or
+      "OASDI" on your pay stub. You can combine FICA and Medicare
+      into a single amount here.
   - Medical insurance: short_deduction_medical
     datatype: currency
     required: False
@@ -76,12 +100,16 @@ continue button field: short_adjusted_net_income
 question: |
   Adjusted net weekly income
 subquestion: |
-  Total deductions: ${ currency(short_deductions_total_weekly) }
+  | | Weekly |
+  |---|---:|
+  | Gross income | ${ currency(income_total_weekly) } |
+  | Itemized deductions | – ${ currency(short_deductions_total_weekly) } |
+  | **Adjusted net income** | **${ currency(float(income_total_weekly) - float(short_deductions_total_weekly)) }** |
 
-  Adjusted net weekly income: ${ currency(income_total_weekly - short_deductions_total_weekly) }
+  Next, we will ask about any additional deductions (retirement, savings, etc.).
 ---
 code: |
-  short_adjusted_net_weekly_income = income_total_weekly - short_deductions_total_weekly
+  short_adjusted_net_weekly_income = float(income_total_weekly) - float(short_deductions_total_weekly)
 ---
 id: short_other_deductions
 sets:
@@ -123,12 +151,16 @@ continue button field: short_net_income
 question: |
   Net weekly income
 subquestion: |
-  Net weekly income: ${ currency(short_adjusted_net_weekly_income - short_other_deductions_total_weekly) }
+  | | Weekly |
+  |---|---:|
+  | Adjusted income | ${ currency(short_adjusted_net_weekly_income) } |
+  | Other deductions | – ${ currency(short_other_deductions_total_weekly) } |
+  | **Net income** | **${ currency(float(short_adjusted_net_weekly_income) - float(short_other_deductions_total_weekly)) }** |
 
-  This is your income after deductions.
+  This is your take-home pay before expenses.
 ---
 code: |
-  short_net_weekly_income = short_adjusted_net_weekly_income - short_other_deductions_total_weekly
+  short_net_weekly_income = float(short_adjusted_net_weekly_income) - float(short_other_deductions_total_weekly)
 ---
 id: short_prior_year
 sets:
@@ -282,10 +314,12 @@ sets:
   - short_assets_real_estate
 continue button field: short_assets_real_estate
 question: |
-  Assets - real estate
+  Assets - real estate and insurance
 subquestion: |
-  If you do not own real estate, you can leave these blank.
+  If you do not own real estate, leave those fields blank.
 fields:
+  - note: |
+      #### Real estate
   - Real estate location: short_real_estate_location
     required: False
   - Title held in the name of: short_real_estate_title
@@ -299,23 +333,61 @@ fields:
   - Equity: short_real_estate_equity
     datatype: currency
     required: False
+  - note: |
+      #### Annuities and life insurance
+  - Annuity value: short_annuity_value
+    datatype: currency
+    required: False
+    help: |
+      The current value of any annuity contracts you hold.
+  - Life insurance cash surrender value: short_life_insurance_cash_value
+    datatype: currency
+    required: False
+    help: |
+      The cash value your life insurance policy has accumulated,
+      not the death benefit amount.
 ---
 id: short_assets_total
 continue button field: short_assets_total
 question: |
   Assets summary
 subquestion: |
-  Motor vehicles, retirement plans, and other assets were collected in the previous steps.
-  Review and confirm before continuing.
+  Here is what you listed:
+
+  - **Motor vehicles:** ${ len(motor_vehicles) if defined('motor_vehicles') and motor_vehicles.there_are_any else 0 }
+  - **Retirement plans:** ${ len(pensions) if defined('pensions') and pensions.there_are_any else 0 }
+  - **Other assets:** ${ len(other_assets) if defined('other_assets') and other_assets.there_are_any else 0 }
+
+  If any of these counts look wrong, use the **Back** button to make corrections.
 ---
 id: short_liabilities_total
 continue button field: short_liabilities_total
 question: |
   Liabilities summary
 subquestion: |
-  Liabilities collected: ${ len(liabilities) if defined('liabilities') else 0 }
+  **Liabilities listed:** ${ len(liabilities) if defined('liabilities') and liabilities.there_are_any else 0 }
 
-  If this count is not correct, go back to edit liabilities.
+  If this count looks wrong, use the **Back** button to make corrections.
+
+  You are almost done — the next step is to sign and certify your
+  financial statement.
+---
+# Computed totals for short form PDF fields
+code: |
+  # Total assets: real estate equity + vehicle equities + pension values + other asset values + annuity + life insurance
+  _short_re = float(short_real_estate_equity) if defined('short_real_estate_equity') and short_real_estate_equity else 0
+  _short_vehicles = sum(float(v.equity) for v in motor_vehicles if defined(v.instanceName + '.equity')) if defined('motor_vehicles') and motor_vehicles.there_are_any else 0
+  _short_annuity = float(short_annuity_value) if defined('short_annuity_value') and short_annuity_value else 0
+  _short_life_ins = float(short_life_insurance_cash_value) if defined('short_life_insurance_cash_value') and short_life_insurance_cash_value else 0
+  _short_other = sum(float(a.value) for a in other_assets if defined(a.instanceName + '.value')) if defined('other_assets') and other_assets.there_are_any else 0
+  short_assets_total_value = currency(_short_re + _short_vehicles + _short_annuity + _short_life_ins + _short_other)
+---
+code: |
+  # Total liabilities
+  _short_liab_due = sum(float(l.amount_due) for l in liabilities if defined(l.instanceName + '.amount_due')) if defined('liabilities') and liabilities.there_are_any else 0
+  _short_liab_weekly = sum(float(l.weekly_payment) for l in liabilities if defined(l.instanceName + '.weekly_payment')) if defined('liabilities') and liabilities.there_are_any else 0
+  short_liabilities_total_amount_due = currency(_short_liab_due)
+  short_liabilities_total_weekly_payment = currency(_short_liab_weekly)
 ---
 id: short_certification
 sets:
@@ -324,11 +396,12 @@ continue button field: short_certification
 question: |
   Certification
 subquestion: |
-  Sign to certify that the information you provided is true to the best of
-  your knowledge.
+  By signing below, you certify under the penalties of perjury that the
+  information in this financial statement is true and accurate to the
+  best of your knowledge.
 fields:
-  - Signature: user_signature
-    required: False
   - Signature date: user_signature_date
     datatype: date
+    default: ${ today() }
+  - Signature: user_signature
     required: False

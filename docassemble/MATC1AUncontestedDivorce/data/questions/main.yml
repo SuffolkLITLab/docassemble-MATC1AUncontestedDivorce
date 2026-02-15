@@ -1,0 +1,646 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALMassachusetts:al_massachusetts.yml
+---
+metadata:
+  title: >-
+    Joint Divorce Petition
+  short title: >-
+    Joint Divorce Petition
+  description: |-
+    Cjd101a
+  can_I_use_this_form: |
+    If you are a married person in Massachusetts seeking an uncontested divorce, you can use this interview to complete initial court filings.
+  before_you_start: |
+    This interview will help married people in Massachusetts jointly file for an uncontested divorce.
+    
+    Before you get started, please gather:
+    
+    1. 
+    2.
+    
+    When you are finished, you will need to:
+    
+    1. 
+    2.
+  maturity: production
+  estimated_completion_minutes: 20
+  estimated_completion_delta: 5
+  LIST_topics: 
+    - "FA-06-00-00-00"
+  tags:
+    - "FA-06-00-00-00"
+  authors:
+    - Court Forms Online
+  original_form:
+    - https://www.mass.gov/info-details/probate-and-family-court-joint-petition-for-divorce-pursuant-to-gl-c208-ss-1a-cjd-101a
+  original_form_published_on: 2007-09-30
+  help_page_url: >-
+    https://www.mass.gov/guides/get-a-no-fault-1a-divorce
+  help_page_title: >-
+    Mass.gov | Get a no fault divorce
+  allowed_courts: 
+    - "Probate and Family Court"
+  typical_role: "plaintiff"
+  al_weaver_version: "1.11.0"
+  generated_on: "2025-11-09"
+  languages:
+    - en
+  jurisdiction: NAM-US-US+MA
+  review_date: 2025-11-09
+  form_titles:
+    - Joint Divorce Petition
+  form_numbers:
+    - CJ-D 101a
+  fees:
+    - Filing fee: $215.00
+  update_notes: |
+---
+code: |
+  # This controls the default country and list of states in address field questions
+  AL_DEFAULT_COUNTRY = "US"
+---
+code: |
+  # This controls the default state in address field questions
+  AL_DEFAULT_STATE = "MA"
+---
+code: |
+  github_repo_name =  'docassemble-Cjd101A'
+---
+code: |
+  interview_short_title = "Married spouses jointly file for divorce."
+---
+code: |
+  al_form_type = "starts_case" 
+---
+objects:
+  - petitioners2_former: ALPeopleList
+  - users: ALPeopleList.using(there_are_any=True)
+  - petitioners1_former: ALPeopleList
+---
+sections:
+  - review_cjd101a: Review your answers
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_cjd101a
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = ['Probate and Family Court']
+  nav.set_section("review_cjd101a")
+  user_role = "plaintiff"
+  user_ask_role = "plaintiff"
+  petitioners2_name_full_1
+  petitioners1_addresson_one_line
+  petitioners2_addresson_one_line
+  set_progress(14)
+  children2_name_full_plus_birthdate
+  marriage_breakdown_date
+  previous_action_detail
+  set_progress(28)
+  petitioners2_name_full_2
+  trial_court.division
+  docket_number
+  set_progress(42)
+  signature_date
+  set_progress(56)
+  petitioners[0].phone_number
+  petitioners[1].phone_number
+  interview_order_cjd101a = True
+---
+###################### Main order ######################
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  cjd101a_intro
+  interview_order_cjd101a
+  signature_date
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "zip": showifdef("users[0].address.zip"),
+          "reached_interview_end": True,
+      },
+  )
+  cjd101a_download
+---
+id: Joint_Divorce_Petition
+continue button field: cjd101a_intro
+question: |
+  Joint Divorce Petition
+subquestion: |
+  This interview will help married people in Massachusetts jointly file for an uncontested divorce.
+  
+  Before you get started, please gather:
+  
+  1. 
+  2.
+  
+  When you are finished, you will need to:
+  
+  1. 
+  2.
+
+  If you are a married person in Massachusetts seeking an uncontested divorce, you can use this interview to complete initial court filings.
+
+  Most people take about 20 minutes to complete this interview.
+---
+id: Marriage Information
+question: |
+  Marriage Information
+fields:
+  - "Petitioner B full name": petitioners2_name_full_1
+    maxlength: 37
+  - "Petitioner A full name": petitioners1_name_full_1
+    maxlength: 37
+  - "Where were you married? (e.g. City, State)": marriage_place
+    maxlength: 54
+  - "When were you married?": marriage_date
+    datatype: date
+  - "Where did you last live together as a couple?": petitioners_last_living_together_place
+    maxlength: 40
+  - "When did you last live together as a couple?": petitioners_last_living_together_date
+    datatype: date
+  - "Are Partner A and Partner B currently living together?": living_together
+    datatype: yesno
+---
+id: Petitioner A Details
+question: |
+  Petitioner A Details
+fields:
+  - "Petitioner A Address": petitioners1_addresson_one_line
+    maxlength: 37
+  - "Petitioner A City": petitioners1_addresscity
+    maxlength: 20
+  - "Petitioner A State": petitioners1_addressstate
+    maxlength: 5
+  - "Petitioner A Zip": petitioners1_addresszip
+    maxlength: 8
+  - "Change Petitioner A's name to former name": change_name_petitioners1
+    datatype: yesno
+  - "Petitioner A's former name": petitioners1_former_name
+    maxlength: 48
+---
+id: Petitioner B Details
+question: |
+  Petitioner B Details
+fields:
+  - "Petitioner B Address": petitioners2_addresson_one_line
+    maxlength: 37
+  - "Petitioner B City": petitioners2_addresscity
+    maxlength: 20
+  - "Petitioner B Zip": petitioners2_addresszip
+    maxlength: 8
+  - "Petitioner B State": petitioners2_addressstate
+    maxlength: 5
+  - "Change Petitioner B's name to former name": change_name_petitioners2
+    datatype: yesno
+  - "Petitioner Bs former name": petitioners2_former_name
+    maxlength: 48
+---
+id: Children
+question: |
+  Children
+fields:
+  - "PASSTHROUGH VARIABLE": children2_name_full_plus_birthdate
+    maxlength: 39
+    required: False
+  - "PASSTHROUGH VARIABLE": children1_name_full_plus_birthdate
+    maxlength: 39
+    required: False
+  - "PASSTHROUGH VARIABLE": children3_name_full_plus_birthdate
+    maxlength: 39
+    required: False
+  - "PASSTHROUGH VARIABLE": children4_name_full_plus_birthdate
+    maxlength: 39
+    required: False
+---
+id: Marriage Breakdown Date
+question: |
+  Marriage Breakdown Date
+fields:
+  - "Date of marriage breakdown": marriage_breakdown_date
+    datatype: date
+---
+id: Additional Information
+question: |
+  Additional Information
+fields:
+  - "Previous action detail": previous_action_detail
+    input type: area
+    required: False
+  - "Request no fault divorce": request_divorce_nofault
+    datatype: yesno
+  - "Request separation agreement approval": request_separation_agreement_approval
+    datatype: yesno
+  - "Merge agreement": merge_agreement
+    datatype: yesno
+    required: False
+  - "Surivive agreement": surivive_agreement
+    datatype: yesno
+    required: False
+  - "Additional request": additional_request
+    datatype: yesno
+    required: False
+  - "Additonal request detail": additonal_request_detail
+    maxlength: 84
+    required: False
+  - "Petitioner A's Attorney: bbo number": attorneys1_bbo_number
+    maxlength: 31
+    required: False
+  - "Petitioner B's Attorney: bbo number": attorneys2_bbo_number
+    maxlength: 31
+    required: False
+---
+id: Repeats
+question: |
+  Repeats
+fields:
+  - "Petitioners2 name full 2": petitioners2_name_full_2
+    maxlength: 38
+    required: False
+  - "Petitioners1 name full 2": petitioners1_name_full_2
+    maxlength: 38
+    required: False
+  - "Petitioners1 addresson one line 2": petitioners1_addresson_one_line_2
+    maxlength: 38
+    required: False
+  - "Petitioners2addresson one line 2": petitioners2addresson_one_line_2
+    maxlength: 38
+    required: False
+  - "Petitioners1 addresscity 2": petitioners1_addresscity_2
+    maxlength: 17
+    required: False
+  - "Petitioners1 addressstate 2": petitioners1_addressstate_2
+    maxlength: 9
+    required: False
+  - "Petitioners1 addresszip 2": petitioners1_addresszip_2
+    maxlength: 11
+    required: False
+  - "Petitioners2 addresscity 2": petitioners2_addresscity_2
+    maxlength: 17
+    required: False
+  - "Petitioners2 addressstate 2": petitioners2_addressstate_2
+    maxlength: 9
+    required: False
+  - "Petitioners2 addresszip 2": petitioners2_addresszip_2
+    maxlength: 11
+    required: False
+---
+id: preview cjd101a
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Edit answers" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_cjd101a'), label='Edit answers', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: cjd101a_preview_question    
+---
+code: |
+  signature_fields = ['petitioners[1].signature', 'petitioners[0].signature']
+---
+code: |
+  # This is a placeholder for the addresses that will be searched
+  # for matching address to court. Edit if court venue is based on 
+  # a different address than the user's
+  [user.address.address for user in users.complete_elements()]
+  addresses_to_search = [user.address for user in users.complete_elements()]
+---
+id: cjd101a review screen
+event: review_cjd101a
+question: |
+  Review your answers
+review:
+  - Edit: trial_court
+    button: |
+      **Trial court**
+  
+      % if defined("trial_court.division"):
+      * division: ${ trial_court.division }
+      % endif
+  - Edit: docket_number
+    button: |
+      **Docket number**:
+      ${ docket_number }
+  - Edit: petitioners2_name_full_1
+    button: |
+      **Petitioner B full name**:
+      ${ petitioners2_name_full_1 }
+  - Edit: petitioners1_name_full_1
+    button: |
+      **Petitioner A full name**:
+      ${ petitioners1_name_full_1 }
+  - Edit: petitioners1_addresson_one_line
+    button: |
+      **Petitioner A Address**:
+      ${ petitioners1_addresson_one_line }
+  - Edit: petitioners2_addresson_one_line
+    button: |
+      **Petitioner B Address**:
+      ${ petitioners2_addresson_one_line }
+  - Edit: petitioners2_addresscity
+    button: |
+      **Petitioner B City**:
+      ${ petitioners2_addresscity }
+  - Edit: petitioners2_addresszip
+    button: |
+      **Petitioner B Zip**:
+      ${ petitioners2_addresszip }
+  - Edit: petitioners1_addresscity
+    button: |
+      **Petitioner A City**:
+      ${ petitioners1_addresscity }
+  - Edit: petitioners1_addressstate
+    button: |
+      **Petitioner A State**:
+      ${ petitioners1_addressstate }
+  - Edit: petitioners1_addresszip
+    button: |
+      **Petitioner A Zip**:
+      ${ petitioners1_addresszip }
+  - Edit: petitioners2_addressstate
+    button: |
+      **Petitioner B State**:
+      ${ petitioners2_addressstate }
+  - Edit: marriage_place
+    button: |
+      **Where were you married? (e.g. City, State)**:
+      ${ marriage_place }
+  - Edit: marriage_date
+    button: |
+      **When were you married?**:
+      ${ marriage_date }
+  - Edit: petitioners_last_living_together_place
+    button: |
+      **Where did you last live together as a couple?**:
+      ${ petitioners_last_living_together_place }
+  - Edit: petitioners_last_living_together_date
+    button: |
+      **When did you last live together as a couple?**:
+      ${ petitioners_last_living_together_date }
+  - Edit: children2_name_full_plus_birthdate
+    button: |
+      **PASSTHROUGH VARIABLE**:
+      ${ children2_name_full_plus_birthdate }
+  - Edit: children1_name_full_plus_birthdate
+    button: |
+      **PASSTHROUGH VARIABLE**:
+      ${ children1_name_full_plus_birthdate }
+  - Edit: children3_name_full_plus_birthdate
+    button: |
+      **PASSTHROUGH VARIABLE**:
+      ${ children3_name_full_plus_birthdate }
+  - Edit: children4_name_full_plus_birthdate
+    button: |
+      **PASSTHROUGH VARIABLE**:
+      ${ children4_name_full_plus_birthdate }
+  - Edit: previous_action_detail
+    button: |
+      **Previous action detail**:
+      > ${ single_paragraph(previous_action_detail) }
+  - Edit: marriage_breakdown_date
+    button: |
+      **Date of marriage breakdown**:
+      ${ marriage_breakdown_date }
+  - Edit: request_divorce_nofault
+    button: |
+      **Request no fault divorce**:
+      ${ word(yesno(request_divorce_nofault)) }
+  - Edit: request_separation_agreement_approval
+    button: |
+      **Request separation agreement approval**:
+      ${ word(yesno(request_separation_agreement_approval)) }
+  - Edit: merge_agreement
+    button: |
+      **Merge agreement**:
+      ${ word(yesno(merge_agreement)) }
+  - Edit: surivive_agreement
+    button: |
+      **Surivive agreement**:
+      ${ word(yesno(surivive_agreement)) }
+  - Edit: change_name_petitioners1
+    button: |
+      **Change Petitioner A's name to former name**:
+      ${ word(yesno(change_name_petitioners1)) }
+  - Edit: petitioners1_former_name
+    button: |
+      **Petitioner A's former name**:
+      ${ petitioners1_former_name }
+  - Edit: change_name_petitioners2
+    button: |
+      **Change Petitioner B's name to former name**:
+      ${ word(yesno(change_name_petitioners2)) }
+  - Edit: petitioners2_former_name
+    button: |
+      **Petitioner Bs former name**:
+      ${ petitioners2_former_name }
+  - Edit: additional_request
+    button: |
+      **Additional request**:
+      ${ word(yesno(additional_request)) }
+  - Edit: additonal_request_detail
+    button: |
+      **Additonal request detail**:
+      ${ additonal_request_detail }
+  - Edit: signature_date
+    button: |
+      **Date of signature**:
+      ${ signature_date }
+  - Edit: petitioners.revisit
+    button: |
+      **Petitioners**
+
+      % for item in petitioners:
+        * ${ item }
+      % endfor
+  - Edit: petitioners2_name_full_2
+    button: |
+      **Petitioners2 name full 2**:
+      ${ petitioners2_name_full_2 }
+  - Edit: petitioners1_name_full_2
+    button: |
+      **Petitioners1 name full 2**:
+      ${ petitioners1_name_full_2 }
+  - Edit: petitioners1_addresson_one_line_2
+    button: |
+      **Petitioners1 addresson one line 2**:
+      ${ petitioners1_addresson_one_line_2 }
+  - Edit: petitioners2addresson_one_line_2
+    button: |
+      **Petitioners2addresson one line 2**:
+      ${ petitioners2addresson_one_line_2 }
+  - Edit: petitioners1_addresscity_2
+    button: |
+      **Petitioners1 addresscity 2**:
+      ${ petitioners1_addresscity_2 }
+  - Edit: petitioners1_addressstate_2
+    button: |
+      **Petitioners1 addressstate 2**:
+      ${ petitioners1_addressstate_2 }
+  - Edit: petitioners1_addresszip_2
+    button: |
+      **Petitioners1 addresszip 2**:
+      ${ petitioners1_addresszip_2 }
+  - Edit: petitioners2_addresscity_2
+    button: |
+      **Petitioners2 addresscity 2**:
+      ${ petitioners2_addresscity_2 }
+  - Edit: petitioners2_addressstate_2
+    button: |
+      **Petitioners2 addressstate 2**:
+      ${ petitioners2_addressstate_2 }
+  - Edit: petitioners2_addresszip_2
+    button: |
+      **Petitioners2 addresszip 2**:
+      ${ petitioners2_addresszip_2 }
+  - Edit: attorneys1_bbo_number
+    button: |
+      **Petitioner A's Attorney: bbo number**:
+      ${ attorneys1_bbo_number }
+  - Edit: attorneys2_bbo_number
+    button: |
+      **Petitioner B's Attorney: bbo number**:
+      ${ attorneys2_bbo_number }
+  - Edit: living_together
+    button: |
+      **Are Partner A and Partner B currently living together?**:
+      ${ word(yesno(living_together)) }
+---
+continue button field: petitioners.revisit
+question: |
+  Edit petitioners
+subquestion: |
+  ${ petitioners.table }
+
+  ${ petitioners.add_action() }
+---
+table: petitioners.table
+rows: petitioners
+columns:
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - Phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+edit:
+  - signature
+  - phone_number
+confirm: True
+
+---
+id: download cjd101a
+event: cjd101a_download
+question: |
+  All done
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_cjd101a'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+progress: 100
+---
+# ALDocument objects specify the metadata for each template
+objects:
+  - cjd101a_Post_interview_instructions: ALDocument.using(title="Instructions", filename="cjd101a_next_steps.docx", enabled=True, has_addendum=False)
+  - cjd101a_attachment: ALDocument.using(title="Joint Divorce Petition", filename="cjd101a", enabled=True, has_addendum=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+# Bundles group the ALDocuments into separate downloads, such as for court and for the user
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[cjd101a_Post_interview_instructions, cjd101a_attachment], filename="cjd101a", title="All forms to download for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[cjd101a_attachment],  filename="cjd101a", title="All forms to deliver to court", enabled=True)
+---
+# Each attachment defines a key in an ALDocument. We use `i` as the placeholder here so the same template is 
+# used for "preview" and "final" keys, and logic in the template checks the value of 
+# `i` to show or hide the user's signature
+attachment:
+  name: Post-interview-Instructions
+  filename: cjd101a_next_steps
+  docx template file: cjd101a_next_steps.docx
+  variable name: cjd101a_Post_interview_instructions[i]
+  skip undefined: True
+  tagged pdf: True
+---
+attachment:
+  name: cjd101a
+  filename: cjd101a
+  variable name: cjd101a_attachment[i]
+  skip undefined: True
+  pdf template file: cjd101a.pdf
+  fields:
+      - "trial_court_division": ${ trial_court.division }
+      - "docket_number": ${ docket_number }
+      - "petitioners2_name_full_1": ${ petitioners2_name_full_1 }
+      - "petitioners1_name_full_1": ${ petitioners1_name_full_1 }
+      - "petitioners1_address.on_one_line": ${ petitioners1_addresson_one_line }
+      - "petitioners2_address.on_one_line": ${ petitioners2_addresson_one_line }
+      - "petitioners2_address.city": ${ petitioners2_addresscity }
+      - "petitioners2_address.zip": ${ petitioners2_addresszip }
+      - "petitioners1_address.city": ${ petitioners1_addresscity }
+      - "petitioners1_address.state": ${ petitioners1_addressstate }
+      - "petitioners1_address.zip": ${ petitioners1_addresszip }
+      - "petitioners2_address.state": ${ petitioners2_addressstate }
+      - "marriage_place": ${ marriage_place }
+      - "marriage_date": ${ marriage_date.format() }
+      - "petitioners_last_living_together_place": ${ petitioners_last_living_together_place }
+      - "petitioners_last_living_together_date": ${ petitioners_last_living_together_date.format() }
+      - "children2_name_full_plus_birthdate": ${ children2_name_full_plus_birthdate }
+      - "children1_name_full_plus_birthdate": ${ children1_name_full_plus_birthdate }
+      - "children3_name_full_plus_birthdate": ${ children3_name_full_plus_birthdate }
+      - "children4_name_full_plus_birthdate": ${ children4_name_full_plus_birthdate }
+      - "previous_action_detail": ${ cjd101a_attachment.safe_value("previous_action_detail") }
+      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
+      - "request_divorce_nofault": ${ request_divorce_nofault }
+      - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
+      - "merge_agreement": ${ merge_agreement }
+      - "surivive_agreement": ${ surivive_agreement }
+      - "change_name_petitioners1": ${ change_name_petitioners1 }
+      - "petitioners1_former_name": ${ petitioners1_former_name }
+      - "change_name_petitioners2": ${ change_name_petitioners2 }
+      - "petitioners2_former_name": ${ petitioners2_former_name }
+      - "additional_request": ${ additional_request }
+      - "additonal_request_detail": ${ additonal_request_detail }
+      - "signature_date": ${ signature_date }
+      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
+      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
+      - "petitioners2_name_full_2": ${ petitioners2_name_full_2 }
+      - "petitioners1_name_full_2": ${ petitioners1_name_full_2 }
+      - "petitioners1_address.on_one_line_2": ${ petitioners1_addresson_one_line_2 }
+      - "petitioners2address.on_one_line_2": ${ petitioners2addresson_one_line_2 }
+      - "petitioners1_address.city_2": ${ petitioners1_addresscity_2 }
+      - "petitioners1_address.state_2": ${ petitioners1_addressstate_2 }
+      - "petitioners1_address.zip_2": ${ petitioners1_addresszip_2 }
+      - "petitioners2_address.city_2": ${ petitioners2_addresscity_2 }
+      - "petitioners2_address.state_2": ${ petitioners2_addressstate_2 }
+      - "petitioners2_address.zip_2": ${ petitioners2_addresszip_2 }
+      - "petitioners1_phone_number": ${ petitioners[0].phone_number }
+      - "petitioners2_phone_number": ${ petitioners[1].phone_number }
+      - "attorneys1_bbo_number": ${ attorneys1_bbo_number }
+      - "attorneys2_bbo_number": ${ attorneys2_bbo_number }
+---
+code: |
+  cjd101a_attachment.overflow_fields["previous_action_detail"].overflow_trigger = 252
+  cjd101a_attachment.overflow_fields["previous_action_detail"].label = "Previous action detail"
+  cjd101a_attachment.overflow_fields.gathered = True
+
+
+

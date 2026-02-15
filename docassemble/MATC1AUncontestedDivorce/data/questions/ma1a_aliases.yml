@@ -1,0 +1,60 @@
+---
+comment: |
+  Shared MA1A alias layer.
+
+  Purpose:
+    - Provide a canonical schema without breaking existing interviews.
+    - Use this file via "include:" in any interview that should be normalized.
+
+  This is intentionally conservative: only maps a small core set of fields.
+---
+code: |
+  # --- Core case identifiers ---
+  if defined("docket_number") and not defined("ma1a_docket_number"):
+    ma1a_docket_number = docket_number
+  if defined("ma1a_docket_number") and not defined("docket_number"):
+    docket_number = ma1a_docket_number
+
+  if defined("trial_court.division") and not defined("ma1a_trial_court_division"):
+    ma1a_trial_court_division = trial_court.division
+  if defined("ma1a_trial_court_division") and not defined("trial_court.division"):
+    trial_court.division = ma1a_trial_court_division
+
+  # --- Parties (canonical aliases) ---
+  if defined("users"):
+    ma1a_users = users
+    if len(users) > 0 and not defined("ma1a_primary_user"):
+      ma1a_primary_user = users[0]
+
+  # --- Contact info (primary user) ---
+  if defined("users[0].email") and not defined("ma1a_user_email"):
+    ma1a_user_email = users[0].email
+  if defined("ma1a_user_email") and defined("users") and len(users) > 0 and not defined("users[0].email"):
+    users[0].email = ma1a_user_email
+
+  if defined("users[0].phone_number") and not defined("ma1a_user_phone"):
+    ma1a_user_phone = users[0].phone_number
+  if defined("ma1a_user_phone") and defined("users") and len(users) > 0 and not defined("users[0].phone_number"):
+    users[0].phone_number = ma1a_user_phone
+
+  # --- Children list ---
+  if defined("children") and not defined("ma1a_children"):
+    ma1a_children = children
+  if defined("ma1a_children") and not defined("children"):
+    children = ma1a_children
+
+  # --- Signatures ---
+  if defined("signature_date") and not defined("ma1a_signature_date"):
+    ma1a_signature_date = signature_date
+  if defined("user_signature_date") and not defined("ma1a_signature_date"):
+    ma1a_signature_date = user_signature_date
+  if defined("ma1a_signature_date"):
+    if not defined("signature_date"):
+      signature_date = ma1a_signature_date
+    if not defined("user_signature_date"):
+      user_signature_date = ma1a_signature_date
+
+  if defined("attorney_signature_date") and not defined("ma1a_attorney_signature_date"):
+    ma1a_attorney_signature_date = attorney_signature_date
+  if defined("ma1a_attorney_signature_date") and not defined("attorney_signature_date"):
+    attorney_signature_date = ma1a_attorney_signature_date
