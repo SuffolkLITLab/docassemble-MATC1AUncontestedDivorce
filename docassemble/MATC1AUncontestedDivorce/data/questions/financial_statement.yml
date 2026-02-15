@@ -41,7 +41,7 @@ code: |
     "Eligibility",
     "Court and parties",
     "Personal information",
-    "Cadence",
+    "Pay frequency",
     "Income",
     "Deductions",
     "Expenses",
@@ -55,7 +55,21 @@ objects:
   - users: ALPeopleList.using(target_number=1)
   - other_parties: ALPeopleList.using(target_number=1)
   - trial_court: MACourt
-  - user_employer_address: DAAddress
+---
+objects:
+  - fs_short: ALDocument.using(title="Financial Statement (Short Form)", filename="financial_statement_short", enabled=True, has_addendum=False)
+  - fs_long: ALDocument.using(title="Financial Statement (Long Form)", filename="financial_statement_long", enabled=True, has_addendum=False)
+  - fs_schedule_a: ALDocument.using(title="Schedule A - Self-Employment Income", filename="financial_statement_schedule_a", enabled=True, has_addendum=False)
+  - fs_schedule_b: ALDocument.using(title="Schedule B - Rental Income", filename="financial_statement_schedule_b", enabled=True, has_addendum=False)
+  - al_user_bundle: ALDocumentBundle.using(elements=[fs_short, fs_long, fs_schedule_a, fs_schedule_b], filename="financial_statement", title="All financial statement forms for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[fs_short, fs_long, fs_schedule_a, fs_schedule_b], filename="financial_statement", title="All financial statement forms for the court", enabled=True)
+---
+code: |
+  # Enable only the form type that applies
+  fs_short.enabled = financial_form_type == "short"
+  fs_long.enabled = financial_form_type == "long"
+  fs_schedule_a.enabled = defined("has_self_employment_income") and has_self_employment_income
+  fs_schedule_b.enabled = defined("has_rental_income") and has_rental_income
 ---
 sections:
   - review_fs: Review your answers
@@ -74,7 +88,7 @@ code: |
 
   nav.set_section("Eligibility")
   set_progress(15)
-  gross_annual_income
+  income_above_threshold
   financial_form_type
 
   nav.set_section("Court and parties")
@@ -89,17 +103,18 @@ code: |
   users[0].birthdate
   users[0].phone_number
   users[0].address.address
-  user_employer_name
+  user_employment
   if user_employer_name or user_job_title:
-    user_employer_address.address
+    user_employer_address_street
   user_has_health_insurance
 
-  nav.set_section("Cadence")
+  nav.set_section("Pay frequency")
   set_progress(45)
   financial_cadence_default
 
   nav.set_section("Income")
-  set_progress(55)
+  set_progress(50)
+  fs_income_intro
   income_list.gathered
   income_schedule_triggers
 
@@ -108,7 +123,8 @@ code: |
   if has_rental_income:
     schedule_b_sections
   income_totals
-  confirm_no_income
+  if income_total_weekly == 0:
+    confirm_no_income
 
   if financial_form_type == "short":
     short_form_sections
@@ -131,4 +147,788 @@ code: |
     financial_form_type = "long"
   else:
     financial_form_type = "short"
+---
+# Helper: extract individual income amounts from ALIncomeList for PDF field mapping
+code: |
+  def _income_weekly(source_key):
+    """Get weekly income for a specific source from the income list."""
+    try:
+      total = 0
+      for item in income_list:
+        if hasattr(item, 'source') and item.source == source_key:
+          total += item.total(times_per_year=52) if hasattr(item, 'total') else 0
+      return total
+    except:
+      return 0
+
+  fs_income_wages = _income_weekly("wages")
+  fs_income_overtime = _income_weekly("overtime")
+  fs_income_part_time = _income_weekly("part_time")
+  fs_income_tips = _income_weekly("tips")
+  fs_income_commissions = _income_weekly("commissions")
+  fs_income_dividends = _income_weekly("dividends")
+  fs_income_trusts = _income_weekly("trusts")
+  fs_income_pensions = _income_weekly("pensions")
+  fs_income_social_security = _income_weekly("social_security")
+  fs_income_disability = _income_weekly("disability")
+  fs_income_public_assistance = _income_weekly("public_assistance")
+  fs_income_support_received = _income_weekly("support_received")
+  fs_income_royalties = _income_weekly("royalties")
+  fs_income_household_contrib = _income_weekly("household_contrib")
+  fs_income_other = _income_weekly("other")
+---
+# Helper: convert short form deduction/expense amounts to weekly for PDF
+code: |
+  def _to_weekly_safe(var_name):
+    """Safely convert a variable to weekly using the chosen cadence."""
+    try:
+      amt = value(var_name) if defined(var_name) else 0
+      return to_weekly(amt, financial_cadence_default) if amt else 0
+    except:
+      return 0
+---
+# Short form attachment block
+attachment:
+  name: fs_short
+  filename: financial_statement_short
+  variable name: fs_short[i]
+  skip undefined: True
+  pdf template file: financial_statement_short.pdf
+  fields:
+    # Header (repeated on all pages)
+    - "trial_court_division": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number": ${ docket_number }
+    - "trial_court_division_p2": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p2": ${ docket_number }
+    - "trial_court_division_p3": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p3": ${ docket_number }
+    - "trial_court_division_p4": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p4": ${ docket_number }
+    - "plaintiff_petitioner_name": ${ users[0] }
+    - "defendant_petitioner_name": ${ other_parties[0] }
+    # Section 1: Personal Information
+    - "user_name": ${ users[0] }
+    - "user_ssn": ${ showifdef('user_ssn') }
+    - "user_address_street": ${ users[0].address.address }
+    - "user_address_city": ${ users[0].address.city }
+    - "user_address_state": ${ users[0].address.state }
+    - "user_address_zip": ${ users[0].address.zip }
+    - "user_phone": ${ users[0].phone_number }
+    - "user_birthdate": ${ users[0].birthdate.format() if hasattr(users[0].birthdate, 'format') else str(users[0].birthdate) if defined('users[0].birthdate') else '' }
+    - "children_living_count": ${ showifdef('children_living_with_user_count') }
+    - "user_occupation": ${ showifdef('user_job_title') }
+    - "user_employer_name": ${ showifdef('user_employer_name') }
+    - "employer_address_street": ${ showifdef('user_employer_address_street') }
+    - "employer_address_city": ${ showifdef('user_employer_address_city') }
+    - "employer_address_state": ${ showifdef('user_employer_address_state') }
+    - "employer_address_zip": ${ showifdef('user_employer_address_zip') }
+    - "employer_phone": ${ showifdef('user_employer_phone') }
+    - "health_insurance_yes": ${ user_has_health_insurance if defined('user_has_health_insurance') else False }
+    - "health_insurance_no": ${ not user_has_health_insurance if defined('user_has_health_insurance') else False }
+    - "health_insurance_provider": ${ showifdef('user_health_insurance_provider') }
+    # Section 2: Income sub-type checkboxes
+    - "income_check_salary": ${ True if fs_income_wages else False }
+    - "income_check_wages": ${ True if fs_income_wages else False }
+    - "income_check_dividends": ${ True if fs_income_dividends else False }
+    - "income_check_interest": ${ True if fs_income_dividends else False }
+    - "income_check_trusts": ${ True if fs_income_trusts else False }
+    - "income_check_annuities": ${ True if fs_income_trusts else False }
+    - "income_check_pensions": ${ True if fs_income_pensions else False }
+    - "income_check_retirement": ${ True if fs_income_pensions else False }
+    - "income_check_disability": ${ True if fs_income_disability else False }
+    - "income_check_unemployment": ${ True if fs_income_disability else False }
+    - "income_check_workers_comp": ${ True if fs_income_disability else False }
+    - "income_check_child_support": ${ True if fs_income_support_received else False }
+    - "income_check_alimony": ${ True if fs_income_support_received else False }
+    # Section 2: Gross Weekly Income
+    - "income_base_pay": ${ currency(fs_income_wages) if fs_income_wages else '' }
+    - "income_overtime": ${ currency(fs_income_overtime) if fs_income_overtime else '' }
+    - "income_part_time": ${ currency(fs_income_part_time) if fs_income_part_time else '' }
+    - "income_self_employment": ${ currency(income_self_employment_weekly) if defined('income_self_employment_weekly') and income_self_employment_weekly else '' }
+    - "income_tips": ${ currency(fs_income_tips) if fs_income_tips else '' }
+    - "income_commissions": ${ currency(fs_income_commissions) if fs_income_commissions else '' }
+    - "income_dividends": ${ currency(fs_income_dividends) if fs_income_dividends else '' }
+    - "income_trusts": ${ currency(fs_income_trusts) if fs_income_trusts else '' }
+    - "income_pensions": ${ currency(fs_income_pensions) if fs_income_pensions else '' }
+    - "income_social_security": ${ currency(fs_income_social_security) if fs_income_social_security else '' }
+    - "income_disability": ${ currency(fs_income_disability) if fs_income_disability else '' }
+    - "income_public_assistance": ${ currency(fs_income_public_assistance) if fs_income_public_assistance else '' }
+    - "income_child_support": ${ currency(fs_income_support_received) if fs_income_support_received else '' }
+    - "income_rental": ${ currency(income_rental_weekly) if defined('income_rental_weekly') and income_rental_weekly else '' }
+    - "income_royalties": ${ currency(fs_income_royalties) if fs_income_royalties else '' }
+    - "income_contributions": ${ currency(fs_income_household_contrib) if fs_income_household_contrib else '' }
+    - "income_other": ${ currency(fs_income_other) if fs_income_other else '' }
+    - "income_other_specify": ${ showifdef('income_other_description') }
+    - "income_total": ${ currency(income_total_weekly) }
+    # Section 3: Itemized Deductions
+    - "deduction_federal": ${ currency(_to_weekly_safe('short_deduction_federal')) if _to_weekly_safe('short_deduction_federal') else '' }
+    - "deduction_federal_exemptions": ${ showifdef('short_deduction_federal_exemptions') }
+    - "deduction_state": ${ currency(_to_weekly_safe('short_deduction_state')) if _to_weekly_safe('short_deduction_state') else '' }
+    - "deduction_state_exemptions": ${ showifdef('short_deduction_state_exemptions') }
+    - "deduction_fica": ${ currency(_to_weekly_safe('short_deduction_fica')) if _to_weekly_safe('short_deduction_fica') else '' }
+    - "deduction_medical": ${ currency(_to_weekly_safe('short_deduction_medical')) if _to_weekly_safe('short_deduction_medical') else '' }
+    - "deduction_union": ${ currency(_to_weekly_safe('short_deduction_union')) if _to_weekly_safe('short_deduction_union') else '' }
+    - "deduction_total": ${ currency(short_deductions_total_weekly) if defined('short_deductions_total_weekly') else '' }
+    # Section 4: Adjusted Net Weekly Income
+    - "adjusted_net_weekly": ${ currency(short_adjusted_net_weekly_income) if defined('short_adjusted_net_weekly_income') else '' }
+    # Section 5: Other Deductions
+    - "other_deduction_credit_union": ${ currency(_to_weekly_safe('short_other_deduction_credit_union_loan')) if _to_weekly_safe('short_other_deduction_credit_union_loan') else '' }
+    - "other_deduction_savings": ${ currency(_to_weekly_safe('short_other_deduction_savings')) if _to_weekly_safe('short_other_deduction_savings') else '' }
+    - "other_deduction_retirement": ${ currency(_to_weekly_safe('short_other_deduction_retirement')) if _to_weekly_safe('short_other_deduction_retirement') else '' }
+    - "other_deduction_other": ${ currency(_to_weekly_safe('short_other_deduction_other_amount')) if _to_weekly_safe('short_other_deduction_other_amount') else '' }
+    - "other_deduction_other_specify": ${ showifdef('short_other_deduction_other_description') }
+    - "other_deduction_total": ${ currency(short_other_deductions_total_weekly) if defined('short_other_deductions_total_weekly') else '' }
+    # Section 6: Net Weekly Income
+    - "net_weekly_income": ${ currency(short_net_weekly_income) if defined('short_net_weekly_income') else '' }
+    # Section 7: Prior Year
+    - "prior_year_gross": ${ currency(prior_year_gross_amount) if defined('prior_year_gross_amount') else '' }
+    - "social_security_years": ${ showifdef('years_paid_into_social_security') }
+    # Section 8: Expenses
+    - "expense_rent": ${ currency(_to_weekly_safe('short_expense_rent')) if _to_weekly_safe('short_expense_rent') else '' }
+    - "expense_homeowner_insurance": ${ currency(_to_weekly_safe('short_expense_home_insurance')) if _to_weekly_safe('short_expense_home_insurance') else '' }
+    - "expense_maintenance": ${ currency(_to_weekly_safe('short_expense_maintenance')) if _to_weekly_safe('short_expense_maintenance') else '' }
+    - "expense_heat": ${ currency(_to_weekly_safe('short_expense_heat')) if _to_weekly_safe('short_expense_heat') else '' }
+    - "expense_electricity": ${ currency(_to_weekly_safe('short_expense_electric')) if _to_weekly_safe('short_expense_electric') else '' }
+    - "expense_telephone": ${ currency(_to_weekly_safe('short_expense_phone')) if _to_weekly_safe('short_expense_phone') else '' }
+    - "expense_water": ${ currency(_to_weekly_safe('short_expense_water')) if _to_weekly_safe('short_expense_water') else '' }
+    - "expense_food": ${ currency(_to_weekly_safe('short_expense_food')) if _to_weekly_safe('short_expense_food') else '' }
+    - "expense_house_supplies": ${ currency(_to_weekly_safe('short_expense_supplies')) if _to_weekly_safe('short_expense_supplies') else '' }
+    - "expense_laundry": ${ currency(_to_weekly_safe('short_expense_laundry')) if _to_weekly_safe('short_expense_laundry') else '' }
+    - "expense_clothing": ${ currency(_to_weekly_safe('short_expense_clothing')) if _to_weekly_safe('short_expense_clothing') else '' }
+    - "expense_life_insurance": ${ currency(_to_weekly_safe('short_expense_life_insurance')) if _to_weekly_safe('short_expense_life_insurance') else '' }
+    - "expense_medical_insurance": ${ currency(_to_weekly_safe('short_expense_medical_insurance')) if _to_weekly_safe('short_expense_medical_insurance') else '' }
+    - "expense_uninsured_medical": ${ currency(_to_weekly_safe('short_expense_uninsured_medical')) if _to_weekly_safe('short_expense_uninsured_medical') else '' }
+    - "expense_incidentals": ${ currency(_to_weekly_safe('short_expense_incidentals')) if _to_weekly_safe('short_expense_incidentals') else '' }
+    - "expense_motor_vehicle": ${ currency(_to_weekly_safe('short_expense_motor_vehicle')) if _to_weekly_safe('short_expense_motor_vehicle') else '' }
+    - "expense_motor_payment": ${ currency(_to_weekly_safe('short_expense_motor_vehicle_payment')) if _to_weekly_safe('short_expense_motor_vehicle_payment') else '' }
+    - "expense_child_care": ${ currency(_to_weekly_safe('short_expense_child_care')) if _to_weekly_safe('short_expense_child_care') else '' }
+    - "expense_other": ${ currency(_to_weekly_safe('short_expense_other_amount')) if _to_weekly_safe('short_expense_other_amount') else '' }
+    - "expense_other_explain": ${ showifdef('short_expense_other_description') }
+    - "expense_total": ${ currency(short_expenses_total_weekly) if defined('short_expenses_total_weekly') else '' }
+    # Section 9: Counsel Fees
+    - "counsel_retainer": ${ currency(short_counsel_retainer) if defined('short_counsel_retainer') else '' }
+    - "counsel_fees_incurred": ${ currency(short_counsel_fees_incurred) if defined('short_counsel_fees_incurred') else '' }
+    - "counsel_anticipated_from": ${ currency(short_counsel_range_min) if defined('short_counsel_range_min') else '' }
+    - "counsel_anticipated_to": ${ currency(short_counsel_range_max) if defined('short_counsel_range_max') else '' }
+    # Section 10: Assets
+    - "asset_real_estate_location": ${ showifdef('short_real_estate_location') }
+    - "asset_real_estate_title": ${ showifdef('short_real_estate_title') }
+    - "asset_real_estate_fmv": ${ currency(short_real_estate_fmv) if defined('short_real_estate_fmv') else '' }
+    - "asset_real_estate_mortgage": ${ currency(short_real_estate_mortgage) if defined('short_real_estate_mortgage') else '' }
+    - "asset_real_estate_equity": ${ currency(short_real_estate_equity) if defined('short_real_estate_equity') else '' }
+    - "asset_vehicle1_fmv": ${ currency(motor_vehicles[0].fmv) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].fmv') else '' }
+    - "asset_vehicle1_loan": ${ currency(motor_vehicles[0].loan) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].loan') else '' }
+    - "asset_vehicle1_equity": ${ currency(motor_vehicles[0].equity) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].equity') else '' }
+    - "asset_vehicle2_fmv": ${ currency(motor_vehicles[1].fmv) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].fmv') else '' }
+    - "asset_vehicle2_loan": ${ currency(motor_vehicles[1].loan) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].loan') else '' }
+    - "asset_vehicle2_equity": ${ currency(motor_vehicles[1].equity) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].equity') else '' }
+    - "asset_pension1_institution": ${ pensions[0].institution if len(pensions) > 0 and defined('pensions[0].institution') else '' }
+    - "asset_pension1_account": ${ pensions[0].account_number if len(pensions) > 0 and defined('pensions[0].account_number') else '' }
+    - "asset_pension2_institution": ${ pensions[1].institution if len(pensions) > 1 and defined('pensions[1].institution') else '' }
+    - "asset_pension2_account": ${ pensions[1].account_number if len(pensions) > 1 and defined('pensions[1].account_number') else '' }
+    - "asset_pension3_institution": ${ pensions[2].institution if len(pensions) > 2 and defined('pensions[2].institution') else '' }
+    - "asset_pension3_account": ${ pensions[2].account_number if len(pensions) > 2 and defined('pensions[2].account_number') else '' }
+    - "asset_annuity": ${ showifdef('short_annuity_value') }
+    - "asset_life_insurance_cash": ${ showifdef('short_life_insurance_cash_value') }
+    - "asset_savings1_institution": ${ other_assets[0].institution if len(other_assets) > 0 and defined('other_assets[0].institution') else '' }
+    - "asset_savings1_account": ${ other_assets[0].account_number if len(other_assets) > 0 and defined('other_assets[0].account_number') else '' }
+    - "asset_savings2_institution": ${ other_assets[1].institution if len(other_assets) > 1 and defined('other_assets[1].institution') else '' }
+    - "asset_savings2_account": ${ other_assets[1].account_number if len(other_assets) > 1 and defined('other_assets[1].account_number') else '' }
+    - "asset_savings3_institution": ${ other_assets[2].institution if len(other_assets) > 2 and defined('other_assets[2].institution') else '' }
+    - "asset_savings3_account": ${ other_assets[2].account_number if len(other_assets) > 2 and defined('other_assets[2].account_number') else '' }
+    - "asset_other1": ${ other_assets[3].description if len(other_assets) > 3 and defined('other_assets[3].description') else '' }
+    - "asset_other1_value": ${ currency(other_assets[3].value) if len(other_assets) > 3 and defined('other_assets[3].value') else '' }
+    - "asset_other2": ${ other_assets[4].description if len(other_assets) > 4 and defined('other_assets[4].description') else '' }
+    - "asset_other2_value": ${ currency(other_assets[4].value) if len(other_assets) > 4 and defined('other_assets[4].value') else '' }
+    - "asset_total": ${ showifdef('short_assets_total_value') }
+    # Section 11: Liabilities
+    - "liability1_creditor": ${ liabilities[0].creditor if len(liabilities) > 0 and defined('liabilities[0].creditor') else '' }
+    - "liability1_nature": ${ liabilities[0].nature if len(liabilities) > 0 and defined('liabilities[0].nature') else '' }
+    - "liability1_date": ${ liabilities[0].date_incurred if len(liabilities) > 0 and defined('liabilities[0].date_incurred') else '' }
+    - "liability1_amount_due": ${ currency(liabilities[0].amount_due) if len(liabilities) > 0 and defined('liabilities[0].amount_due') else '' }
+    - "liability1_weekly_payment": ${ currency(liabilities[0].weekly_payment) if len(liabilities) > 0 and defined('liabilities[0].weekly_payment') else '' }
+    - "liability2_creditor": ${ liabilities[1].creditor if len(liabilities) > 1 and defined('liabilities[1].creditor') else '' }
+    - "liability2_nature": ${ liabilities[1].nature if len(liabilities) > 1 and defined('liabilities[1].nature') else '' }
+    - "liability2_date": ${ liabilities[1].date_incurred if len(liabilities) > 1 and defined('liabilities[1].date_incurred') else '' }
+    - "liability2_amount_due": ${ currency(liabilities[1].amount_due) if len(liabilities) > 1 and defined('liabilities[1].amount_due') else '' }
+    - "liability2_weekly_payment": ${ currency(liabilities[1].weekly_payment) if len(liabilities) > 1 and defined('liabilities[1].weekly_payment') else '' }
+    - "liability3_creditor": ${ liabilities[2].creditor if len(liabilities) > 2 and defined('liabilities[2].creditor') else '' }
+    - "liability3_nature": ${ liabilities[2].nature if len(liabilities) > 2 and defined('liabilities[2].nature') else '' }
+    - "liability3_date": ${ liabilities[2].date_incurred if len(liabilities) > 2 and defined('liabilities[2].date_incurred') else '' }
+    - "liability3_amount_due": ${ currency(liabilities[2].amount_due) if len(liabilities) > 2 and defined('liabilities[2].amount_due') else '' }
+    - "liability3_weekly_payment": ${ currency(liabilities[2].weekly_payment) if len(liabilities) > 2 and defined('liabilities[2].weekly_payment') else '' }
+    - "liability4_creditor": ${ liabilities[3].creditor if len(liabilities) > 3 and defined('liabilities[3].creditor') else '' }
+    - "liability4_nature": ${ liabilities[3].nature if len(liabilities) > 3 and defined('liabilities[3].nature') else '' }
+    - "liability4_date": ${ liabilities[3].date_incurred if len(liabilities) > 3 and defined('liabilities[3].date_incurred') else '' }
+    - "liability4_amount_due": ${ currency(liabilities[3].amount_due) if len(liabilities) > 3 and defined('liabilities[3].amount_due') else '' }
+    - "liability4_weekly_payment": ${ currency(liabilities[3].weekly_payment) if len(liabilities) > 3 and defined('liabilities[3].weekly_payment') else '' }
+    - "liability_total_due": ${ showifdef('short_liabilities_total_amount_due') }
+    - "liability_total_weekly": ${ showifdef('short_liabilities_total_weekly_payment') }
+    # Certification
+    - "cert_date": ${ user_signature_date.format() if defined('user_signature_date') and hasattr(user_signature_date, 'format') else str(user_signature_date) if defined('user_signature_date') else '' }
+    - "cert_signature": ${ showifdef('user_signature') }
+    - "attorney_date": ${ attorney_signature_date.format() if defined('attorney_signature_date') and hasattr(attorney_signature_date, 'format') else str(attorney_signature_date) if defined('attorney_signature_date') else '' }
+    - "attorney_signature": ${ attorney_signature if defined('attorney_signature') else '' }
+    - "attorney_name": ${ showifdef('attorney_print_name') }
+    - "attorney_address_street": ${ showifdef('attorney_address') }
+    - "attorney_address_city": ""
+    - "attorney_address_state": ""
+    - "attorney_address_zip": ""
+    - "attorney_phone": ${ showifdef('attorney_phone') }
+    - "attorney_bbo": ${ showifdef('attorney_bbo') }
+---
+# Helper: extract long form expense amounts from ALExpenseList for PDF
+code: |
+  def _long_expense_weekly(source_key):
+    """Get weekly expense for a specific source from the long expense list."""
+    try:
+      total = 0
+      for item in long_expense_list:
+        if hasattr(item, 'source') and item.source == source_key:
+          total += item.total(times_per_year=52) if hasattr(item, 'total') else 0
+      return total
+    except:
+      return 0
+---
+# Helper: extract schedule_a expense amounts by source key
+code: |
+  def _schedule_a_expense_monthly(source_key):
+    """Get monthly expense amount for a specific source from schedule_a_expenses."""
+    try:
+      total = 0
+      for item in schedule_a_expenses:
+        if hasattr(item, 'source') and item.source == source_key:
+          total += item.total(times_per_year=12) if hasattr(item, 'total') else 0
+      return total
+    except:
+      return 0
+---
+# Helper: extract schedule_b expense amounts by source key
+code: |
+  def _schedule_b_expense_annual(source_key):
+    """Get annual expense amount for a specific source from schedule_b_expenses."""
+    try:
+      total = 0
+      for item in schedule_b_expenses:
+        if hasattr(item, 'source') and item.source == source_key:
+          total += item.total(times_per_year=1) if hasattr(item, 'total') else 0
+      return total
+    except:
+      return 0
+---
+# Long form attachment block
+attachment:
+  name: fs_long
+  filename: financial_statement_long
+  variable name: fs_long[i]
+  skip undefined: True
+  pdf template file: financial_statement_long.pdf
+  fields:
+    # Header (repeated on all pages)
+    - "trial_court_division": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number": ${ docket_number }
+    - "trial_court_division_p2": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p2": ${ docket_number }
+    - "trial_court_division_p3": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p3": ${ docket_number }
+    - "trial_court_division_p4": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p4": ${ docket_number }
+    - "trial_court_division_p5": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p5": ${ docket_number }
+    - "trial_court_division_p6": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p6": ${ docket_number }
+    - "trial_court_division_p7": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p7": ${ docket_number }
+    - "trial_court_division_p8": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p8": ${ docket_number }
+    - "trial_court_division_p9": ${ trial_court.division if hasattr(trial_court, 'division') else '' }
+    - "docket_number_p9": ${ docket_number }
+    - "plaintiff_petitioner_name": ${ users[0] }
+    - "defendant_petitioner_name": ${ other_parties[0] }
+    # Section I: Personal Information
+    - "user_name": ${ users[0] }
+    - "user_ssn": ${ showifdef('user_ssn') }
+    - "user_address_street": ${ users[0].address.address }
+    - "user_address_city": ${ users[0].address.city }
+    - "user_address_state": ${ users[0].address.state }
+    - "user_address_zip": ${ users[0].address.zip }
+    - "user_phone": ${ users[0].phone_number }
+    - "user_birthdate": ${ users[0].birthdate.format() if hasattr(users[0].birthdate, 'format') else str(users[0].birthdate) if defined('users[0].birthdate') else '' }
+    - "children_living_count": ${ showifdef('children_living_with_user_count') }
+    - "user_occupation": ${ showifdef('user_job_title') }
+    - "user_employer_name": ${ showifdef('user_employer_name') }
+    - "employer_address_street": ${ showifdef('user_employer_address_street') }
+    - "employer_address_city": ${ showifdef('user_employer_address_city') }
+    - "employer_address_state": ${ showifdef('user_employer_address_state') }
+    - "employer_address_zip": ${ showifdef('user_employer_address_zip') }
+    - "employer_phone": ${ showifdef('user_employer_phone') }
+    - "health_insurance_yes": ${ user_has_health_insurance if defined('user_has_health_insurance') else False }
+    - "health_insurance_no": ${ not user_has_health_insurance if defined('user_has_health_insurance') else False }
+    - "health_insurance_provider": ${ showifdef('user_health_insurance_provider') }
+    # Section II: Income sub-type checkboxes
+    - "income_check_salary": ${ True if fs_income_wages else False }
+    - "income_check_wages": ${ True if fs_income_wages else False }
+    - "income_check_dividends": ${ True if fs_income_dividends else False }
+    - "income_check_interest": ${ True if fs_income_dividends else False }
+    - "income_check_trusts": ${ True if fs_income_trusts else False }
+    - "income_check_annuities": ${ True if fs_income_trusts else False }
+    - "income_check_pensions": ${ True if fs_income_pensions else False }
+    - "income_check_retirement": ${ True if fs_income_pensions else False }
+    - "income_check_disability": ${ True if fs_income_disability else False }
+    - "income_check_unemployment": ${ True if fs_income_disability else False }
+    - "income_check_workers_comp": ${ True if fs_income_disability else False }
+    - "income_check_child_support": ${ True if fs_income_support_received else False }
+    - "income_check_alimony": ${ True if fs_income_support_received else False }
+    # Section II: Gross Weekly Income
+    - "income_base_pay": ${ currency(fs_income_wages) if fs_income_wages else '' }
+    - "income_overtime": ${ currency(fs_income_overtime) if fs_income_overtime else '' }
+    - "income_part_time": ${ currency(fs_income_part_time) if fs_income_part_time else '' }
+    - "income_self_employment": ${ currency(income_self_employment_weekly) if defined('income_self_employment_weekly') and income_self_employment_weekly else '' }
+    - "income_tips": ${ currency(fs_income_tips) if fs_income_tips else '' }
+    - "income_commissions": ${ currency(fs_income_commissions) if fs_income_commissions else '' }
+    - "income_dividends": ${ currency(fs_income_dividends) if fs_income_dividends else '' }
+    - "income_trusts": ${ currency(fs_income_trusts) if fs_income_trusts else '' }
+    - "income_pensions": ${ currency(fs_income_pensions) if fs_income_pensions else '' }
+    - "income_social_security": ${ currency(fs_income_social_security) if fs_income_social_security else '' }
+    - "income_disability": ${ currency(fs_income_disability) if fs_income_disability else '' }
+    - "income_public_assistance": ${ currency(fs_income_public_assistance) if fs_income_public_assistance else '' }
+    - "income_child_support": ${ currency(fs_income_support_received) if fs_income_support_received else '' }
+    - "income_rental": ${ currency(income_rental_weekly) if defined('income_rental_weekly') and income_rental_weekly else '' }
+    - "income_royalties": ${ currency(fs_income_royalties) if fs_income_royalties else '' }
+    - "income_contributions": ${ currency(fs_income_household_contrib) if fs_income_household_contrib else '' }
+    - "income_other": ${ currency(fs_income_other) if fs_income_other else '' }
+    - "income_other_specify": ${ showifdef('income_other_description') }
+    - "income_total": ${ currency(income_total_weekly) }
+    # Section III: Deductions (long form has more detail)
+    - "deduction_federal": ${ currency(_to_weekly_safe('long_deduction_federal')) if _to_weekly_safe('long_deduction_federal') else '' }
+    - "deduction_federal_allowances": ${ showifdef('long_federal_allowances') }
+    - "deduction_state": ${ currency(_to_weekly_safe('long_deduction_state')) if _to_weekly_safe('long_deduction_state') else '' }
+    - "deduction_state_allowances": ${ showifdef('long_state_allowances') }
+    - "deduction_fica": ${ currency(_to_weekly_safe('long_deduction_fica')) if _to_weekly_safe('long_deduction_fica') else '' }
+    - "deduction_medicare": ${ currency(_to_weekly_safe('long_deduction_medicare')) if _to_weekly_safe('long_deduction_medicare') else '' }
+    - "deduction_medical": ${ currency(_to_weekly_safe('long_deduction_medical')) if _to_weekly_safe('long_deduction_medical') else '' }
+    - "deduction_dental": ${ currency(_to_weekly_safe('long_deduction_dental')) if _to_weekly_safe('long_deduction_dental') else '' }
+    - "deduction_vision": ${ currency(_to_weekly_safe('long_deduction_vision')) if _to_weekly_safe('long_deduction_vision') else '' }
+    - "deduction_union": ${ currency(_to_weekly_safe('long_deduction_union')) if _to_weekly_safe('long_deduction_union') else '' }
+    - "deduction_child_support": ${ currency(_to_weekly_safe('long_deduction_child_support')) if _to_weekly_safe('long_deduction_child_support') else '' }
+    - "deduction_spousal_support": ${ currency(_to_weekly_safe('long_deduction_spousal_support')) if _to_weekly_safe('long_deduction_spousal_support') else '' }
+    - "deduction_retirement": ${ currency(_to_weekly_safe('long_deduction_retirement')) if _to_weekly_safe('long_deduction_retirement') else '' }
+    - "deduction_savings": ${ currency(_to_weekly_safe('long_deduction_savings')) if _to_weekly_safe('long_deduction_savings') else '' }
+    - "deduction_deferred_comp": ${ currency(_to_weekly_safe('long_deduction_deferred_comp')) if _to_weekly_safe('long_deduction_deferred_comp') else '' }
+    - "deduction_credit_union_loan": ${ currency(_to_weekly_safe('long_deduction_credit_union_loan')) if _to_weekly_safe('long_deduction_credit_union_loan') else '' }
+    - "deduction_credit_union_savings": ${ currency(_to_weekly_safe('long_deduction_credit_union_savings')) if _to_weekly_safe('long_deduction_credit_union_savings') else '' }
+    - "deduction_charity": ${ currency(_to_weekly_safe('long_deduction_charity')) if _to_weekly_safe('long_deduction_charity') else '' }
+    - "deduction_life_insurance": ${ currency(_to_weekly_safe('long_deduction_life_insurance')) if _to_weekly_safe('long_deduction_life_insurance') else '' }
+    - "deduction_other": ${ currency(_to_weekly_safe('long_deduction_other_amount')) if _to_weekly_safe('long_deduction_other_amount') else '' }
+    - "deduction_other_specify": ${ showifdef('long_deduction_other_description') }
+    - "deduction_total": ${ currency(long_deductions_total_weekly) if defined('long_deductions_total_weekly') else '' }
+    # Section IV: Net Weekly Income
+    - "net_income_gross": ${ currency(income_total_weekly) }
+    - "net_income_deductions": ${ currency(long_deductions_total_weekly) if defined('long_deductions_total_weekly') else '' }
+    - "net_income_net": ${ currency(long_net_weekly_income) if defined('long_net_weekly_income') else '' }
+    # Section V: Prior Year
+    - "prior_year_gross": ${ currency(prior_year_gross_amount) if defined('prior_year_gross_amount') else '' }
+    - "social_security_years": ${ showifdef('years_paid_into_social_security') }
+    # Section VI: Expense sub-type checkboxes
+    - "expense_check_maintenance": ${ True }
+    - "expense_check_condo": ${ True }
+    - "expense_check_water": ${ True }
+    - "expense_check_sewer": ${ True }
+    - "expense_check_propane": ${ True }
+    - "expense_check_natural_gas": ${ True }
+    # Section VI: Expenses
+    - "expense_rent": ${ currency(_long_expense_weekly('rent')) if _long_expense_weekly('rent') else '' }
+    - "expense_mortgage": ${ currency(_long_expense_weekly('mortgage')) if _long_expense_weekly('mortgage') else '' }
+    - "expense_property_tax": ${ currency(_long_expense_weekly('property_tax')) if _long_expense_weekly('property_tax') else '' }
+    - "expense_home_insurance": ${ currency(_long_expense_weekly('home_insurance')) if _long_expense_weekly('home_insurance') else '' }
+    - "expense_maintenance_fees": ${ currency(_long_expense_weekly('maintenance_fees')) if _long_expense_weekly('maintenance_fees') else '' }
+    - "expense_heat": ${ currency(_long_expense_weekly('heat')) if _long_expense_weekly('heat') else '' }
+    - "expense_electric": ${ currency(_long_expense_weekly('electric')) if _long_expense_weekly('electric') else '' }
+    - "expense_gas": ${ currency(_long_expense_weekly('gas')) if _long_expense_weekly('gas') else '' }
+    - "expense_phone": ${ currency(_long_expense_weekly('phone')) if _long_expense_weekly('phone') else '' }
+    - "expense_water": ${ currency(_long_expense_weekly('water')) if _long_expense_weekly('water') else '' }
+    - "expense_food": ${ currency(_long_expense_weekly('food')) if _long_expense_weekly('food') else '' }
+    - "expense_supplies": ${ currency(_long_expense_weekly('supplies')) if _long_expense_weekly('supplies') else '' }
+    - "expense_laundry": ${ currency(_long_expense_weekly('laundry')) if _long_expense_weekly('laundry') else '' }
+    - "expense_dry_cleaning": ${ currency(_long_expense_weekly('dry_cleaning')) if _long_expense_weekly('dry_cleaning') else '' }
+    - "expense_clothing": ${ currency(_long_expense_weekly('clothing')) if _long_expense_weekly('clothing') else '' }
+    - "expense_life_insurance": ${ currency(_long_expense_weekly('life_insurance')) if _long_expense_weekly('life_insurance') else '' }
+    - "expense_medical_insurance": ${ currency(_long_expense_weekly('medical_insurance')) if _long_expense_weekly('medical_insurance') else '' }
+    - "expense_dental_insurance": ${ currency(_long_expense_weekly('dental_insurance')) if _long_expense_weekly('dental_insurance') else '' }
+    - "expense_vision_insurance": ${ currency(_long_expense_weekly('vision_insurance')) if _long_expense_weekly('vision_insurance') else '' }
+    - "expense_uninsured_medical": ${ currency(_long_expense_weekly('uninsured_medical')) if _long_expense_weekly('uninsured_medical') else '' }
+    - "expense_uninsured_dental": ${ currency(_long_expense_weekly('uninsured_dental')) if _long_expense_weekly('uninsured_dental') else '' }
+    - "expense_motor_vehicle": ${ currency(_long_expense_weekly('motor_vehicle')) if _long_expense_weekly('motor_vehicle') else '' }
+    - "expense_fuel": ${ currency(_long_expense_weekly('fuel')) if _long_expense_weekly('fuel') else '' }
+    - "expense_vehicle_insurance": ${ currency(_long_expense_weekly('vehicle_insurance')) if _long_expense_weekly('vehicle_insurance') else '' }
+    - "expense_vehicle_maintenance": ${ currency(_long_expense_weekly('vehicle_maintenance')) if _long_expense_weekly('vehicle_maintenance') else '' }
+    - "expense_loan_payments": ${ currency(_long_expense_weekly('loan_payments')) if _long_expense_weekly('loan_payments') else '' }
+    - "expense_entertainment": ${ currency(_long_expense_weekly('entertainment')) if _long_expense_weekly('entertainment') else '' }
+    - "expense_vacation": ${ currency(_long_expense_weekly('vacation')) if _long_expense_weekly('vacation') else '' }
+    - "expense_cable": ${ currency(_long_expense_weekly('cable')) if _long_expense_weekly('cable') else '' }
+    - "expense_child_support": ${ currency(_long_expense_weekly('child_support')) if _long_expense_weekly('child_support') else '' }
+    - "expense_child_day_care": ${ currency(_long_expense_weekly('child_day_care')) if _long_expense_weekly('child_day_care') else '' }
+    - "expense_child_education": ${ currency(_long_expense_weekly('child_education')) if _long_expense_weekly('child_education') else '' }
+    - "expense_education_self": ${ currency(_long_expense_weekly('education_self')) if _long_expense_weekly('education_self') else '' }
+    - "expense_uniforms": ${ currency(_long_expense_weekly('uniforms')) if _long_expense_weekly('uniforms') else '' }
+    - "expense_employment_travel": ${ currency(_long_expense_weekly('employment_travel')) if _long_expense_weekly('employment_travel') else '' }
+    - "expense_continuing_education": ${ currency(_long_expense_weekly('continuing_education')) if _long_expense_weekly('continuing_education') else '' }
+    - "expense_employment_other": ${ currency(_long_expense_weekly('employment_other')) if _long_expense_weekly('employment_other') else '' }
+    - "expense_employment_other_specify": ${ showifdef('long_expense_employment_other_description') }
+    - "expense_lottery": ${ currency(_long_expense_weekly('lottery')) if _long_expense_weekly('lottery') else '' }
+    - "expense_charity": ${ currency(_long_expense_weekly('charity')) if _long_expense_weekly('charity') else '' }
+    - "expense_child_allowance": ${ currency(_long_expense_weekly('child_allowance')) if _long_expense_weekly('child_allowance') else '' }
+    - "expense_visitation_travel": ${ currency(_long_expense_weekly('visitation_travel')) if _long_expense_weekly('visitation_travel') else '' }
+    - "expense_other": ${ currency(_long_expense_weekly('other')) if _long_expense_weekly('other') else '' }
+    - "expense_other_specify": ${ showifdef('long_expense_other_description') }
+    - "expense_total": ${ currency(long_expenses_total_weekly) if defined('long_expenses_total_weekly') else '' }
+    # Section VII: Counsel Fees
+    - "counsel_retainer": ${ currency(long_counsel_retainer) if defined('long_counsel_retainer') else '' }
+    - "counsel_fees_incurred": ${ currency(long_counsel_fees_incurred) if defined('long_counsel_fees_incurred') else '' }
+    - "counsel_anticipated_from": ${ currency(long_counsel_range_min) if defined('long_counsel_range_min') else '' }
+    - "counsel_anticipated_to": ${ currency(long_counsel_range_max) if defined('long_counsel_range_max') else '' }
+    # Section VIII.A: Real Estate - Primary
+    - "primary_re_address": ${ showifdef('long_primary_real_estate_address') }
+    - "primary_re_city": ${ showifdef('long_primary_real_estate_city') }
+    - "primary_re_state": ${ showifdef('long_primary_real_estate_state') }
+    - "primary_re_title": ${ showifdef('long_primary_real_estate_title') }
+    - "primary_re_purchase_price": ${ currency(long_primary_real_estate_purchase_price) if defined('long_primary_real_estate_purchase_price') else '' }
+    - "primary_re_purchase_year": ${ showifdef('long_primary_real_estate_purchase_year') }
+    - "primary_re_assessed_value": ${ currency(long_primary_real_estate_assessed_value) if defined('long_primary_real_estate_assessed_value') else '' }
+    - "primary_re_assessment_date": ${ long_primary_real_estate_assessment_date.format() if defined('long_primary_real_estate_assessment_date') else '' }
+    - "primary_re_fmv": ${ currency(long_primary_real_estate_fmv) if defined('long_primary_real_estate_fmv') else '' }
+    - "primary_re_first_mortgage": ${ currency(long_primary_real_estate_first_mortgage) if defined('long_primary_real_estate_first_mortgage') else '' }
+    - "primary_re_second_mortgage": ${ currency(long_primary_real_estate_second_mortgage) if defined('long_primary_real_estate_second_mortgage') else '' }
+    - "primary_re_equity": ${ currency(long_primary_real_estate_equity) if defined('long_primary_real_estate_equity') else '' }
+    # Section VIII.A: Real Estate - Secondary
+    - "secondary_re_address": ${ showifdef('long_secondary_real_estate_address') }
+    - "secondary_re_city": ${ showifdef('long_secondary_real_estate_city') }
+    - "secondary_re_state": ${ showifdef('long_secondary_real_estate_state') }
+    - "secondary_re_title": ${ showifdef('long_secondary_real_estate_title') }
+    - "secondary_re_purchase_price": ${ currency(long_secondary_real_estate_purchase_price) if defined('long_secondary_real_estate_purchase_price') else '' }
+    - "secondary_re_purchase_year": ${ showifdef('long_secondary_real_estate_purchase_year') }
+    - "secondary_re_assessed_value": ${ currency(long_secondary_real_estate_assessed_value) if defined('long_secondary_real_estate_assessed_value') else '' }
+    - "secondary_re_assessment_date": ${ long_secondary_real_estate_assessment_date.format() if defined('long_secondary_real_estate_assessment_date') else '' }
+    - "secondary_re_fmv": ${ currency(long_secondary_real_estate_fmv) if defined('long_secondary_real_estate_fmv') else '' }
+    - "secondary_re_first_mortgage": ${ currency(long_secondary_real_estate_first_mortgage) if defined('long_secondary_real_estate_first_mortgage') else '' }
+    - "secondary_re_second_mortgage": ${ currency(long_secondary_real_estate_second_mortgage) if defined('long_secondary_real_estate_second_mortgage') else '' }
+    - "secondary_re_equity": ${ currency(long_secondary_real_estate_equity) if defined('long_secondary_real_estate_equity') else '' }
+    # Section VIII.B: Motor Vehicles
+    - "vehicle1_type": ${ motor_vehicles[0].vehicle_type if len(motor_vehicles) > 0 and defined('motor_vehicles[0].vehicle_type') else '' }
+    - "vehicle1_make": ${ motor_vehicles[0].make if len(motor_vehicles) > 0 and defined('motor_vehicles[0].make') else '' }
+    - "vehicle1_model": ${ motor_vehicles[0].model if len(motor_vehicles) > 0 and defined('motor_vehicles[0].model') else '' }
+    - "vehicle1_purchase_price": ${ currency(motor_vehicles[0].purchase_price) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].purchase_price') else '' }
+    - "vehicle1_purchase_year": ${ motor_vehicles[0].purchase_year if len(motor_vehicles) > 0 and defined('motor_vehicles[0].purchase_year') else '' }
+    - "vehicle1_fmv": ${ currency(motor_vehicles[0].fair_market_value) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].fair_market_value') else '' }
+    - "vehicle1_loan": ${ currency(motor_vehicles[0].outstanding_loan) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].outstanding_loan') else '' }
+    - "vehicle1_equity": ${ currency(motor_vehicles[0].equity) if len(motor_vehicles) > 0 and defined('motor_vehicles[0].equity') else '' }
+    - "vehicle2_type": ${ motor_vehicles[1].vehicle_type if len(motor_vehicles) > 1 and defined('motor_vehicles[1].vehicle_type') else '' }
+    - "vehicle2_make": ${ motor_vehicles[1].make if len(motor_vehicles) > 1 and defined('motor_vehicles[1].make') else '' }
+    - "vehicle2_model": ${ motor_vehicles[1].model if len(motor_vehicles) > 1 and defined('motor_vehicles[1].model') else '' }
+    - "vehicle2_purchase_price": ${ currency(motor_vehicles[1].purchase_price) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].purchase_price') else '' }
+    - "vehicle2_purchase_year": ${ motor_vehicles[1].purchase_year if len(motor_vehicles) > 1 and defined('motor_vehicles[1].purchase_year') else '' }
+    - "vehicle2_fmv": ${ currency(motor_vehicles[1].fair_market_value) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].fair_market_value') else '' }
+    - "vehicle2_loan": ${ currency(motor_vehicles[1].outstanding_loan) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].outstanding_loan') else '' }
+    - "vehicle2_equity": ${ currency(motor_vehicles[1].equity) if len(motor_vehicles) > 1 and defined('motor_vehicles[1].equity') else '' }
+    # Section VIII.C: Pensions
+    - "pension_institution": ${ pensions[0].institution if len(pensions) > 0 and defined('pensions[0].institution') else '' }
+    - "pension_account": ${ pensions[0].account_number if len(pensions) > 0 and defined('pensions[0].account_number') else '' }
+    - "pension_beneficiary": ${ pensions[0].beneficiary if len(pensions) > 0 and defined('pensions[0].beneficiary') else '' }
+    - "pension_defined_benefit": ${ currency(pensions[0].defined_benefit_amount) if len(pensions) > 0 and defined('pensions[0].defined_benefit_amount') else '' }
+    - "pension_defined_contribution": ${ currency(pensions[0].defined_contribution_amount) if len(pensions) > 0 and defined('pensions[0].defined_contribution_amount') else '' }
+    - "pension_dc_institution": ${ pensions[1].institution if len(pensions) > 1 and defined('pensions[1].institution') else '' }
+    - "pension_dc_account": ${ pensions[1].account_number if len(pensions) > 1 and defined('pensions[1].account_number') else '' }
+    - "pension_dc_beneficiary": ${ pensions[1].beneficiary if len(pensions) > 1 and defined('pensions[1].beneficiary') else '' }
+    # Section VIII.D: Other Assets (mapped from other_assets list by asset_type)
+    - "asset_checking": ${ currency(other_assets.total(asset_type='checking')) if other_assets.total(asset_type='checking') else '' }
+    - "checking_institution": ""
+    - "checking_account": ""
+    - "checking_beneficiary": ""
+    - "asset_savings": ${ currency(other_assets.total(asset_type='savings')) if other_assets.total(asset_type='savings') else '' }
+    - "savings_institution": ""
+    - "savings_account": ""
+    - "savings_beneficiary": ""
+    - "asset_cash": ${ currency(other_assets.total(asset_type='cash')) if other_assets.total(asset_type='cash') else '' }
+    - "cash_institution": ""
+    - "cash_account": ""
+    - "cash_beneficiary": ""
+    - "asset_cd": ${ currency(other_assets.total(asset_type='cd')) if other_assets.total(asset_type='cd') else '' }
+    - "cd_institution": ""
+    - "cd_account": ""
+    - "cd_beneficiary": ""
+    - "asset_credit_union": ${ currency(other_assets.total(asset_type='credit_union')) if other_assets.total(asset_type='credit_union') else '' }
+    - "credit_union_institution": ""
+    - "credit_union_account": ""
+    - "credit_union_beneficiary": ""
+    - "asset_escrow": ${ currency(other_assets.total(asset_type='escrow')) if other_assets.total(asset_type='escrow') else '' }
+    - "escrow_institution": ""
+    - "escrow_account": ""
+    - "escrow_beneficiary": ""
+    - "asset_stocks": ${ currency(other_assets.total(asset_type='stocks')) if other_assets.total(asset_type='stocks') else '' }
+    - "stocks_institution": ""
+    - "stocks_account": ""
+    - "stocks_beneficiary": ""
+    - "asset_bonds": ${ currency(other_assets.total(asset_type='bonds')) if other_assets.total(asset_type='bonds') else '' }
+    - "bonds_institution": ""
+    - "bonds_account": ""
+    - "bonds_beneficiary": ""
+    - "asset_bond_funds": ${ currency(other_assets.total(asset_type='bond_funds')) if other_assets.total(asset_type='bond_funds') else '' }
+    - "bond_funds_institution": ""
+    - "bond_funds_account": ""
+    - "bond_funds_beneficiary": ""
+    - "asset_notes": ${ currency(other_assets.total(asset_type='notes_held')) if other_assets.total(asset_type='notes_held') else '' }
+    - "notes_institution": ""
+    - "notes_account": ""
+    - "notes_beneficiary": ""
+    - "asset_brokerage": ${ currency(other_assets.total(asset_type='brokerage_cash')) if other_assets.total(asset_type='brokerage_cash') else '' }
+    - "brokerage_institution": ""
+    - "brokerage_account": ""
+    - "brokerage_beneficiary": ""
+    - "asset_money_market": ${ currency(other_assets.total(asset_type='money_market')) if other_assets.total(asset_type='money_market') else '' }
+    - "money_market_institution": ""
+    - "money_market_account": ""
+    - "money_market_beneficiary": ""
+    - "asset_us_savings_bonds": ${ currency(other_assets.total(asset_type='us_savings_bonds')) if other_assets.total(asset_type='us_savings_bonds') else '' }
+    - "us_savings_bonds_institution": ""
+    - "us_savings_bonds_account": ""
+    - "us_savings_bonds_beneficiary": ""
+    - "asset_ira": ${ currency(other_assets.total(asset_type='ira')) if other_assets.total(asset_type='ira') else '' }
+    - "ira_institution": ""
+    - "ira_account": ""
+    - "ira_beneficiary": ""
+    - "asset_keogh": ${ currency(other_assets.total(asset_type='keough')) if other_assets.total(asset_type='keough') else '' }
+    - "keogh_institution": ""
+    - "keogh_account": ""
+    - "keogh_beneficiary": ""
+    - "asset_profit_sharing": ${ currency(other_assets.total(asset_type='profit_sharing')) if other_assets.total(asset_type='profit_sharing') else '' }
+    - "profit_sharing_institution": ""
+    - "profit_sharing_account": ""
+    - "profit_sharing_beneficiary": ""
+    - "asset_deferred_comp": ${ currency(other_assets.total(asset_type='deferred_comp')) if other_assets.total(asset_type='deferred_comp') else '' }
+    - "deferred_comp_institution": ""
+    - "deferred_comp_account": ""
+    - "deferred_comp_beneficiary": ""
+    - "asset_other_retirement": ${ currency(other_assets.total(asset_type='other_retirement')) if other_assets.total(asset_type='other_retirement') else '' }
+    - "other_retirement_institution": ""
+    - "other_retirement_account": ""
+    - "other_retirement_beneficiary": ""
+    - "asset_annuity": ${ currency(other_assets.total(asset_type='annuity')) if other_assets.total(asset_type='annuity') else '' }
+    - "annuity_institution": ""
+    - "annuity_account": ""
+    - "annuity_beneficiary": ""
+    - "asset_life_insurance_cash": ${ currency(other_assets.total(asset_type='life_insurance_cash')) if other_assets.total(asset_type='life_insurance_cash') else '' }
+    - "life_insurance_cash_institution": ""
+    - "life_insurance_cash_account": ""
+    - "life_insurance_cash_beneficiary": ""
+    - "asset_judgments": ${ currency(other_assets.total(asset_type='judgments_liens')) if other_assets.total(asset_type='judgments_liens') else '' }
+    - "asset_inheritances": ${ currency(other_assets.total(asset_type='pending_inheritance')) if other_assets.total(asset_type='pending_inheritance') else '' }
+    - "asset_jewelry": ${ currency(other_assets.total(asset_type='jewelry')) if other_assets.total(asset_type='jewelry') else '' }
+    - "asset_safe_deposit": ${ currency(other_assets.total(asset_type='safe_deposit')) if other_assets.total(asset_type='safe_deposit') else '' }
+    - "asset_firearms": ${ currency(other_assets.total(asset_type='firearms')) if other_assets.total(asset_type='firearms') else '' }
+    - "asset_collections": ${ currency(other_assets.total(asset_type='collections')) if other_assets.total(asset_type='collections') else '' }
+    - "asset_tools": ${ currency(other_assets.total(asset_type='tools_equipment')) if other_assets.total(asset_type='tools_equipment') else '' }
+    - "asset_crops": ${ currency(other_assets.total(asset_type='crops_livestock')) if other_assets.total(asset_type='crops_livestock') else '' }
+    - "asset_furnishings": ${ currency(other_assets.total(asset_type='home_furnishings')) if other_assets.total(asset_type='home_furnishings') else '' }
+    - "asset_arts": ${ currency(other_assets.total(asset_type='arts_antiques')) if other_assets.total(asset_type='arts_antiques') else '' }
+    - "asset_other1": ""
+    - "asset_other1_value": ${ currency(other_assets.total(asset_type='other')) if other_assets.total(asset_type='other') else '' }
+    - "asset_other2": ""
+    - "asset_other2_value": ""
+    - "asset_total": ${ showifdef('long_assets_total_value') }
+    # Section IX: Liabilities (long form has more rows)
+    - "liability1_creditor": ${ liabilities[0].creditor if len(liabilities) > 0 and defined('liabilities[0].creditor') else '' }
+    - "liability1_nature": ${ liabilities[0].debt_type if len(liabilities) > 0 and defined('liabilities[0].debt_type') else '' }
+    - "liability1_date": ${ liabilities[0].date_incurred if len(liabilities) > 0 and defined('liabilities[0].date_incurred') else '' }
+    - "liability1_amount_due": ${ currency(liabilities[0].amount_due) if len(liabilities) > 0 and defined('liabilities[0].amount_due') else '' }
+    - "liability1_weekly_payment": ${ currency(liabilities[0].weekly_payment) if len(liabilities) > 0 and defined('liabilities[0].weekly_payment') else '' }
+    - "liability2_creditor": ${ liabilities[1].creditor if len(liabilities) > 1 and defined('liabilities[1].creditor') else '' }
+    - "liability2_nature": ${ liabilities[1].debt_type if len(liabilities) > 1 and defined('liabilities[1].debt_type') else '' }
+    - "liability2_date": ${ liabilities[1].date_incurred if len(liabilities) > 1 and defined('liabilities[1].date_incurred') else '' }
+    - "liability2_amount_due": ${ currency(liabilities[1].amount_due) if len(liabilities) > 1 and defined('liabilities[1].amount_due') else '' }
+    - "liability2_weekly_payment": ${ currency(liabilities[1].weekly_payment) if len(liabilities) > 1 and defined('liabilities[1].weekly_payment') else '' }
+    - "liability3_creditor": ${ liabilities[2].creditor if len(liabilities) > 2 and defined('liabilities[2].creditor') else '' }
+    - "liability3_nature": ${ liabilities[2].debt_type if len(liabilities) > 2 and defined('liabilities[2].debt_type') else '' }
+    - "liability3_date": ${ liabilities[2].date_incurred if len(liabilities) > 2 and defined('liabilities[2].date_incurred') else '' }
+    - "liability3_amount_due": ${ currency(liabilities[2].amount_due) if len(liabilities) > 2 and defined('liabilities[2].amount_due') else '' }
+    - "liability3_weekly_payment": ${ currency(liabilities[2].weekly_payment) if len(liabilities) > 2 and defined('liabilities[2].weekly_payment') else '' }
+    - "liability4_creditor": ${ liabilities[3].creditor if len(liabilities) > 3 and defined('liabilities[3].creditor') else '' }
+    - "liability4_nature": ${ liabilities[3].debt_type if len(liabilities) > 3 and defined('liabilities[3].debt_type') else '' }
+    - "liability4_date": ${ liabilities[3].date_incurred if len(liabilities) > 3 and defined('liabilities[3].date_incurred') else '' }
+    - "liability4_amount_due": ${ currency(liabilities[3].amount_due) if len(liabilities) > 3 and defined('liabilities[3].amount_due') else '' }
+    - "liability4_weekly_payment": ${ currency(liabilities[3].weekly_payment) if len(liabilities) > 3 and defined('liabilities[3].weekly_payment') else '' }
+    - "liability5_creditor": ${ liabilities[4].creditor if len(liabilities) > 4 and defined('liabilities[4].creditor') else '' }
+    - "liability5_nature": ${ liabilities[4].debt_type if len(liabilities) > 4 and defined('liabilities[4].debt_type') else '' }
+    - "liability5_date": ${ liabilities[4].date_incurred if len(liabilities) > 4 and defined('liabilities[4].date_incurred') else '' }
+    - "liability5_amount_due": ${ currency(liabilities[4].amount_due) if len(liabilities) > 4 and defined('liabilities[4].amount_due') else '' }
+    - "liability5_weekly_payment": ${ currency(liabilities[4].weekly_payment) if len(liabilities) > 4 and defined('liabilities[4].weekly_payment') else '' }
+    - "liability6_creditor": ${ liabilities[5].creditor if len(liabilities) > 5 and defined('liabilities[5].creditor') else '' }
+    - "liability6_nature": ${ liabilities[5].debt_type if len(liabilities) > 5 and defined('liabilities[5].debt_type') else '' }
+    - "liability6_date": ${ liabilities[5].date_incurred if len(liabilities) > 5 and defined('liabilities[5].date_incurred') else '' }
+    - "liability6_amount_due": ${ currency(liabilities[5].amount_due) if len(liabilities) > 5 and defined('liabilities[5].amount_due') else '' }
+    - "liability6_weekly_payment": ${ currency(liabilities[5].weekly_payment) if len(liabilities) > 5 and defined('liabilities[5].weekly_payment') else '' }
+    - "liability7_creditor": ${ liabilities[6].creditor if len(liabilities) > 6 and defined('liabilities[6].creditor') else '' }
+    - "liability7_nature": ${ liabilities[6].debt_type if len(liabilities) > 6 and defined('liabilities[6].debt_type') else '' }
+    - "liability7_date": ${ liabilities[6].date_incurred if len(liabilities) > 6 and defined('liabilities[6].date_incurred') else '' }
+    - "liability7_amount_due": ${ currency(liabilities[6].amount_due) if len(liabilities) > 6 and defined('liabilities[6].amount_due') else '' }
+    - "liability7_weekly_payment": ${ currency(liabilities[6].weekly_payment) if len(liabilities) > 6 and defined('liabilities[6].weekly_payment') else '' }
+    - "liability8_creditor": ${ liabilities[7].creditor if len(liabilities) > 7 and defined('liabilities[7].creditor') else '' }
+    - "liability8_nature": ${ liabilities[7].debt_type if len(liabilities) > 7 and defined('liabilities[7].debt_type') else '' }
+    - "liability8_date": ${ liabilities[7].date_incurred if len(liabilities) > 7 and defined('liabilities[7].date_incurred') else '' }
+    - "liability8_amount_due": ${ currency(liabilities[7].amount_due) if len(liabilities) > 7 and defined('liabilities[7].amount_due') else '' }
+    - "liability8_weekly_payment": ${ currency(liabilities[7].weekly_payment) if len(liabilities) > 7 and defined('liabilities[7].weekly_payment') else '' }
+    - "liability9_creditor": ${ liabilities[8].creditor if len(liabilities) > 8 and defined('liabilities[8].creditor') else '' }
+    - "liability9_nature": ${ liabilities[8].debt_type if len(liabilities) > 8 and defined('liabilities[8].debt_type') else '' }
+    - "liability9_date": ${ liabilities[8].date_incurred if len(liabilities) > 8 and defined('liabilities[8].date_incurred') else '' }
+    - "liability9_amount_due": ${ currency(liabilities[8].amount_due) if len(liabilities) > 8 and defined('liabilities[8].amount_due') else '' }
+    - "liability9_weekly_payment": ${ currency(liabilities[8].weekly_payment) if len(liabilities) > 8 and defined('liabilities[8].weekly_payment') else '' }
+    - "liability10_creditor": ${ liabilities[9].creditor if len(liabilities) > 9 and defined('liabilities[9].creditor') else '' }
+    - "liability10_nature": ${ liabilities[9].debt_type if len(liabilities) > 9 and defined('liabilities[9].debt_type') else '' }
+    - "liability10_date": ${ liabilities[9].date_incurred if len(liabilities) > 9 and defined('liabilities[9].date_incurred') else '' }
+    - "liability10_amount_due": ${ currency(liabilities[9].amount_due) if len(liabilities) > 9 and defined('liabilities[9].amount_due') else '' }
+    - "liability10_weekly_payment": ${ currency(liabilities[9].weekly_payment) if len(liabilities) > 9 and defined('liabilities[9].weekly_payment') else '' }
+    - "liability11_creditor": ${ liabilities[10].creditor if len(liabilities) > 10 and defined('liabilities[10].creditor') else '' }
+    - "liability11_nature": ${ liabilities[10].debt_type if len(liabilities) > 10 and defined('liabilities[10].debt_type') else '' }
+    - "liability11_date": ${ liabilities[10].date_incurred if len(liabilities) > 10 and defined('liabilities[10].date_incurred') else '' }
+    - "liability11_amount_due": ${ currency(liabilities[10].amount_due) if len(liabilities) > 10 and defined('liabilities[10].amount_due') else '' }
+    - "liability11_weekly_payment": ${ currency(liabilities[10].weekly_payment) if len(liabilities) > 10 and defined('liabilities[10].weekly_payment') else '' }
+    - "liability_total_due": ${ showifdef('long_liabilities_total_amount_due') }
+    - "liability_total_weekly": ${ showifdef('long_liabilities_total_weekly_payment') }
+    # Certification / Notary / Attorney
+    - "cert_date": ${ user_signature_date.format() if defined('user_signature_date') and hasattr(user_signature_date, 'format') else str(user_signature_date) if defined('user_signature_date') else '' }
+    - "cert_signature": ${ showifdef('user_signature') }
+    - "notary_county": ${ showifdef('notary_county') }
+    - "notary_name": ${ showifdef('notary_name') }
+    - "notary_date": ${ notary_appearance_date.format() if defined('notary_appearance_date') else '' }
+    - "notary_signature": ""
+    - "notary_commission_expires": ${ showifdef('notary_commission_expires') }
+    - "attorney_date": ${ attorney_signature_date.format() if defined('attorney_signature_date') and hasattr(attorney_signature_date, 'format') else str(attorney_signature_date) if defined('attorney_signature_date') else '' }
+    - "attorney_signature": ${ attorney_signature if defined('attorney_signature') else '' }
+    - "attorney_name": ${ showifdef('attorney_print_name') }
+    - "attorney_address": ${ showifdef('attorney_address') }
+    - "attorney_city": ""
+    - "attorney_state": ""
+    - "attorney_zip": ""
+    - "attorney_phone": ${ showifdef('attorney_phone') }
+    - "attorney_bbo": ${ showifdef('attorney_bbo') }
+---
+# Schedule A attachment block
+attachment:
+  name: fs_schedule_a
+  filename: financial_statement_schedule_a
+  variable name: fs_schedule_a[i]
+  skip undefined: True
+  pdf template file: financial_statement_schedule_a.pdf
+  fields:
+    # Header
+    - "sa_name": ${ users[0] }
+    - "sa_docket_number": ${ docket_number }
+    # Gross receipts
+    - "sa_gross_monthly_receipts": ${ currency(schedule_a_gross_monthly_receipts) if defined('schedule_a_gross_monthly_receipts') else '' }
+    # Monthly business expenses
+    - "sa_cost_goods": ${ currency(_schedule_a_expense_monthly('cost_goods')) if _schedule_a_expense_monthly('cost_goods') else '' }
+    - "sa_advertising": ${ currency(_schedule_a_expense_monthly('advertising')) if _schedule_a_expense_monthly('advertising') else '' }
+    - "sa_bad_debts": ${ currency(_schedule_a_expense_monthly('bad_debts')) if _schedule_a_expense_monthly('bad_debts') else '' }
+    - "sa_motor_vehicle_gas": ${ currency(_schedule_a_expense_monthly('motor_vehicle_gas')) if _schedule_a_expense_monthly('motor_vehicle_gas') else '' }
+    - "sa_motor_vehicle_insurance": ${ currency(_schedule_a_expense_monthly('motor_vehicle_insurance')) if _schedule_a_expense_monthly('motor_vehicle_insurance') else '' }
+    - "sa_motor_vehicle_maintenance": ${ currency(_schedule_a_expense_monthly('motor_vehicle_maintenance')) if _schedule_a_expense_monthly('motor_vehicle_maintenance') else '' }
+    - "sa_motor_vehicle_registration": ${ currency(_schedule_a_expense_monthly('motor_vehicle_registration')) if _schedule_a_expense_monthly('motor_vehicle_registration') else '' }
+    - "sa_commissions": ${ currency(_schedule_a_expense_monthly('commissions')) if _schedule_a_expense_monthly('commissions') else '' }
+    - "sa_depletion": ${ currency(_schedule_a_expense_monthly('depletion')) if _schedule_a_expense_monthly('depletion') else '' }
+    - "sa_dues_publications": ${ currency(_schedule_a_expense_monthly('dues_publications')) if _schedule_a_expense_monthly('dues_publications') else '' }
+    - "sa_employee_benefits": ${ currency(_schedule_a_expense_monthly('employee_benefits')) if _schedule_a_expense_monthly('employee_benefits') else '' }
+    - "sa_freight": ${ currency(_schedule_a_expense_monthly('freight')) if _schedule_a_expense_monthly('freight') else '' }
+    - "sa_insurance_other": ${ currency(_schedule_a_expense_monthly('insurance_other')) if _schedule_a_expense_monthly('insurance_other') else '' }
+    - "sa_insurance_other_specify": ""
+    - "sa_mortgage_interest": ${ currency(_schedule_a_expense_monthly('mortgage_interest')) if _schedule_a_expense_monthly('mortgage_interest') else '' }
+    - "sa_loan_interest": ${ currency(_schedule_a_expense_monthly('loan_interest')) if _schedule_a_expense_monthly('loan_interest') else '' }
+    - "sa_legal_professional": ${ currency(_schedule_a_expense_monthly('legal_professional')) if _schedule_a_expense_monthly('legal_professional') else '' }
+    - "sa_office_expenses": ${ currency(_schedule_a_expense_monthly('office_expenses')) if _schedule_a_expense_monthly('office_expenses') else '' }
+    - "sa_laundry_cleaning": ${ currency(_schedule_a_expense_monthly('laundry_cleaning')) if _schedule_a_expense_monthly('laundry_cleaning') else '' }
+    - "sa_pension_profit_sharing": ${ currency(_schedule_a_expense_monthly('pension_profit_sharing')) if _schedule_a_expense_monthly('pension_profit_sharing') else '' }
+    - "sa_rent_leased_equipment": ${ currency(_schedule_a_expense_monthly('rent_leased_equipment')) if _schedule_a_expense_monthly('rent_leased_equipment') else '' }
+    - "sa_machinery_equipment": ${ currency(_schedule_a_expense_monthly('machinery_equipment')) if _schedule_a_expense_monthly('machinery_equipment') else '' }
+    - "sa_other_business_property": ${ currency(_schedule_a_expense_monthly('other_business_property')) if _schedule_a_expense_monthly('other_business_property') else '' }
+    - "sa_repairs": ${ currency(_schedule_a_expense_monthly('repairs')) if _schedule_a_expense_monthly('repairs') else '' }
+    - "sa_supplies": ${ currency(_schedule_a_expense_monthly('supplies')) if _schedule_a_expense_monthly('supplies') else '' }
+    - "sa_taxes": ${ currency(_schedule_a_expense_monthly('taxes')) if _schedule_a_expense_monthly('taxes') else '' }
+    - "sa_travel": ${ currency(_schedule_a_expense_monthly('travel')) if _schedule_a_expense_monthly('travel') else '' }
+    - "sa_meals_entertainment": ${ currency(_schedule_a_expense_monthly('meals_entertainment')) if _schedule_a_expense_monthly('meals_entertainment') else '' }
+    - "sa_utilities_phones": ${ currency(_schedule_a_expense_monthly('utilities_phones')) if _schedule_a_expense_monthly('utilities_phones') else '' }
+    - "sa_wages": ${ currency(_schedule_a_expense_monthly('wages')) if _schedule_a_expense_monthly('wages') else '' }
+    - "sa_other_expenses": ${ currency(_schedule_a_expense_monthly('other')) if _schedule_a_expense_monthly('other') else '' }
+    - "sa_other_expenses_specify": ""
+    # Totals
+    - "sa_total_monthly_expenses": ${ currency(schedule_a_total_monthly_expenses) if defined('schedule_a_total_monthly_expenses') else '' }
+    - "sa_weekly_business_income": ${ currency(schedule_a_weekly_business_income) if defined('schedule_a_weekly_business_income') else '' }
+    # Nature of business
+    - "sa_business_nature": ${ showifdef('schedule_a_business_nature') }
+    # Seasonal
+    - "sa_is_seasonal_yes": ${ schedule_a_is_seasonal if defined('schedule_a_is_seasonal') else False }
+    - "sa_is_seasonal_no": ${ not schedule_a_is_seasonal if defined('schedule_a_is_seasonal') else False }
+    - "sa_jan_income_pct": ${ showifdef('schedule_a_january_income_pct') }
+    - "sa_jan_expense_pct": ${ showifdef('schedule_a_january_expense_pct') }
+    - "sa_feb_income_pct": ${ showifdef('schedule_a_february_income_pct') }
+    - "sa_feb_expense_pct": ${ showifdef('schedule_a_february_expense_pct') }
+    - "sa_mar_income_pct": ${ showifdef('schedule_a_march_income_pct') }
+    - "sa_mar_expense_pct": ${ showifdef('schedule_a_march_expense_pct') }
+    - "sa_apr_income_pct": ${ showifdef('schedule_a_april_income_pct') }
+    - "sa_apr_expense_pct": ${ showifdef('schedule_a_april_expense_pct') }
+    - "sa_may_income_pct": ${ showifdef('schedule_a_may_income_pct') }
+    - "sa_may_expense_pct": ${ showifdef('schedule_a_may_expense_pct') }
+    - "sa_jun_income_pct": ${ showifdef('schedule_a_june_income_pct') }
+    - "sa_jun_expense_pct": ${ showifdef('schedule_a_june_expense_pct') }
+    - "sa_jul_income_pct": ${ showifdef('schedule_a_july_income_pct') }
+    - "sa_jul_expense_pct": ${ showifdef('schedule_a_july_expense_pct') }
+    - "sa_aug_income_pct": ${ showifdef('schedule_a_august_income_pct') }
+    - "sa_aug_expense_pct": ${ showifdef('schedule_a_august_expense_pct') }
+    - "sa_sep_income_pct": ${ showifdef('schedule_a_september_income_pct') }
+    - "sa_sep_expense_pct": ${ showifdef('schedule_a_september_expense_pct') }
+    - "sa_oct_income_pct": ${ showifdef('schedule_a_october_income_pct') }
+    - "sa_oct_expense_pct": ${ showifdef('schedule_a_october_expense_pct') }
+    - "sa_nov_income_pct": ${ showifdef('schedule_a_november_income_pct') }
+    - "sa_nov_expense_pct": ${ showifdef('schedule_a_november_expense_pct') }
+    - "sa_dec_income_pct": ${ showifdef('schedule_a_december_income_pct') }
+    - "sa_dec_expense_pct": ${ showifdef('schedule_a_december_expense_pct') }
+    # Accounting
+    - "sa_calendar_year": ${ schedule_a_accounting_basis == 'calendar' if defined('schedule_a_accounting_basis') else True }
+    - "sa_fiscal_year": ${ schedule_a_accounting_basis == 'fiscal' if defined('schedule_a_accounting_basis') else False }
+    - "sa_fiscal_start": ${ showifdef('schedule_a_fiscal_start') }
+    - "sa_fiscal_end": ${ showifdef('schedule_a_fiscal_end') }
+    # Year to date
+    - "sa_gross_receipts_ytd": ${ currency(schedule_a_gross_receipts_ytd) if defined('schedule_a_gross_receipts_ytd') else '' }
+    - "sa_gross_expenses_ytd": ${ currency(schedule_a_gross_expenses_ytd) if defined('schedule_a_gross_expenses_ytd') else '' }
+---
+# Schedule B attachment block
+attachment:
+  name: fs_schedule_b
+  filename: financial_statement_schedule_b
+  variable name: fs_schedule_b[i]
+  skip undefined: True
+  pdf template file: financial_statement_schedule_b.pdf
+  fields:
+    # Header
+    - "sb_name": ${ users[0] }
+    - "sb_docket_number": ${ docket_number }
+    # Annual rent received
+    - "sb_annual_rent_received": ${ currency(schedule_b_annual_rent_received) if defined('schedule_b_annual_rent_received') else '' }
+    # Annual expenses
+    - "sb_advertising": ${ currency(_schedule_b_expense_annual('advertising')) if _schedule_b_expense_annual('advertising') else '' }
+    - "sb_motor_vehicle_travel": ${ currency(_schedule_b_expense_annual('motor_vehicle_travel')) if _schedule_b_expense_annual('motor_vehicle_travel') else '' }
+    - "sb_insurance": ${ currency(_schedule_b_expense_annual('insurance')) if _schedule_b_expense_annual('insurance') else '' }
+    - "sb_cleaning_maintenance": ${ currency(_schedule_b_expense_annual('cleaning_maintenance')) if _schedule_b_expense_annual('cleaning_maintenance') else '' }
+    - "sb_commissions": ${ currency(_schedule_b_expense_annual('commissions')) if _schedule_b_expense_annual('commissions') else '' }
+    - "sb_mortgage_interest": ${ currency(_schedule_b_expense_annual('mortgage_interest')) if _schedule_b_expense_annual('mortgage_interest') else '' }
+    - "sb_other_interest_specify": ""
+    - "sb_other_interest": ${ currency(_schedule_b_expense_annual('other_interest')) if _schedule_b_expense_annual('other_interest') else '' }
+    - "sb_legal_professional": ${ currency(_schedule_b_expense_annual('legal_professional')) if _schedule_b_expense_annual('legal_professional') else '' }
+    - "sb_repairs": ${ currency(_schedule_b_expense_annual('repairs')) if _schedule_b_expense_annual('repairs') else '' }
+    - "sb_supplies": ${ currency(_schedule_b_expense_annual('supplies')) if _schedule_b_expense_annual('supplies') else '' }
+    - "sb_taxes": ${ currency(_schedule_b_expense_annual('taxes')) if _schedule_b_expense_annual('taxes') else '' }
+    - "sb_utilities": ${ currency(_schedule_b_expense_annual('utilities')) if _schedule_b_expense_annual('utilities') else '' }
+    - "sb_wages": ${ currency(_schedule_b_expense_annual('wages')) if _schedule_b_expense_annual('wages') else '' }
+    - "sb_other_expenses_specify": ""
+    - "sb_other_expenses": ${ currency(_schedule_b_expense_annual('other')) if _schedule_b_expense_annual('other') else '' }
+    # Totals
+    - "sb_total_annual_expenses": ${ currency(schedule_b_total_annual_expenses) if defined('schedule_b_total_annual_expenses') else '' }
+    - "sb_weekly_rental_income": ${ currency(schedule_b_weekly_rental_income) if defined('schedule_b_weekly_rental_income') else '' }
 ---
