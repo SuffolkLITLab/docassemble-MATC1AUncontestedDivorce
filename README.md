@@ -10,7 +10,7 @@ A docassemble package for Massachusetts 1A uncontested divorce materials. This p
 
 ## Status
 
-The financial statement interview has progressed — it covers both the short and long form variants, includes Schedule A (real estate) and Schedule B (personal property), and has full CI test coverage across 9 scenarios.
+Ongoing work.
 
 ## What's Included
 
@@ -29,3 +29,4 @@ The package includes a CI pipeline (GitHub Actions) that runs on every push to `
 ## Author
 
 Court Forms Online
+
