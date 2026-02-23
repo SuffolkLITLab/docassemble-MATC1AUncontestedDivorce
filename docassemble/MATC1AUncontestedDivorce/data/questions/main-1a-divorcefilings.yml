@@ -54,6 +54,7 @@ metadata:
   review_date: 2026-01-23
   form_titles:
     - Uncontested Divorce Joint Petition 1A
+    - 
   form_numbers: [cjd101A, R408, TC0050, TC0050A]
   fees:
     - Filing fee: $215.00
@@ -77,8 +78,10 @@ code: |
   al_form_type = "starts_case" 
 ---
 objects:
-  - users: ALPeopleList.using(there_are_any=True)
-  - children: ALPeopleList.using(ask_number=True)
+  - users: ALPeopleList.using(ask_number=True, target_number=2)
+  - children: ALPeopleList
+  - attorneys: ALPeopleList.using(ask_number=True)
+  - marital_home: ALAddress
 ---
 sections:
   - review_divorcefilings: Review your answers
@@ -111,10 +114,13 @@ code: |
     cautionary_validation_message
   marriage_date
   live_together
-  previous_action_detail
-  set_progress(14)
+  marital_home.address_fields()
+  previous_action
+  if previous_action == True:
+    previous_action_detail
   users.gather()
   children.gather()
+  set_progress(90)
   interview_order_divorcefilings = True
 ---
 ###################### Main order ######################
@@ -166,7 +172,7 @@ subquestion: |
   Are you using this interview to ask the Massachusetts courts for a divorce?
 yesno: purpose_is_divorce
 ---
-id: Purpose Screen Offramp
+id: Purpose screen offramp
 event: purpose_mismatch
 question: | 
   Joint (1A) Divorce Petition - Massachusetts
@@ -182,7 +188,7 @@ continue button field: cautionary_validation_message
 question: |
   Confirm information
 subquestion: |
-  You entered blah 1 and blah 2 and that is an unusual combination. Are you sure you want to proceed? Alternative you are allowed to proceed without doing blah, but are you really sure?
+  You entered information 1 and information 2 and that is an unusual combination. Are you sure you want to proceed? Alternative you are allowed to proceed without doing blah, but are you really sure?
 ---
 id: Identity screen
 question: |
@@ -201,16 +207,6 @@ question: |
 subquestion: |
   The questions in this interview are written for people to facilitate preparation of paperwork for their own use. If you are completing this interview for someone else, respond to questions phrased with "you" as if you are the person for whom you are completing this paperwork - more specifically one spouse of the couple seeking a divorce.
 ---
-id: Users name
-sets:
-  - users.name.first
-  - users.name.last
-question: |
-  Spouse name
-fields:
-  - code: |
-      users.name_fields()
----
 id: Legal marriage
 question: |
   Legal marriage confirmation
@@ -221,8 +217,10 @@ yesno: legal_marriage
 id: Confirm Jurisdiction
 question: |
   Confirm Jurisdiction
+subquestion: |
+  ${  users[0].name.full()  } and ${  users[1].name.full()  }
 fields:
-  - "Have one or both spouses lived in Massachusetts for at least one year?": massachusetts_residency
+  - "Have either or both lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
   #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     #datatype: yesnoradio
@@ -254,7 +252,7 @@ id: Separation agreement format
 question: |
   Separation agreement format
 subquestion: |
-  Must file a separation agreement within 90 days of filing 1A form. Separation agreement must be notorized and should completely address the major issues such as property division, child custody, and child support. 
+  Anyone filing a joint petition for divorce with the courts must file a separation agreement within 90 days of initial filing. Separation agreement must be notorized and should completely address the major issues such as property division, child custody, and child support. 
 
   Here we will explain the different options available for filing a separation agreement with a 1A divorce. 
 fields: 
@@ -264,7 +262,7 @@ fields:
       - "Upload my complete, notorized separation agreement here": upload
       - "File my complete, notorized separation agreement with the registry later" : wait
       - "Create a separation agreement using this interview tool.": interview 
-  #- "Use ODR product": import #connect with API here 
+  #- "Use ODR product": Link them there first? How are we connecting to API?
 ---
 id: Relationship background
 question: |
@@ -283,12 +281,11 @@ fields:
     maxlength: 810
 #Need to include guidance on how to write this portion of the affidavit effectively
 ---
----
 id: Living arrangements
 question: |
   Living arrangements
 fields: 
-  - "Do you currently live together?": live_together
+  - "Do ${  users[0]  } and ${  users[1]  } currently live together?": live_together
     datatype: radio
     choices: 
       - We live together: True
@@ -298,7 +295,7 @@ fields:
     show if:
       variable: live_together
       is: False
-  - "Where did you last live together? (County)": last_living_together_location
+  - "Where did you last live together? (County)": last_living_together_county
     datatype: radio
     choices:
       - Barnstable
@@ -319,7 +316,7 @@ fields:
     show if:
       variable: live_together
       is: False
-  - "Where do you live together? (County)": petitioners_last_living_together_location
+  - "Where do you live together? (County)": last_living_together_county
     datatype: radio
     choices:
       - Barnstable
@@ -339,60 +336,77 @@ fields:
       - Outside of Massachusetts
     show if: live_together
 ---
-id: requests
+id: Marital home address
+sets:
+  - marital_home.address
+  - marital_home.city
 question: |
-  requests
+  Marital home address
+subquestion:  |
+  Address of the marital home
+fields: 
+  - code: |
+      marital_home.address_fields()
+---
+code: |
+  request_divorce_nofault = petition_is_joint and separation_agreement_reached
+---
+code: |
+  request_separation_agreement_approval = separation_agreement_reached
+---
+id: merger survival 
+question: | 
+  Merger or survival of separation agreement
+subquestion: | 
+  Do you want your agreement to merge or survive? 
+
+  Will add much more guidance about the consequences here. Complicated needs simple explainations.
 fields:
-  - "Previous action(s) detail": previous_action_detail
-    input type: area
-    maxlength: 252
-  - "Request divorce nofault": request_divorce_nofault
-    datatype: yesno
-  - "Request separation agreement approval": request_separation_agreement_approval
-    datatype: yesno
   - "Request merge agreement": request_merge_agreement
-    datatype: yesno
+    datatype: yesnoradio
   - "Request survive agreement": request_survive_agreement
-    datatype: yesno
-  - "Change name petitioners1": change_name_petitioners1
-    datatype: yesno
-  - "Petitioners1 former name last": petitioners1_former_name_last
+    datatype: yesnoradio
+#May be better to set these values with a series of questions and code. 
+#should correspond to Alara's portion of this content. 
+---
+id: Name change requests
+question: |
+  Name change requests
+fields:
+  - "Change ${  users[0].familiar()  } last name to former last name": change_name_petitioners1
+    datatype: yesnoradio
+  - "${  users[0]  } former last name": petitioners1_former_name_last
     maxlength: 48
-  - "Change name petitioners2": change_name_petitioners2
-    datatype: yesno
-  - "Petitioners2 former name last": petitioners2_former_name_last
+    show if: change_name_petitioners1
+  - "Change ${  users[0]  } last name to former last name": change_name_petitioners2
+    datatype: yesnoradio
+  - "${  users[1]  } former last name": petitioners2_former_name_last
     maxlength: 48
-  - "Additional request": additional_request
-    datatype: yesno
-  - "Additonal request detail": additonal_request_detail
-    maxlength: 84
-  - "Petitioners1 name last upon divorce": petitioners1_name_last_upon_divorce
-    maxlength: 26
+    show if: change_name_petitioners2
   - "Petitioners2 name last upon divorce": petitioners2_name_last_upon_divorce
     maxlength: 26
 ---
-id: Attorney Information
+id: Additional requests
 question: |
-  Screen five
-fields:
-  - "Attorneys1 bbo number": attorneys1_bbo_number
-    maxlength: 31
-  - "Attorneys2 bbo number": attorneys2_bbo_number
-    maxlength: 31
-  - "Do you have a lawyer?": petitioners1_has_attorney
-    datatype: yesno
-  - "Is your spouse represented by a lawyer?": petitioners2_has_attorney
-    datatype: yesno
+  Additional requests
+subquestion: | 
+  Any additonal requests for the court? This is RARE
+fields: 
+  - "Do you have any additional requests for the court?": additional_request
+    datatype: noyesradio
+    hint: This is unlikely unles...
+  - "Additonal request detail": additonal_request_detail
+    maxlength: 84
+    required: False
+    show if: additional_request
 ---
 id: Petitioner A Information
 question: |
   Petitioner A Information
 fields:
-  - "Petitioners1 is plaintiff": petitioners1_is_plaintiff
-    datatype: yesno
-  - "Petitioners1 is defendant": petitioners1_is_defendant
-    datatype: yesno
   - "Petitioners1 name last at birth": petitioners1_name_last_at_birth
+    maxlength: 26
+  - "Petitioners1 name last upon divorce": petitioners1_name_last_upon_divorce
     maxlength: 26
   - "Petitioners1 is male": petitioners1_is_male
     datatype: yesno
@@ -402,7 +416,29 @@ fields:
     maxlength: 23
   - "Petitioners1 marriage number": petitioners1_marriage_number
     maxlength: 10
-
+---
+id: Previous actions
+question: |
+  Previous actions
+subquestion: |
+  Have ${  users[0].familiar()  } and ${  users[1].familiar()  } filed any previous action(s) for:
+  * divorce, annulment or affirmation of marriage, 
+  * separate support,
+  * desertion, 
+  * living apart for justifiable cause, or 
+  * custody of child(ren)?
+yesno: previous_action
+---
+id: Previous action details
+question: |
+  Previous action details
+subquestion: |
+  Petitioners certify that no previous action for divorce, annulment or affirmation of marriage, separate support, desertion, living apart for justifiable cause, or custody of child(ren) has been brought by either party against the other except:
+fields:
+  - "List details for all previous actions": previous_action_detail
+    input type: area
+    maxlength: 252
+    required: False
 ---
 id: Petitioner B Information
 question: |
@@ -410,10 +446,6 @@ question: |
 fields:
   - "Petitioners2 marriage number": petitioners2_marriage_number
     maxlength: 10
-  - "Petitioners2 is plaintiff": petitioners2_is_plaintiff
-    datatype: yesno
-  - "Petitioners2 is defendant": petitioners2_is_defendant
-    datatype: yesno
   - "Petitioners2 name last at birth": petitioners2_name_last_at_birth
     maxlength: 26
   - "Petitioners2 is female": petitioners2_is_female
@@ -422,6 +454,8 @@ fields:
     datatype: yesno
   - "Petitioners2 ssn": petitioners2_ssn
     maxlength: 23
+---
+#change gender info to be asked with users gather
 ---
 id: Eligibility and input confirmation 
 event: Introduction summary 
@@ -444,7 +478,6 @@ fields:
     maxlength: 39
   - "Children4 name full plus birthdate": children4_name_full_plus_birthdate
     maxlength: 39
-
 ---
 id: Miscellaneous Blanks
 question: |
@@ -474,18 +507,18 @@ subquestion: |
 fields: 
   - "Are there any children of this marriage?": children_of_marriage
     datatype: yesnoradio
+  - "How many?": children_of_marriage_number
+---
+# code to set the number of children target equal to the children_of_marriage_number
 ---
 id: Children
 question: |
   Children
 fields:
-
   - "Petitioners1 number of custodial children": petitioners1_number_of_custodial_children
     maxlength: 10
   - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
     maxlength: 10
-  - "Children of marriage number": children_of_marriage_number
-    maxlength: 14
   - "R408 addendum": r408_addendum
     input type: area
     maxlength: 425
