@@ -44,12 +44,12 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MATC1AUncontestedDivorce',
-      version='1.24',
+      version='1.30',
       description=('An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)'),
-      long_description='# docassemble.ADivorceAgreement\r\n\r\n1A Divorce Agreement\r\n\r\n## Author\r\n\r\nauthor@example.com\r\n\r\n',
+      long_description="# docassemble.MATC1AUncontestedDivorce\r\n\r\nA docassemble package for Massachusetts 1A uncontested divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:\r\n\r\n- Joint Divorce Petition (CJD-101A)\r\n- Separation Agreement\r\n- Financial Statements (short & long forms) with Schedules A & B\r\n- Child Care & Custody Disclosure\r\n- Other required supporting documents\r\n\r\n## Status\r\n\r\nThe financial statement interview has progressed — it covers both the short and long form variants, includes Schedule A (real estate) and Schedule B (personal property), and has full CI test coverage across 9 scenarios.\r\n\r\n## What's Included\r\n\r\n- **Interview YAML files** — the question flows, logic, and PDF field mappings\r\n- **PDF form templates** — the court forms themselves\r\n- **ALKiln test files** — `.feature` specs for automated testing\r\n- **Test scenarios** — JSON definitions covering short form, long form, schedules, and various edge cases\r\n\r\n## Testing\r\n\r\nThe package includes a CI pipeline (GitHub Actions) that runs on every push to `main`:\r\n\r\n1. Static analysis — YAML syntax and interview logic validation\r\n2. Runtime tests — spins up a docassemble server, installs the package, and runs all 9 test scenarios against the REST API\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n",
       long_description_content_type='text/markdown',
-      author='KP Hunsinger, Alara Akisik, Sam Darkwa Jr.',
-      author_email='litlab@suffolk.edu',
+      author='Suffolk Legal Innovation and Technology Lab',
+      author_email='litlab@suffolk.org',
       license='MIT',
       url='https://courtformsonline.org',
       packages=find_namespace_packages(),
