@@ -1,6 +1,6 @@
 # docassemble.MATC1AUncontestedDivorce
 
-A docassemble package for Massachusetts 1A uncontested divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:
+A docassemble package for Massachusetts 1A no fault joint divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:
 
 - Joint Divorce Petition (CJD-101A)
 - Separation Agreement
@@ -29,4 +29,5 @@ The package includes a CI pipeline (GitHub Actions) that runs on every push to `
 ## Author
 
 Court Forms Online
+
 
