@@ -2,50 +2,21 @@
 modules:
   - docassemble.base.util
 ---
-terms:
-  F.I.C.A.: |
-    Federal Insurance Contributions Act — the Social Security and
-    Medicare tax withheld from your paycheck. Often labeled "FICA,"
-    "SS," or "OASDI" on a pay stub.
-  FICA: |
-    Federal Insurance Contributions Act — the Social Security and
-    Medicare tax withheld from your paycheck.
-  fair market value: |
-    What your property would likely sell for on the open market today,
-    in a transaction between a willing buyer and willing seller.
-  deferred compensation: |
-    Income you have earned but have chosen to receive at a later date,
-    often through an employer-sponsored plan such as a 457(b).
-  defined benefit plan: |
-    A retirement plan where your employer promises a specific monthly
-    payment when you retire, based on salary and years of service.
-    Traditional pensions are defined benefit plans.
-  defined contribution plan: |
-    A retirement plan where you (and sometimes your employer) contribute
-    money that is invested on your behalf — for example, a 401(k),
-    403(b), or IRA.
-  equity: |
-    The difference between what an asset is worth (fair market value) and
-    what you still owe on it. For example, if your home is worth $300,000
-    and your mortgage balance is $200,000, your equity is $100,000.
-  PIT: |
-    Principal, Interest, and Taxes — the main components of a typical
-    mortgage payment.
-  TAFDC: |
-    Transitional Aid to Families with Dependent Children — a
-    Massachusetts public assistance program.
-  SNAP: |
-    Supplemental Nutrition Assistance Program — federal food assistance,
-    sometimes called "food stamps."
-  gross income: |
-    Your total income before any taxes or deductions are taken out.
-  net income: |
-    Your take-home pay — gross income minus all deductions.
-  cadence: |
-    How often you receive a payment or paycheck. Also called pay frequency.
-  BBO number: |
-    Board of Bar Overseers registration number — a Massachusetts attorney
-    license identifier.
+metadata:
+  title: |
+    Financial Statement Shared Questions
+  short title: |
+    Financial Statement Shared
+  description: |
+    Shared questions, helper functions, and reusable lists for the Massachusetts
+    financial statement interview.
+  LIST_topics:
+    - Family law
+    - Financial disclosure
+  jurisdiction: NAM-US-US+MA
+  landing_page_url: https://courtformsonline.org/
+  authors:
+    - Court Forms Online
 ---
 code: |
   from docassemble.base.util import defined, log, value
@@ -88,6 +59,41 @@ code: |
     if cadence == "annual":
       return 1
     return 52
+
+  def fs_safe_float(amount):
+    try:
+      return float(amount)
+    except Exception:
+      return 0.0
+
+  def fs_item_value(item, attr_name):
+    var_name = f"{item.instanceName}.{attr_name}"
+    if defined(var_name):
+      return value(var_name)
+    return None
+
+  def fs_sum_list_attr(items, attr_name):
+    total = 0.0
+    try:
+      for item in items:
+        item_value = fs_item_value(item, attr_name)
+        if item_value not in (None, ""):
+          total += fs_safe_float(item_value)
+    except Exception:
+      return 0.0
+    return total
+
+  def _other_assets_total_by_type(asset_type_key):
+    total = 0.0
+    try:
+      for item in other_assets:
+        if fs_item_value(item, "asset_type") == asset_type_key:
+          item_value = fs_item_value(item, "current_balance")
+          if item_value not in (None, ""):
+            total += fs_safe_float(item_value)
+    except Exception:
+      return 0.0
+    return total
 ---
 variable name: cadence_choices
 data:
@@ -137,10 +143,10 @@ data: !!omap
   - overtime: "Overtime"
   - part_time: "Part-time job"
   - tips: "Tips"
-  - commissions: "Commissions/bonuses"
-  - dividends: "Dividends/interest"
-  - trusts: "Trusts/annuities"
-  - pensions: "Pensions/retirement funds"
+  - commissions: "Commissions and bonuses"
+  - dividends: "Dividends and interest"
+  - trusts: "Trusts and annuities"
+  - pensions: "Pensions and retirement funds"
   - social_security: "Social Security"
   - disability: "Disability, unemployment, or worker's compensation"
   - public_assistance: "Public assistance (TAFDC, SNAP, etc.)"
@@ -152,12 +158,12 @@ data: !!omap
 variable name: fs_expense_terms
 data: !!omap
   - rent: "Rent or mortgage (PIT)"
-  - home_insurance: "Homeowners/tenant insurance"
+  - home_insurance: "Homeowners or tenant insurance"
   - maintenance: "Maintenance and repair"
   - heat: "Heat"
-  - electric: "Electricity and/or gas"
+  - electric: "Electricity or gas"
   - phone: "Telephone"
-  - water: "Water/sewer"
+  - water: "Water and sewer"
   - food: "Food"
   - supplies: "House supplies"
   - laundry: "Laundry and cleaning"
@@ -190,80 +196,67 @@ code: |
 id: fs_intro
 continue button field: fs_intro
 question: |
-  Massachusetts Financial Statement
+  Financial Statement
 subquestion: |
-  This interview walks you through the Massachusetts Probate and Family
-  Court financial statement step by step. At the end, you will have a
-  completed PDF ready to print, sign, and file.
+  This interview helps you prepare a Massachusetts financial statement.
+  You will answer questions about your income, deductions, expenses, assets,
+  and debts.
 
-  The form covers six areas:
+  **What you will do**
+  - Enter amounts for one pay period or payment.
+  - Choose how often you receive or pay each amount.
+  - Check totals that the interview calculates for you.
 
-  1. **Personal information** and employment
-  2. **Income** — wages, benefits, and other sources
-  3. **Deductions** — taxes, insurance, and withholdings
-  4. **Expenses** — housing, transportation, and daily costs
-  5. **Assets** — property, vehicles, and accounts
-  6. **Liabilities** — debts and obligations
+  **What to gather (if available)**
+  - Recent pay stubs or benefit statements
+  - Recent bills or statements for recurring expenses
+  - Account balances for assets and debts
 
-  ${ collapse_template(fs_what_to_gather) }
+  **Save your progress**
+  Your work is saved as you go. You can return later to continue.
 
-  Your progress is **saved automatically**. You can close the browser and
-  return later to pick up where you left off.
-
-  Estimates are fine if you do not have exact figures. The court expects
-  good-faith numbers, not perfection.
+  **Tip:** Estimates are OK if you are not sure. Aim for your best, good-faith
+  numbers so the court gets a clear picture.
 ---
-template: fs_what_to_gather
-subject: |
-  What to have ready
-content: |
-  Gathering these items before you begin will make the process faster:
-
-  - **Pay stubs** from the last 4 weeks (or benefit award letters)
-  - **Most recent tax return** and W-2s
-  - **Recurring bills** — rent/mortgage, utilities, insurance premiums
-  - **Account statements** — bank, retirement, and investment accounts
-  - **Debt statements** — credit cards, loans, and other obligations
-  - **Vehicle information** — make, model, and loan balance
-  - **Property records** — assessed value, mortgage balance
-
-  You do not need all of these to get started. You can leave fields blank
-  and return to fill them in later.
----
-id: income_above_threshold
+id: gross_annual_income
 question: |
-  Which financial statement form applies to you?
+  Gross annual income
 subquestion: |
-  Massachusetts uses two versions of the financial statement:
+  Enter your total income before taxes for the last 12 months.
 
-  - **Short form** — for gross annual income **under $75,000**
-  - **Long form** — for gross annual income **$75,000 or more**
-
-  Gross annual income means your total income from all sources before
-  taxes over the last 12 months — wages, tips, benefits, rental income,
-  investments, and anything else.
-
-  If you are not sure, your best estimate is fine. You will enter detailed
-  income amounts later in the interview.
+  **Include:** wages, tips, overtime, benefits, rental income, and other income.
+  If you are not sure, give your best estimate.
 fields:
-  - Is your gross annual income $75,000 or more?: income_above_threshold
-    datatype: yesnoradio
+  - I do not know my gross annual income: gross_annual_income_unknown
+    datatype: yesno
+  - Gross annual income: gross_annual_income
+    datatype: currency
+    min: 0
+    show if:
+      variable: gross_annual_income_unknown
+      is: False
     help: |
-      If your total household income from all sources is $75,000 or more
-      per year before taxes, select "Yes." Otherwise select "No."
+      Use your best estimate if you are unsure.
+  - Best estimate of gross annual income: gross_annual_income_estimate
+    datatype: currency
+    min: 0
+    required: True
+    show if:
+      variable: gross_annual_income_unknown
+      is: True
+    help: |
+      This estimate helps the court decide whether the short or long form applies.
 ---
 code: |
-  if income_above_threshold:
-    gross_annual_income = 75000
-  else:
-    gross_annual_income = 74999
+  if defined("gross_annual_income_unknown") and gross_annual_income_unknown:
+    gross_annual_income = value("gross_annual_income_estimate") or 0
 ---
 id: docket_number
 question: |
   Docket number
 subquestion: |
   If the court has already assigned a docket number, enter it here.
-  Otherwise, you can leave this blank.
+  If not, leave this blank.
 fields:
   - Docket number: docket_number
     required: False
@@ -276,31 +269,34 @@ sets:
 question: |
   Party names
 subquestion: |
-  Use legal names as they appear on court documents. If you do not know
-  the other party's information yet, you can leave those fields blank.
+  Use legal names as they appear on court paperwork.
+  If you do not know the other party's information yet, leave it blank for now.
 fields:
-  - note: |
-      #### Your information
-  - First name: users[0].name.first
-  - Last name: users[0].name.last
-  - note: |
-      #### Other party
-  - First name: other_parties[0].name.first
-  - Last name: other_parties[0].name.last
+  - Your first name: users[0].name.first
+  - Your last name: users[0].name.last
+  - Other party first name: other_parties[0].name.first
+  - Other party last name: other_parties[0].name.last
 ---
 id: user_personal_info
 sets:
   - user_personal_info
 question: |
-  About you
+  Personal information
 subquestion: |
-  This information will appear on page 1 of your financial statement.
-  The court requires it to identify you in the case.
+  We ask about children to match the court form. If you do not have children,
+  leave the count at 0.
+
+  Your Social Security number is optional. Enter only the last 4 digits.
 fields:
-  - Your date of birth: users[0].birthdate
+  - Social Security number (last 4 digits): user_ssn
+    required: False
+    maxlength: 4
+    help: |
+      Optional. Enter only the last 4 digits (example: 1234).
+  - Date of birth: users[0].birthdate
     datatype: date
-  - note: |
-      #### Children
+    help: |
+      Use month/day/year format.
   - Do you have any children?: user_has_children
     datatype: yesno
   - Number of children living with you: children_living_with_user_count
@@ -310,11 +306,7 @@ fields:
     show if:
       variable: user_has_children
       is: True
-  - note: |
-      #### Social Security number
-      This is optional. The court form has a field for it, but you are not
-      required to provide it.
-  - Social Security number: user_ssn
+  - Occupation: user_occupation
     required: False
 ---
 code: |
@@ -327,7 +319,7 @@ sets:
 question: |
   Contact information
 subquestion: |
-  Provide contact details where you can reliably receive court-related notices.
+  Give contact details where you can reliably receive court notices.
   If you prefer not to share an email, you can leave it blank.
 fields:
   - Phone number: users[0].phone_number
@@ -343,23 +335,21 @@ id: user_address
 sets:
   - user_address
 question: |
-  Your address
+  Address
 subquestion: |
-  Use your current mailing address. If you receive mail at a different
-  location, enter that address instead.
+  Use your current mailing address.
+  If you receive mail elsewhere, enter that address instead.
 fields:
   - Street address: users[0].address.address
     address autocomplete: True
   - City/Town: users[0].address.city
-    css class: col-md-6
   - State: users[0].address.state
     default: MA
-    css class: col-md-3
   - ZIP: users[0].address.zip
-    css class: col-md-3
 ---
 id: user_employment
-continue button field: user_employment
+sets:
+  - user_employment
 question: |
   Employment
 subquestion: |
@@ -375,21 +365,19 @@ id: user_employer_address
 question: |
   Employer address
 subquestion: |
-  Enter your employer's address and phone number if you have them.
-  These fields are optional — leave blank if you do not know.
+  Add your employer's address and phone if you have an employer and know it.
+  If you do not have this information, leave it blank.
 fields:
-  - Street address: user_employer_address_street
+  - Street address: user_employer_address.address
+    address autocomplete: True
     required: False
-  - City/Town: user_employer_address_city
+  - City/Town: user_employer_address.city
     required: False
-    css class: col-md-6
-  - State: user_employer_address_state
+  - State: user_employer_address.state
     default: MA
     required: False
-    css class: col-md-3
-  - ZIP: user_employer_address_zip
+  - ZIP: user_employer_address.zip
     required: False
-    css class: col-md-3
   - Employer phone number: user_employer_phone
     required: False
 ---
@@ -414,11 +402,10 @@ id: financial_cadence_default
 question: |
   How often are you paid?
 subquestion: |
-  Most of your income and expense amounts will use this schedule. You can
-  override it for individual items later if needed.
+  Most amounts will use this schedule. You can change it later for any item.
 
-  For example, if you are paid every two weeks and your check is $900,
-  select "Every 2 weeks" and enter 900 when asked for income amounts.
+  **Example:** If you are paid every 2 weeks and your pay is $900 per check,
+  choose "Every 2 weeks" and enter 900.
 fields:
   - Pay frequency: financial_cadence_default
     input type: radio
@@ -426,83 +413,19 @@ fields:
       cadence_choices
     default: weekly
     help: |
-      Pick the schedule that matches your main paycheck or most of your bills.
+      Choose the schedule that matches your main paycheck or most bills.
 ---
-reconsider: True
 code: |
-  fs_default_times_per_year = cadence_to_times_per_year(financial_cadence_default)
----
-id: fs_deductions_intro
-continue button field: fs_deductions_intro
-question: |
-  Next: Deductions
-subquestion: |
-  Now we will ask about amounts deducted from your paycheck — taxes,
-  insurance premiums, and other withholdings.
-
-  If you have a **recent pay stub**, look for lines labeled "deductions"
-  or "withholdings." Enter the amount for a single pay period.
----
-id: fs_expenses_intro
-continue button field: fs_expenses_intro
-question: |
-  Next: Weekly expenses
-subquestion: |
-  This section covers your regular household and personal expenses —
-  housing, food, transportation, insurance, and other recurring costs.
-
-  Enter the amount you typically pay each period. We will convert
-  everything to weekly totals for the court form.
----
-id: fs_assets_intro
-continue button field: fs_assets_intro
-question: |
-  Next: Assets
-subquestion: |
-  Now we will collect information about what you own — real estate,
-  vehicles, retirement accounts, bank accounts, and other property.
-
-  You will also be asked about **counsel fees** (attorney costs) if
-  applicable.
-
-  Have your **account statements** and **property records** ready if
-  possible. Estimates are fine if you do not have exact figures.
----
-id: fs_liabilities_intro
-continue button field: fs_liabilities_intro
-question: |
-  Next: Liabilities
-subquestion: |
-  Finally, we will ask about your debts and financial obligations —
-  credit cards, loans, tax debt, and other amounts you owe.
-
-  For each liability, you will enter the creditor name, amount owed,
-  and your weekly payment.
----
-id: fs_income_intro
-continue button field: fs_income_intro
-question: |
-  Next: Income
-subquestion: |
-  Now we will ask about your income sources — wages, benefits,
-  investments, and any other money you receive.
-
-  You will:
-
-  - Select which income types apply to you
-  - Enter amounts for each source
-  - Indicate whether you have self-employment or rental income
-
-  All amounts will be converted to weekly totals for the court form.
-
-  If you have a **pay stub** handy, it will help with this section.
+  fs_default_times_per_year = cadence_to_times_per_year(
+    value("financial_cadence_default") if defined("financial_cadence_default") else "weekly"
+  )
 ---
 id: fs_income_sources
 generic object: ALIncomeList
 question: |
   Gross income sources
 subquestion: |
-  Select all income sources you receive.
+  Choose all income sources you receive.
 
   You will enter amounts and how often you receive them. If a category is
   missing, choose "Other income."
@@ -546,7 +469,7 @@ fields:
     input type: radio
     code: |
       times_per_year_list
-    default: ${ fs_default_times_per_year }
+    default: fs_default_times_per_year
     show if:
       variable: x[i].use_default_cadence
       is: False
@@ -584,7 +507,7 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Review your entries. Use "Add another" to include more income sources.
+  Look over your entries. Use "Add another" to include more income sources.
 
   ${ x.add_action() }
 ---
@@ -593,7 +516,7 @@ generic object: ALExpenseList
 question: |
   Expense categories
 subquestion: |
-  Select the expense categories that apply to your household.
+  Choose the expense categories that apply to your household.
 
   You will add amounts and how often you pay them. If a category is missing,
   choose "Other."
@@ -636,7 +559,7 @@ fields:
     input type: radio
     code: |
       times_per_year_for_expenses
-    default: ${ fs_default_times_per_year }
+    default: fs_default_times_per_year
     show if:
       variable: x[i].use_default_cadence
       is: False
@@ -674,7 +597,7 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Review your entries. Use "Add another" to include more expenses.
+  Look over your entries. Use "Add another" to include more expenses.
 
   ${ x.add_action() }
 ---
@@ -683,33 +606,20 @@ continue button field: income_schedule_triggers
 question: |
   Self-employment and rental income
 subquestion: |
-  Your answers here determine whether additional schedules are included
-  with your financial statement.
+  These answers decide whether Schedule A (self-employment) and Schedule B
+  (rental income) are included with your financial statement.
 
-  ${ collapse_template(schedule_explanation) }
+  **Self-employment examples:** gig work, freelance, small business, side jobs.
+  **Rental income examples:** rent from a house, apartment, or room.
 fields:
   - Do you have self-employment or business income?: has_self_employment_income
     datatype: yesno
     help: |
-      Includes gig work (Uber, DoorDash), freelance, consulting, a small
-      business, or any side job where you are not a W-2 employee.
+      Examples: gig work, freelance, or small business income.
   - Do you have rental income from property?: has_rental_income
     datatype: yesno
     help: |
-      Includes rent from a house, apartment, condo, or room that you own.
----
-template: schedule_explanation
-subject: |
-  What are Schedule A and Schedule B?
-content: |
-  **Schedule A** covers self-employment and business income. If you do
-  freelance work, gig work, run a small business, or have any income
-  where you are not a W-2 employee, you should answer "Yes" to the
-  self-employment question.
-
-  **Schedule B** covers rental income from property you own. If you
-  collect rent from a house, apartment, or room, answer "Yes" to the
-  rental income question.
+      Examples: rent from a house, apartment, or room.
 ---
 id: income_part_1
 sets:
@@ -720,7 +630,7 @@ subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
   If a line does not apply, leave it blank.
 fields:
-  - Base pay from salary/wages: income_base_pay_amount
+  - Base pay from salary or wages: income_base_pay_amount
     datatype: currency
     required: False
   - Overtime: income_overtime_amount
@@ -732,13 +642,13 @@ fields:
   - Tips: income_tips_amount
     datatype: currency
     required: False
-  - Commissions/bonuses: income_commissions_amount
+  - Commissions and bonuses: income_commissions_amount
     datatype: currency
     required: False
-  - Dividends/interest: income_dividends_amount
+  - Dividends and interest: income_dividends_amount
     datatype: currency
     required: False
-  - Trusts/annuities: income_trusts_amount
+  - Trusts and annuities: income_trusts_amount
     datatype: currency
     required: False
   - Do you have self-employment or business income?: has_self_employment_income
@@ -753,7 +663,7 @@ subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
   If a line does not apply, leave it blank.
 fields:
-  - Pensions/retirement funds: income_pensions_amount
+  - Pensions and retirement funds: income_pensions_amount
     datatype: currency
     required: False
   - Social Security: income_social_security_amount
@@ -797,38 +707,29 @@ continue button field: income_totals
 question: |
   Income summary
 subquestion: |
-  Here is your calculated gross weekly income. The court form uses
-  weekly amounts, so all values have been converted.
+  We will convert your amounts to weekly values for the financial statement.
+  You can go back to edit any income source if needed.
 
-  **Total gross weekly income:** ${ currency(income_total_weekly) }
-
-  % if defined('income_self_employment_weekly') and income_self_employment_weekly:
-  Includes self-employment income: ${ currency(income_self_employment_weekly) }/week
-  % endif
-  % if defined('income_rental_weekly') and income_rental_weekly:
-  Includes rental income: ${ currency(income_rental_weekly) }/week
-  % endif
-
-  If something looks wrong, use the **Back** button to make corrections.
+  Total gross weekly income (current): ${ currency(income_total_weekly) }
 ---
 code: |
-  fs_log("Calculating weekly income totals.")
-  income_total_weekly = float(income_list.total(times_per_year=52))
+  fs_log("income_totals")
+  income_total_weekly = income_list.total(times_per_year=52)
 
   if defined("schedule_a_weekly_business_income"):
-    income_self_employment_weekly = float(schedule_a_weekly_business_income)
+    income_self_employment_weekly = schedule_a_weekly_business_income
   else:
-    income_self_employment_weekly = 0.0
+    income_self_employment_weekly = 0
 
   if defined("schedule_b_weekly_rental_income"):
-    income_rental_weekly = float(schedule_b_weekly_rental_income)
+    income_rental_weekly = schedule_b_weekly_rental_income
   else:
-    income_rental_weekly = 0.0
+    income_rental_weekly = 0
 
   income_total_weekly = (
-    float(income_total_weekly)
-    + float(income_self_employment_weekly)
-    + float(income_rental_weekly)
+    income_total_weekly
+    + income_self_employment_weekly
+    + income_rental_weekly
   )
 ---
 id: confirm_no_income
@@ -837,196 +738,116 @@ continue button field: confirm_no_income
 question: |
   Confirm no income
 subquestion: |
-  You entered $0 for all income sources.
+  You entered $0 for income.
 
-  If this is correct, choose "Yes" to continue. If not, click "Back" to add income.
+  Choose "Yes" to continue, or "No" to go back and add income.
 fields:
-  - Yes, I have no income to report: confirm_no_income
+  - Yes, I do not have income to list: confirm_no_income
     datatype: yesno
----
-id: fs_review
-continue button field: fs_review
-question: |
-  Review your financial statement
-subquestion: |
-  Take a moment to check that your information is correct before
-  generating the final document. You can edit any section by clicking
-  the pencil icon.
-
-  **Form type:** ${ "Short form (income under $75,000)" if financial_form_type == "short" else "Long form (income $75,000 or more)" }
-review:
-  - label: Edit personal information
-    fields:
-      - users[0].name.first
-      - users[0].birthdate
-      - user_ssn
-      - user_has_children
-      - children_living_with_user_count
-    button: |
-      **Personal information**
-
-      Name: ${ users[0] }
-      % if defined('users[0].birthdate'):
-      Date of birth: ${ users[0].birthdate }
-      % endif
-      % if defined('user_has_children') and user_has_children:
-      Children living with you: ${ children_living_with_user_count }
-      % endif
-  - label: Edit contact and address
-    fields:
-      - users[0].phone_number
-      - users[0].address.address
-    button: |
-      **Contact and address**
-
-      % if defined('users[0].phone_number') and users[0].phone_number:
-      Phone: ${ users[0].phone_number }
-      % endif
-      Address: ${ users[0].address.on_one_line() }
-  - label: Edit employment
-    fields:
-      - user_employer_name
-      - user_job_title
-    button: |
-      **Employment**
-
-      % if defined('user_employer_name') and user_employer_name:
-      Employer: ${ user_employer_name }
-      % endif
-      % if defined('user_job_title') and user_job_title:
-      Title: ${ user_job_title }
-      % endif
-      % if (not defined('user_employer_name') or not user_employer_name) and (not defined('user_job_title') or not user_job_title):
-      *None listed*
-      % endif
-  - label: Edit income
-    fields:
-      - income_list.revisit
-    button: |
-      **Income**
-
-      Gross weekly income: ${ currency(income_total_weekly) }
-      % if defined('income_self_employment_weekly') and income_self_employment_weekly:
-      Self-employment (weekly): ${ currency(income_self_employment_weekly) }
-      % endif
-      % if defined('income_rental_weekly') and income_rental_weekly:
-      Rental income (weekly): ${ currency(income_rental_weekly) }
-      % endif
-  - label: Edit court and parties
-    fields:
-      - docket_number
-      - other_parties[0].name.first
-    button: |
-      **Court and parties**
-
-      Court: ${ trial_court.division if hasattr(trial_court, 'division') else '' }
-      % if defined('docket_number') and docket_number:
-      Docket: ${ docket_number }
-      % endif
-      Other party: ${ other_parties[0] }
 ---
 id: review_fs
 event: review_fs
 question: |
   Edit your answers
 subquestion: |
-  Use the sections below to find and correct any information. Click
-  "Resume" when you are finished editing.
+  Choose any item below to edit it.
 review:
-  - label: Edit personal information
-    fields:
-      - users[0].name.first
-      - users[0].birthdate
+  - Edit: trial_court
     button: |
-      **Personal information**
-
-      Name: ${ users[0] }
-      % if defined('users[0].birthdate'):
-      Date of birth: ${ users[0].birthdate }
-      % endif
-  - label: Edit contact and address
-    fields:
-      - users[0].phone_number
-      - users[0].address.address
+      **Court**
+      ${ trial_court.division if defined("trial_court.division") else "" }
+  - Edit: docket_number
     button: |
-      **Contact and address**
-
-      Address: ${ users[0].address.on_one_line() }
-  - label: Edit employment
-    fields:
-      - user_employer_name
+      **Docket number**
+      ${ docket_number if defined("docket_number") and docket_number else "Not provided" }
+  - Edit: users[0].name.first
     button: |
-      **Employment**
-
-      % if defined('user_employer_name') and user_employer_name:
-      Employer: ${ user_employer_name }
-      % else:
-      *None listed*
-      % endif
-  - label: Edit income
-    fields:
-      - income_list.revisit
+      **Your name**
+      ${ users[0] if defined("users[0].name.first") else "" }
+  - Edit: other_parties[0].name.first
+    button: |
+      **Other party**
+      ${ other_parties[0] if defined("other_parties[0].name.first") else "Not provided" }
+  - Edit: users[0].birthdate
+    button: |
+      **Birth date**
+      ${ users[0].birthdate if defined("users[0].birthdate") else "Not provided" }
+  - Edit: users[0].phone_number
+    button: |
+      **Phone**
+      ${ users[0].phone_number if defined("users[0].phone_number") and users[0].phone_number else "Not provided" }
+  - Edit: users[0].address.address
+    button: |
+      **Address**
+      ${ users[0].address.on_one_line() if defined("users[0].address.address") else "Not provided" }
+  - Edit: financial_cadence_default
+    button: |
+      **Cadence**
+      ${ financial_cadence_default if defined("financial_cadence_default") else "" }
+  - Edit: income_list.revisit
     button: |
       **Income**
-
-      Gross weekly income: ${ currency(income_total_weekly) }
-  - label: Edit court and parties
-    fields:
-      - docket_number
-      - other_parties[0].name.first
+      Weekly total: ${ currency(income_total_weekly) }
+  - Edit: has_self_employment_income
     button: |
-      **Court and parties**
+      **Self-employment income**
+      ${ "Yes" if defined("has_self_employment_income") and has_self_employment_income else ("No" if defined("has_self_employment_income") else "Not answered") }
+  - Edit: has_rental_income
+    button: |
+      **Rental income**
+      ${ "Yes" if defined("has_rental_income") and has_rental_income else ("No" if defined("has_rental_income") else "Not answered") }
+---
+id: fs_review
+continue button field: fs_review
+question: |
+  Check your answers
+subquestion: |
+  Form type: ${ financial_form_type.upper() }
 
-      Court: ${ trial_court.division if hasattr(trial_court, 'division') else '' }
-      Other party: ${ other_parties[0] }
+  Gross weekly income: ${ currency(income_total_weekly) }
+
+  Check each section to confirm totals and details.
+
+  **Things to check**
+  - Your income sources and amounts
+  - Whether Schedule A or B applies
+  - Expenses, assets, and liabilities
+
+  **Jump to a section**
+  % for section in section_links(nav):
+  * ${ section }
+  % endfor
+  % if defined("debug_log") and debug_log:
+  ---
+  ### Debug log (last 5)
+  % for entry in debug_log[-5:]:
+  - ${ entry }
+  % endfor
+  % endif
 ---
 id: fs_download
 event: fs_download
 question: |
-  Your financial statement is ready
+  Download your financial statement
 subquestion: |
-  ${ al_user_bundle.download_list_html() }
+  Your financial statement is ready. You can download the forms below.
 
-  ${ action_button_html(url_action('review_fs'), label='Edit answers', color='info', size='sm') }
+  ${ action_button_html(url_action('review_fs'), label='Edit answers', color='info') }
+
+  ${ al_user_bundle.download_list_html() }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  ${ collapse_template(fs_next_steps) }
-
-  ${ collapse_template(fs_attachment_checklist) }
+  ${ collapse_template(fs_attachment_checklist, collapsed=False) }
 progress: 100
 ---
-template: fs_next_steps
-subject: |
-  What to do next
-content: |
-  1. **Print** your financial statement and any schedules.
-  2. **Sign** the certification page (if you have not already).
-  % if financial_form_type == "long":
-  3. **Get the statement notarized** before filing. The long form requires
-     notarization under Massachusetts court rules.
-  % endif
-  4. **Attach** supporting documents (pay stubs, tax returns, etc.).
-  5. **File** the original with the court clerk's office and keep a copy for
-     your records.
-  6. **Serve** a copy on the other party or their attorney.
----
 template: fs_attachment_checklist
-subject: |
-  Documents to attach
 content: |
-  The court may require supporting documents with your financial statement.
-  Gather the following if available:
-
-  - Most recent **pay stubs** (at least 4 weeks)
-  - Most recent **federal tax return** (including W-2s)
-  - Proof of **child care** or **medical costs** (if claimed)
-  % if defined('has_self_employment_income') and has_self_employment_income:
-  - **Business records** (receipts, P&L statement) for Schedule A
-  % endif
-  % if defined('has_rental_income') and has_rental_income:
-  - **Rental records** (lease agreements, expense receipts) for Schedule B
-  % endif
+  **Attachment checklist**
+  - Recent pay stubs or benefit statements
+  - Proof of child care or medical costs (if applicable)
+  - Business records for Schedule A
+  - Rental records for Schedule B
 ---
 id: motor_vehicles
 question: |
@@ -1042,44 +863,40 @@ generic object: motor_vehicles
 question: |
   Motor vehicle details
 subquestion: |
-  Enter the details you have. Estimates are fine if exact values are
-  not available.
+  Enter the best information you have. Estimates are fine if exact values
+  are not available.
 fields:
   - Type: motor_vehicles[i].vehicle_type
     required: False
-    help: |
-      Car, truck, SUV, motorcycle, etc.
   - Make: motor_vehicles[i].make
     required: False
-    css class: col-md-4
   - Model: motor_vehicles[i].model
     required: False
-    css class: col-md-4
-  - Year of purchase: motor_vehicles[i].purchase_year
-    datatype: integer
-    required: False
-    css class: col-md-4
   - Purchase price: motor_vehicles[i].purchase_price
     datatype: currency
+    required: False
+  - Year of purchase: motor_vehicles[i].purchase_year
+    datatype: integer
     required: False
   - Fair market value: motor_vehicles[i].fair_market_value
     datatype: currency
     required: False
-    help: |
-      What the vehicle would sell for today. You can check Kelley Blue
-      Book (kbb.com) or similar sites for an estimate.
   - Outstanding loan: motor_vehicles[i].outstanding_loan
     datatype: currency
     required: False
-    help: |
-      The remaining balance on any auto loan for this vehicle.
   - Equity: motor_vehicles[i].equity
     datatype: currency
     required: False
-    help: |
-      Fair market value minus the outstanding loan balance.
 ---
 code: |
+  motor_vehicles[i].vehicle_type
+  motor_vehicles[i].make
+  motor_vehicles[i].model
+  motor_vehicles[i].purchase_price
+  motor_vehicles[i].purchase_year
+  motor_vehicles[i].fair_market_value
+  motor_vehicles[i].outstanding_loan
+  motor_vehicles[i].equity
   motor_vehicles[i].complete = True
 ---
 id: motor_vehicles_more
@@ -1105,14 +922,10 @@ generic object: pensions
 question: |
   Pension or retirement plan
 subquestion: |
-  Enter the most recent values you have. Check your latest statement
-  or log in to your account for current balances.
+  Enter the most recent values you have access to.
 fields:
   - Institution: pensions[i].institution
     required: False
-    help: |
-      The company that manages the plan — for example, Fidelity, Vanguard,
-      TIAA, or your employer's name.
   - Account number: pensions[i].account_number
     required: False
   - Listed beneficiary: pensions[i].beneficiary
@@ -1120,18 +933,16 @@ fields:
   - Defined benefit plan amount: pensions[i].defined_benefit_amount
     datatype: currency
     required: False
-    help: |
-      A defined benefit plan promises a fixed monthly payment at retirement,
-      based on salary and years of service. Enter the projected monthly
-      benefit if known.
   - Defined contribution plan amount: pensions[i].defined_contribution_amount
     datatype: currency
     required: False
-    help: |
-      A defined contribution plan (401(k), 403(b), IRA) has a current
-      account balance. Enter the most recent balance.
 ---
 code: |
+  pensions[i].institution
+  pensions[i].account_number
+  pensions[i].beneficiary
+  pensions[i].defined_benefit_amount
+  pensions[i].defined_contribution_amount
   pensions[i].complete = True
 ---
 id: pensions_more
@@ -1175,6 +986,12 @@ fields:
     required: False
 ---
 code: |
+  other_assets[i].asset_type
+  other_assets[i].description
+  other_assets[i].institution
+  other_assets[i].account_number
+  other_assets[i].beneficiary
+  other_assets[i].current_balance
   other_assets[i].complete = True
 ---
 id: other_assets_more
@@ -1200,34 +1017,27 @@ generic object: liabilities
 question: |
   Liability details
 subquestion: |
-  Enter what you know about this debt. Estimates are fine if you do
-  not have exact figures.
+  Enter the creditor and current balance if known.
 fields:
   - Creditor: liabilities[i].creditor
     required: False
-    help: |
-      The person or company you owe money to — for example, a bank,
-      credit card company, or the IRS.
   - Nature of debt: liabilities[i].debt_type
     required: False
-    help: |
-      Examples: credit card, student loan, auto loan, medical bill,
-      tax debt, personal loan.
   - Date incurred: liabilities[i].date_incurred
     required: False
-    help: |
-      The approximate date the debt was taken on.
-  - Total amount due: liabilities[i].amount_due
+  - Amount due: liabilities[i].amount_due
     datatype: currency
     required: False
   - Weekly payment: liabilities[i].weekly_payment
     datatype: currency
     required: False
-    help: |
-      Your current weekly payment toward this debt. If you pay monthly,
-      divide by 4.3.
 ---
 code: |
+  liabilities[i].creditor
+  liabilities[i].debt_type
+  liabilities[i].date_incurred
+  liabilities[i].amount_due
+  liabilities[i].weekly_payment
   liabilities[i].complete = True
 ---
 id: liabilities_more
@@ -1246,9 +1056,7 @@ continue button field: attorney_statement
 question: |
   Attorney statement
 subquestion: |
-  If you are representing yourself (pro se), select "No" below and
-  continue to the next step. The remaining fields on this page only
-  apply if you have legal representation.
+  If you do not have an attorney, choose "No" and skip the rest of this page.
 fields:
   - Do you have an attorney?: has_attorney
     datatype: yesno
