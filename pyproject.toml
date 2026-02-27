@@ -16,6 +16,7 @@ dependencies = [
     "docassemble.ALMassachusetts>=0.1.2",
     "docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main",
     "docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main",
+    "docassemble.AssemblyLine>=4.3.0",
 ]
 license = "MIT"
 license-files = [

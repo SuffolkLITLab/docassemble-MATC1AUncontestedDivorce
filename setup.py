@@ -53,7 +53,7 @@ setup(name='docassemble.MATC1AUncontestedDivorce',
       license='MIT',
       url='https://courtformsonline.org',
       packages=find_namespace_packages(),
-      install_requires=['docassemble.ALMassachusetts>=0.1.2', 'docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main', 'docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main'],
+      install_requires=['docassemble.ALMassachusetts>=0.1.2', 'docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main', 'docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main', 'docassemble.AssemblyLine>=4.3.0']
       zip_safe=False,
       package_data=find_package_data(where='docassemble/MATC1AUncontestedDivorce/', package='docassemble.MATC1AUncontestedDivorce'),
      )
