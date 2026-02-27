@@ -2,18 +2,33 @@
 modules:
   - docassemble.base.util
 ---
+metadata:
+  title: |
+    Financial Statement (Long Form)
+  short title: |
+    Financial Statement Long
+  description: |
+    Long-form financial statement questions for Massachusetts Probate and Family Court.
+  LIST_topics:
+    - Family law
+    - Financial disclosure
+  jurisdiction: NAM-US-US+MA
+  landing_page_url: https://courtformsonline.org/
+  authors:
+    - Court Forms Online
+---
 variable name: long_expense_terms
 data: !!omap
   - rent: "Rent"
   - mortgage: "Mortgage (principal, interest, taxes, insurance if escrowed)"
   - property_tax: "Property taxes and assessments"
-  - home_insurance: "Homeowner/tenant insurance"
+  - home_insurance: "Homeowner or tenant insurance"
   - maintenance_fees: "Maintenance fees or condo fees"
   - heat: "Heat"
   - electric: "Electricity"
   - gas: "Propane or natural gas"
   - phone: "Telephone"
-  - water: "Water/sewer"
+  - water: "Water and sewer"
   - food: "Food"
   - supplies: "House supplies"
   - laundry: "Laundry"
@@ -56,23 +71,17 @@ sets:
   - long_form_sections
 code: |
   nav.set_section("Deductions")
-  set_progress(58)
-  fs_deductions_intro
-  long_deductions_taxes
-  long_deductions_insurance
-  long_deductions_other
+  set_progress(60)
+  long_deductions
   long_net_income
   long_prior_year
   nav.set_section("Expenses")
-  set_progress(68)
-  fs_expenses_intro
+  set_progress(70)
   long_expense_list.gathered
   long_expenses_total
-  if long_expenses_total_weekly == 0:
-    confirm_no_expenses_long
+  confirm_no_expenses_long
   nav.set_section("Assets")
-  set_progress(78)
-  fs_assets_intro
+  set_progress(80)
   long_counsel_fees
   long_real_estate_primary
   long_real_estate_secondary
@@ -81,8 +90,7 @@ code: |
   other_assets.gather()
   long_assets_total
   nav.set_section("Liabilities")
-  set_progress(88)
-  fs_liabilities_intro
+  set_progress(90)
   liabilities.gather()
   long_liabilities_total
   long_certification
@@ -95,7 +103,7 @@ generic object: ALExpenseList
 question: |
   Expense categories
 subquestion: |
-  Select the expense categories that apply to your household. You will enter
+  Choose the expense categories that apply to your household. You will enter
   amounts and how often you pay them. If a category is missing, choose "Other."
 fields:
   - no label: x.selected_types
@@ -133,7 +141,7 @@ fields:
     input type: radio
     code: |
       times_per_year_for_expenses
-    default: ${ fs_default_times_per_year }
+    default: fs_default_times_per_year
 validation code: |
   x[i].display_name = long_expense_terms.get(x[i].source, x[i].source)
 ---
@@ -166,59 +174,43 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Review your entries. Use "Add another" to include more expenses.
+  Look over your entries. Use "Add another" to include more expenses.
 
   ${ x.add_action() }
 ---
-id: long_deductions_taxes
+id: long_deductions
 sets:
   - long_deductions
-continue button field: long_deductions_taxes
+continue button field: long_deductions
 question: |
-  Deductions: Taxes and mandatory withholdings
+  Deductions from gross income
 subquestion: |
-  Enter the amounts deducted from a single paycheck using your pay
-  frequency (${ financial_cadence_default }). Look for these lines on
-  your pay stub under "deductions" or "withholdings."
+  Enter the amount taken out in one pay period for each line.
+  Use your chosen cadence (${ financial_cadence_default }).
+  These are amounts withheld from your gross pay.
+
+  **Tip:** If you do not know an exact amount, enter your best estimate.
 fields:
-  - Federal tax withholding: long_deduction_federal
+  - Federal tax withholding/estimated payments: long_deduction_federal
     datatype: currency
     required: False
-    help: |
-      Look for "Federal Tax," "FIT," or "Fed W/H" on your pay stub.
   - Federal withholding allowances claimed: long_federal_allowances
     datatype: integer
     required: False
     min: 0
-  - State tax withholding: long_deduction_state
+  - State tax withholding/estimated payments: long_deduction_state
     datatype: currency
     required: False
-    help: |
-      Look for "State Tax," "SIT," or "MA W/H" on your pay stub.
   - State withholding allowances claimed: long_state_allowances
     datatype: integer
     required: False
     min: 0
-  - F.I.C.A. (Social Security): long_deduction_fica
+  - F.I.C.A.: long_deduction_fica
     datatype: currency
     required: False
-    help: |
-      Federal Insurance Contributions Act — the Social Security tax on
-      your pay stub. Often labeled "FICA," "SS," or "OASDI."
   - Medicare: long_deduction_medicare
     datatype: currency
     required: False
-    help: |
-      Usually listed separately from FICA on your pay stub.
----
-id: long_deductions_insurance
-continue button field: long_deductions_insurance
-question: |
-  Deductions: Insurance and union dues
-subquestion: |
-  Enter insurance premiums and union dues deducted from your paycheck
-  (${ financial_cadence_default } amounts).
-fields:
   - Medical insurance: long_deduction_medical
     datatype: currency
     required: False
@@ -228,46 +220,34 @@ fields:
   - Vision insurance: long_deduction_vision
     datatype: currency
     required: False
-  - Life insurance: long_deduction_life_insurance
-    datatype: currency
-    required: False
   - Union dues: long_deduction_union
     datatype: currency
     required: False
----
-id: long_deductions_other
-continue button field: long_deductions_other
-question: |
-  Deductions: Support, savings, and other
-subquestion: |
-  Enter any remaining paycheck deductions
-  (${ financial_cadence_default } amounts). Leave blank any that do
-  not apply.
-fields:
   - Child support: long_deduction_child_support
     datatype: currency
     required: False
   - Spousal support: long_deduction_spousal_support
     datatype: currency
     required: False
-  - Retirement contributions: long_deduction_retirement
+  - Retirement: long_deduction_retirement
     datatype: currency
     required: False
-    help: |
-      401(k), 403(b), pension, or other employer-sponsored retirement.
   - Savings: long_deduction_savings
     datatype: currency
     required: False
   - Deferred compensation: long_deduction_deferred_comp
     datatype: currency
     required: False
-  - Credit union (loan repayment): long_deduction_credit_union_loan
+  - Credit union (loan): long_deduction_credit_union_loan
     datatype: currency
     required: False
   - Credit union (savings): long_deduction_credit_union_savings
     datatype: currency
     required: False
   - Charitable contributions: long_deduction_charity
+    datatype: currency
+    required: False
+  - Life insurance: long_deduction_life_insurance
     datatype: currency
     required: False
   - Other (specify): long_deduction_other_description
@@ -303,16 +283,13 @@ continue button field: long_net_income
 question: |
   Net weekly income
 subquestion: |
-  Here is your income after deductions:
+  Total gross weekly income: ${ currency(income_total_weekly) }
 
-  | | Weekly |
-  |---|---:|
-  | Gross income | ${ currency(income_total_weekly) } |
-  | Total deductions | – ${ currency(long_deductions_total_weekly) } |
-  | **Net income** | **${ currency(float(income_total_weekly) - float(long_deductions_total_weekly)) }** |
+  Total weekly deductions: ${ currency(long_deductions_total_weekly) }
 
-  This is your take-home pay before expenses. If something looks off,
-  use the **Back** button to review your entries.
+  Net weekly income: ${ currency(float(income_total_weekly) - float(long_deductions_total_weekly)) }
+
+  This is your income after deductions.
 ---
 code: |
   long_net_weekly_income = float(income_total_weekly) - float(long_deductions_total_weekly)
@@ -517,9 +494,9 @@ question: |
 subquestion: |
   You entered $0 for expenses.
 
-  If this is correct, choose "Yes" to continue. If not, click "Back" to edit.
+  Choose "Yes" to continue, or "No" to go back and edit expenses.
 fields:
-  - Yes, I have no expenses to report: confirm_no_expenses_long
+  - Yes, I do not have expenses to list: confirm_no_expenses_long
     datatype: yesno
 ---
 id: long_counsel_fees
@@ -529,12 +506,12 @@ continue button field: long_counsel_fees
 question: |
   Counsel fees
 subquestion: |
-  Only complete this section if you have an attorney.
+  Only fill this section if you have an attorney.
 fields:
   - Retainer amount(s) paid to your attorney(s): long_counsel_retainer
     datatype: currency
     required: False
-  - Legal fees incurred to date against retainer(s): long_counsel_fees_incurred
+  - Legal fees incurred so far against retainer(s): long_counsel_fees_incurred
     datatype: currency
     required: False
   - Anticipated total legal expense (minimum): long_counsel_range_min
@@ -557,11 +534,9 @@ fields:
     required: False
   - City/Town: long_primary_real_estate_city
     required: False
-    css class: col-md-6
   - State: long_primary_real_estate_state
     default: MA
     required: False
-    css class: col-md-6
   - Title held in name of: long_primary_real_estate_title
     required: False
   - Purchase price: long_primary_real_estate_purchase_price
@@ -582,7 +557,7 @@ fields:
   - Outstanding 1st mortgage: long_primary_real_estate_first_mortgage
     datatype: currency
     required: False
-  - Outstanding 2nd mortgage/home equity loan: long_primary_real_estate_second_mortgage
+  - Outstanding 2nd mortgage or home equity loan: long_primary_real_estate_second_mortgage
     datatype: currency
     required: False
   - Equity: long_primary_real_estate_equity
@@ -602,11 +577,9 @@ fields:
     required: False
   - City/Town: long_secondary_real_estate_city
     required: False
-    css class: col-md-6
   - State: long_secondary_real_estate_state
     default: MA
     required: False
-    css class: col-md-6
   - Title held in name of: long_secondary_real_estate_title
     required: False
   - Purchase price: long_secondary_real_estate_purchase_price
@@ -627,12 +600,41 @@ fields:
   - Outstanding 1st mortgage: long_secondary_real_estate_first_mortgage
     datatype: currency
     required: False
-  - Outstanding 2nd mortgage/home equity loan: long_secondary_real_estate_second_mortgage
+  - Outstanding 2nd mortgage or home equity loan: long_secondary_real_estate_second_mortgage
     datatype: currency
     required: False
   - Equity: long_secondary_real_estate_equity
     datatype: currency
     required: False
+---
+code: |
+  _long_re_primary = (
+    fs_safe_float(value("long_primary_real_estate_equity"))
+    if defined("long_primary_real_estate_equity")
+    and value("long_primary_real_estate_equity") not in (None, "")
+    else 0.0
+  )
+  _long_re_secondary = (
+    fs_safe_float(value("long_secondary_real_estate_equity"))
+    if defined("long_secondary_real_estate_equity")
+    and value("long_secondary_real_estate_equity") not in (None, "")
+    else 0.0
+  )
+  _long_vehicles = fs_sum_list_attr(motor_vehicles, "equity") if defined("motor_vehicles") else 0.0
+  _long_pensions = 0.0
+  if defined("pensions"):
+    _long_pensions = (
+      fs_sum_list_attr(pensions, "defined_benefit_amount")
+      + fs_sum_list_attr(pensions, "defined_contribution_amount")
+    )
+  _long_other = fs_sum_list_attr(other_assets, "current_balance") if defined("other_assets") else 0.0
+  long_assets_total_value = currency(
+    _long_re_primary
+    + _long_re_secondary
+    + _long_vehicles
+    + _long_pensions
+    + _long_other
+  )
 ---
 id: long_assets_total
 continue button field: long_assets_total
@@ -645,7 +647,7 @@ subquestion: |
   - **Retirement plans:** ${ len(pensions) if defined('pensions') and pensions.there_are_any else 0 }
   - **Other assets:** ${ len(other_assets) if defined('other_assets') and other_assets.there_are_any else 0 }
 
-  If any of these counts look wrong, use the **Back** button to make corrections.
+  Use **Back** if you want to make changes.
 ---
 id: long_liabilities_total
 continue button field: long_liabilities_total
@@ -654,24 +656,11 @@ question: |
 subquestion: |
   **Liabilities listed:** ${ len(liabilities) if defined('liabilities') and liabilities.there_are_any else 0 }
 
-  If this count looks wrong, use the **Back** button to make corrections.
-
-  You are almost done — the next steps are to sign, certify, and
-  optionally notarize your financial statement.
----
-# Computed totals for long form PDF fields
-code: |
-  # Total assets: real estate equity + vehicle equities + pension values + other asset values
-  _long_re_primary = float(long_primary_real_estate_equity) if defined('long_primary_real_estate_equity') and long_primary_real_estate_equity else 0
-  _long_re_secondary = float(long_secondary_real_estate_equity) if defined('long_secondary_real_estate_equity') and long_secondary_real_estate_equity else 0
-  _long_vehicles = sum(float(v.equity) for v in motor_vehicles if defined(v.instanceName + '.equity')) if defined('motor_vehicles') and motor_vehicles.there_are_any else 0
-  _long_other = sum(float(a.value) for a in other_assets if defined(a.instanceName + '.value')) if defined('other_assets') and other_assets.there_are_any else 0
-  long_assets_total_value = currency(_long_re_primary + _long_re_secondary + _long_vehicles + _long_other)
+  Use **Back** if you want to make changes.
 ---
 code: |
-  # Total liabilities
-  _long_liab_due = sum(float(l.amount_due) for l in liabilities if defined(l.instanceName + '.amount_due')) if defined('liabilities') and liabilities.there_are_any else 0
-  _long_liab_weekly = sum(float(l.weekly_payment) for l in liabilities if defined(l.instanceName + '.weekly_payment')) if defined('liabilities') and liabilities.there_are_any else 0
+  _long_liab_due = fs_sum_list_attr(liabilities, "amount_due") if defined("liabilities") else 0.0
+  _long_liab_weekly = fs_sum_list_attr(liabilities, "weekly_payment") if defined("liabilities") else 0.0
   long_liabilities_total_amount_due = currency(_long_liab_due)
   long_liabilities_total_weekly_payment = currency(_long_liab_weekly)
 ---
@@ -682,14 +671,13 @@ continue button field: long_certification
 question: |
   Certification
 subquestion: |
-  By signing below, you certify under the penalties of perjury that the
-  information in this financial statement is true and accurate to the
-  best of your knowledge.
+  Sign to certify that the information you provided is true to the best of
+  your knowledge.
 fields:
+  - Signature: user_signature
+    required: False
   - Signature date: user_signature_date
     datatype: date
-    default: ${ today() }
-  - Signature: user_signature
     required: False
 ---
 id: long_notary
@@ -699,7 +687,7 @@ continue button field: long_notary
 question: |
   Notary
 subquestion: |
-  If you plan to have the statement notarized now, provide the notary details.
+  If you plan to have the statement notarized now, enter the notary details.
 fields:
   - Will you have this notarized now?: will_notarize_now
     datatype: yesno

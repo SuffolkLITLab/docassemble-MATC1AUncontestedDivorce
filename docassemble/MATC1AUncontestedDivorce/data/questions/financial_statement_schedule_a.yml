@@ -2,6 +2,21 @@
 modules:
   - docassemble.base.util
 ---
+metadata:
+  title: |
+    Financial Statement Schedule A
+  short title: |
+    Schedule A
+  description: |
+    Schedule A questions for self-employment or business income.
+  LIST_topics:
+    - Family law
+    - Financial disclosure
+  jurisdiction: NAM-US-US+MA
+  landing_page_url: https://courtformsonline.org/
+  authors:
+    - Court Forms Online
+---
 variable name: schedule_a_expense_choices
 data:
   - [cost_goods, "Cost of goods sold"]
@@ -24,7 +39,7 @@ data:
   - [laundry_cleaning, "Laundry and cleaning"]
   - [pension_profit_sharing, "Pension and profit sharing"]
   - [rent_leased_equipment, "Rent on leased equipment"]
-  - [machinery_equipment, "Machinery/equipment"]
+  - [machinery_equipment, "Machinery and equipment"]
   - [other_business_property, "Other business property"]
   - [repairs, "Repairs"]
   - [supplies, "Supplies"]
@@ -54,10 +69,10 @@ code: |
 id: schedule_a_intro
 continue button field: schedule_a_intro
 question: |
-  Schedule A - self-employment or business income
+  Schedule A: self-employment or business income
 subquestion: |
   You indicated that you have self-employment or business income.
-  This schedule captures business receipts and expenses.
+  This schedule asks for business income and business expenses.
 ---
 id: schedule_a_gross_receipts
 sets:
@@ -82,7 +97,7 @@ question: |
   Monthly business expenses
 subquestion: |
   Add each expense line item and its monthly amount. If you are not sure,
-  provide your best estimate.
+  give your best estimate.
 fields:
   - Do you have business expenses to list?: schedule_a_expenses.there_are_any
     datatype: yesno
@@ -141,7 +156,7 @@ continue button field: schedule_a_weekly_income
 question: |
   Weekly business income
 subquestion: |
-  Weekly business income (gross monthly receipts minus total monthly expenses, divided by 4.3):
+  Weekly business income = (gross monthly receipts - total monthly expenses) divided by 4.3
   ${ currency(schedule_a_weekly_business_income) }
 ---
 id: schedule_a_business_nature
@@ -320,7 +335,7 @@ continue button field: schedule_a_accounting
 question: |
   Accounting basis
 subquestion: |
-  Most small businesses use the calendar year.
+  Most small businesses use calendar year accounting.
 fields:
   - Accounting basis: schedule_a_accounting_basis
     input type: radio
@@ -343,13 +358,13 @@ sets:
   - schedule_a_year_to_date
 continue button field: schedule_a_year_to_date
 question: |
-  Year-to-date totals
+  This year so far
 subquestion: |
-  Enter totals from the beginning of the year through today, if known.
+  Enter totals from the start of the year through today, if known.
 fields:
-  - Gross receipts year to date: schedule_a_gross_receipts_ytd
+  - Gross receipts this year so far: schedule_a_gross_receipts_ytd
     datatype: currency
     required: False
-  - Gross expenses year to date: schedule_a_gross_expenses_ytd
+  - Gross expenses this year so far: schedule_a_gross_expenses_ytd
     datatype: currency
     required: False

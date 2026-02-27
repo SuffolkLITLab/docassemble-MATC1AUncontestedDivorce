@@ -2,6 +2,21 @@
 modules:
   - docassemble.base.util
 ---
+metadata:
+  title: |
+    Financial Statement Schedule B
+  short title: |
+    Schedule B
+  description: |
+    Schedule B questions for rental income and rental expenses.
+  LIST_topics:
+    - Family law
+    - Financial disclosure
+  jurisdiction: NAM-US-US+MA
+  landing_page_url: https://courtformsonline.org/
+  authors:
+    - Court Forms Online
+---
 variable name: schedule_b_expense_choices
 data:
   - [advertising, "Advertising"]
@@ -34,25 +49,25 @@ code: |
 id: schedule_b_intro
 continue button field: schedule_b_intro
 question: |
-  Schedule B - rental income
+  Schedule B: rental income
 subquestion: |
   You indicated that you have rental income.
-  This schedule captures rental receipts and expenses.
+  This schedule asks for rental income and rental expenses.
 ---
 id: schedule_b_rent_received
 sets:
   - schedule_b_rent_received
 continue button field: schedule_b_rent_received
 question: |
-  Annual rent received
+  Annual rent
 subquestion: |
-  Enter the total rent you receive in a typical year before expenses.
+  Enter the total rent you get in a typical year before expenses.
 fields:
-  - Annual rent received: schedule_b_annual_rent_received
+  - Annual rent: schedule_b_annual_rent_received
     datatype: currency
     required: False
     help: |
-      Enter the total rent you receive in a typical year before expenses.
+      Enter the total rent you get in a typical year before expenses.
 ---
 id: schedule_b_expenses_list
 sets:
@@ -62,7 +77,7 @@ question: |
   Annual rental expenses
 subquestion: |
   Add each expense line item and its annual amount. If you are not sure,
-  provide your best estimate.
+  give your best estimate.
 fields:
   - Do you have rental expenses to list?: schedule_b_expenses.there_are_any
     datatype: yesno
@@ -107,9 +122,9 @@ code: |
 id: schedule_b_expense_totals
 continue button field: schedule_b_expense_totals
 question: |
-  Total annual expenses
+  Annual expense total
 subquestion: |
-  Total annual expenses: ${ currency(schedule_b_total_annual_expenses) }
+  ${ currency(schedule_b_total_annual_expenses) }
 ---
 code: |
   schedule_b_weekly_rental_income = (
@@ -121,5 +136,5 @@ continue button field: schedule_b_weekly_income
 question: |
   Weekly rental income
 subquestion: |
-  Weekly rental income (annual rent minus expenses, divided by 52):
+  Weekly rental income = (annual rent - annual expenses) divided by 52
   ${ currency(schedule_b_weekly_rental_income) }
