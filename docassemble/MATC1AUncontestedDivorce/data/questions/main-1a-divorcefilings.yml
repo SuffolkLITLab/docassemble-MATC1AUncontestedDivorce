@@ -6,11 +6,11 @@ include:
 ---
 metadata:
   title: >-
-    Uncontested Divorce Joint Petition 
+        No fault divorce joint petition 1A
   short title: >-
-    Joint Divorce Petition
+        Divorce Joint Petition
   description: |-
-    This interview helps someone in Massachusetts ask the court for a joint, uncontested divorce under STATUTE.
+        This interview helps couples in Massachusetts ask the court for a joint, uncontested divorce under [G.L. c. 208 § 1A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
   can_I_use_this_form: |
     If you are married, you can use this interview to jointly request an uncontested divorce.
   before_you_start: |
@@ -19,9 +19,10 @@ metadata:
     Before you get started, please gather:
     
     1. Marriage certificate
-    2. Recent pay stub. 
-    3. Bills.
-    
+    2. Recent pay stub
+    3. Budget or bills tracking
+    4. Most recent tax return
+
     When you are finished, you will need to:
     
     1. 
@@ -53,12 +54,18 @@ metadata:
   jurisdiction: NAM-US-US+MA
   review_date: 2026-01-23
   form_titles:
-    - Uncontested Divorce Joint Petition 1A
-    - 
+    - Joint petition for divorce pursuant to G.L. c. 208, § 1 A
+    - Affidavit of irretrievable breakdown
+    - Report of absolute divorce or annulment
+    - Child care or custody disclosure affidavit
+    - Supplemental child care or custody disclosure affidavit
   form_numbers: [cjd101A, R408, TC0050, TC0050A]
   fees:
-    - Filing fee: $215.00
+    - Filing fee: $200.00
+    - Surcharge: $15.00
+
   update_notes: |
+    (none)
 ---
 code: |
   # This controls the default country and list of states in address field questions
@@ -69,17 +76,17 @@ code: |
   AL_DEFAULT_STATE = "MA"
 ---
 code: |
-  github_repo_name =  'docassemble-Divorcefilings'
+  github_repo_name = 'docassemble-MATC1AUncontestedDivorce'
 ---
 code: |
-  interview_short_title = "Ask the court for a joint, uncontested divorce"
+    interview_short_title = "Jointly ask the court for a no fault divorce"
 ---
 code: |
   al_form_type = "starts_case" 
 ---
 objects:
   - users: ALPeopleList.using(ask_number=True, target_number=2)
-  - children: ALPeopleList
+  - children: ALPeopleList.using(target_number=children_of_marriage_number)
   - attorneys: ALPeopleList.using(ask_number=True)
   - marital_home: ALAddress
 ---
@@ -108,16 +115,29 @@ code: |
   massachusetts_residency
   if massachusetts_residency == False:
     purpose_mismatch
+  petition_is_joint
+  if petition_is_joint == False:
+    purpose_mismatch
   separation_agreement_reached
+  if separation_agreement_reached == False:
+    purpose_mismatch
   separation_agreement_format
   if separation_agreement_format == "wait":
     cautionary_validation_message
   marriage_date
   live_together
-  marital_home.address_fields()
+  marital_home.address
+  users[0].name_change
+  request_merge_agreement
   previous_action
   if previous_action == True:
     previous_action_detail
+  additional_request
+  children_of_marriage
+  if not children_of_marriage:
+    children_of_marriage_number = 0
+  else:
+    children_of_marriage_number
   users.gather()
   children.gather()
   set_progress(90)
@@ -148,7 +168,7 @@ continue button field: divorcefilings_intro
 question: |
   Uncontested Divorce Joint Petition
 subquestion: |
-  This interview will help you ask the court for a joint, uncontested divorce.
+  This interview will help you ask the court for a joint, uncontested divorce
   
   Before you get started, please gather:
   
@@ -254,7 +274,7 @@ question: |
 subquestion: |
   Anyone filing a joint petition for divorce with the courts must file a separation agreement within 90 days of initial filing. Separation agreement must be notorized and should completely address the major issues such as property division, child custody, and child support. 
 
-  Here we will explain the different options available for filing a separation agreement with a 1A divorce. 
+    Here we will explain the different options available for filing a separation agreement with a joint (1A) divorce. 
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
@@ -295,46 +315,6 @@ fields:
     show if:
       variable: live_together
       is: False
-  - "Where did you last live together? (County)": last_living_together_county
-    datatype: radio
-    choices:
-      - Barnstable
-      - Berkshire
-      - Bristol
-      - Dukes
-      - Essex
-      - Franklin
-      - Hampden
-      - Hampshire
-      - Middlesex
-      - Nantucket
-      - Norfolk
-      - Plymouth
-      - Suffolk
-      - Worcester
-      - Outside of Massachusetts
-    show if:
-      variable: live_together
-      is: False
-  - "Where do you live together? (County)": last_living_together_county
-    datatype: radio
-    choices:
-      - Barnstable
-      - Berkshire
-      - Bristol
-      - Dukes
-      - Essex
-      - Franklin
-      - Hampden
-      - Hampshire
-      - Middlesex
-      - Nantucket
-      - Norfolk
-      - Plymouth
-      - Suffolk
-      - Worcester
-      - Outside of Massachusetts
-    show if: live_together
 ---
 id: Marital home address
 sets:
@@ -346,7 +326,12 @@ subquestion:  |
   Address of the marital home
 fields: 
   - code: |
-      marital_home.address_fields()
+      marital_home.address_fields(show_county=True)
+---
+#refer to marital_home.normalized_address().county to the logic for venue
+
+#marital_home.normalized_address().county
+#if marital_home.normalized_address().county == users[0].normalized_address().county:
 ---
 code: |
   request_divorce_nofault = petition_is_joint and separation_agreement_reached
@@ -354,7 +339,7 @@ code: |
 code: |
   request_separation_agreement_approval = separation_agreement_reached
 ---
-id: merger survival 
+id: merger survival
 question: | 
   Merger or survival of separation agreement
 subquestion: | 
@@ -373,18 +358,16 @@ id: Name change requests
 question: |
   Name change requests
 fields:
-  - "Change ${  users[0].familiar()  } last name to former last name": change_name_petitioners1
+  - "Does ${  users[0].familiar()  } want to change their last name to their former last name?": users[0].name_change
     datatype: yesnoradio
-  - "${  users[0]  } former last name": petitioners1_former_name_last
+  - "${  users[0].familiar()  }'s former last name": users[0].former_name_last
     maxlength: 48
-    show if: change_name_petitioners1
-  - "Change ${  users[0]  } last name to former last name": change_name_petitioners2
+    show if: users[0].name_change
+  - "Does ${  users[1].familiar()  } want to change their last name to their former last name?": users[1].name_change
     datatype: yesnoradio
-  - "${  users[1]  } former last name": petitioners2_former_name_last
+  - "${  users[1]  }'s former last name": users[1].former_name_last
     maxlength: 48
-    show if: change_name_petitioners2
-  - "Petitioners2 name last upon divorce": petitioners2_name_last_upon_divorce
-    maxlength: 26
+    show if: users[1].name_change
 ---
 id: Additional requests
 question: |
@@ -393,8 +376,8 @@ subquestion: |
   Any additonal requests for the court? This is RARE
 fields: 
   - "Do you have any additional requests for the court?": additional_request
-    datatype: noyesradio
-    hint: This is unlikely unles...
+    datatype: yesnoradio
+    hint: This is unlikely unless...
   - "Additonal request detail": additonal_request_detail
     maxlength: 84
     required: False
@@ -404,18 +387,16 @@ id: Petitioner A Information
 question: |
   Petitioner A Information
 fields:
-  - "Petitioners1 name last at birth": petitioners1_name_last_at_birth
+  - "{  users[0].familair()  } last name at birth": users[0].name_last_at_birth
     maxlength: 26
-  - "Petitioners1 name last upon divorce": petitioners1_name_last_upon_divorce
-    maxlength: 26
-  - "Petitioners1 is male": petitioners1_is_male
-    datatype: yesno
-  - "Petitioners1 is female": petitioners1_is_female
-    datatype: yesno
-  - "Petitioners1 ssn": petitioners1_ssn
-    maxlength: 23
   - "Petitioners1 marriage number": petitioners1_marriage_number
     maxlength: 10
+---
+# ask for binary sex and explain why
+#  - "Petitioners1 is male": petitioners1_is_male
+#    datatype: yesno
+#  - "Petitioners1 is female": petitioners1_is_female
+#    datatype: yesno
 ---
 id: Previous actions
 question: |
@@ -452,10 +433,6 @@ fields:
     datatype: yesno
   - "Petitioners2 is male": petitioners2_is_male
     datatype: yesno
-  - "Petitioners2 ssn": petitioners2_ssn
-    maxlength: 23
----
-#change gender info to be asked with users gather
 ---
 id: Eligibility and input confirmation 
 event: Introduction summary 
@@ -497,19 +474,27 @@ fields:
     maxlength: 90
   - "Submitting official fullname": submitting_official_fullname
     maxlength: 88
-
 ---
 id: Children of the Marriage
 question: |
   Children of the Marriage
-subquestion: | 
-  Children of the marriage are defined as... 
-fields: 
+subquestion: |
+  Children of the marriage are defined as...
+fields:
   - "Are there any children of this marriage?": children_of_marriage
     datatype: yesnoradio
-  - "How many?": children_of_marriage_number
 ---
-# code to set the number of children target equal to the children_of_marriage_number
+id: Children of the marriage number
+question: |
+  Number of children of the marriage
+fields:
+  - "How many children came from the marriage between ${ users[0].familiar() } and ${ users[1].familiar() }?": children_of_marriage_number
+    datatype: integer
+    min: 0
+    max: 8
+    show if:
+      variable: children_of_marriage
+      is: True
 ---
 id: Children
 question: |
@@ -519,14 +504,21 @@ fields:
     maxlength: 10
   - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
     maxlength: 10
-  - "R408 addendum": r408_addendum
-    input type: area
-    maxlength: 425
-  - "Do you have any children of this marriage?": children_of_marriage
-    datatype: yesno
-  - "How many children of this marriage?": children_of_marriage_numnber
-    datatype: integer
-    min: 0
+---
+ # "R408 addendum": r408_addendum
+ #   input type: area
+ #  maxlength: 425
+---
+id: Social security 
+question: |
+  Social security numbers
+subquestion: |
+  r408 asks for demographic information including social security number (cite statute from intstuctions sheet)
+fields:
+  - "Petitioners1 ssn": petitioners1_ssn
+    maxlength: 23
+  - "Petitioners2 ssn": petitioners2_ssn
+    maxlength: 23
 ---
 id: preview divorcefilings
 question: |
