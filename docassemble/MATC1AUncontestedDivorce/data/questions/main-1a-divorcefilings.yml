@@ -8,11 +8,11 @@ metadata:
   title: >-
         No fault divorce joint petition 1A
   short title: >-
-        Divorce Joint Petition
+        Divorce joint petition
   description: |-
         This interview helps couples in Massachusetts ask the court for a joint, uncontested divorce under [G.L. c. 208 § 1A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
   can_I_use_this_form: |
-    If you are married, you can use this interview to jointly request an uncontested divorce.
+    If you are married, and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an uncontested divorce. 
   before_you_start: |
     This interview will help you ask the court for a joint, uncontested divorce.
     
@@ -172,10 +172,11 @@ subquestion: |
   
   Before you get started, please gather:
   
-  1. Marriage certificate
-  2. 
-  3. 
-  
+    1. Marriage certificate
+    2. Recent pay stub
+    3. Budget or bills tracking
+    4. Most recent tax return
+
   When you are finished, you will need to:
   
   1. 
@@ -240,7 +241,7 @@ question: |
 subquestion: |
   ${  users[0].name.full()  } and ${  users[1].name.full()  }
 fields:
-  - "Have either or both lived in Massachusetts for at least one year?": massachusetts_residency
+  - "Have either or both  lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
   #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     #datatype: yesnoradio
@@ -250,9 +251,11 @@ fields:
 ---
 id: Divorce type
 question: |
-  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
-  (1) you want to get divorced and 
-  (2) you want file together?
+  Divorce type 
+subquestion: |
+    Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
+    (1) you want to get divorced and 
+    (2) you want file together?
 yesno: petition_is_joint
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
 ---
@@ -319,7 +322,6 @@ fields:
 id: Marital home address
 sets:
   - marital_home.address
-  - marital_home.city
 question: |
   Marital home address
 subquestion:  |
@@ -919,14 +921,14 @@ attachment:
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
-      - "petitioners1_name_full__1": ${ petitioners[0] }
-      - "petitioners1_name_full__2": ${ petitioners[0] }
-      - "petitioners1_name_full__1": ${ petitioners[0] }
-      - "petitioners1_name_full__2": ${ petitioners[0] }
-      - "petitioners2_name_full__1": ${ petitioners[1] }
-      - "petitioners2_name_full__2": ${ petitioners[1] }
-      - "petitioners2_name_full__1": ${ petitioners[1] }
-      - "petitioners2_name_full__2": ${ petitioners[1] }
+      - "petitioners1_name_full__1": ${ users[0] }
+      - "petitioners1_name_full__2": ${ users[0] }
+      - "petitioners1_name_full__1": ${ users[0] }
+      - "petitioners1_name_full__2": ${ users[0] }
+      - "petitioners2_name_full__1": ${ users[1] }
+      - "petitioners2_name_full__2": ${ users[1] }
+      - "petitioners2_name_full__1": ${ users[1] }
+      - "petitioners2_name_full__2": ${ users[1] }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
       - "marriage_breakdown_justification": ${ marriage_breakdown_justification }
