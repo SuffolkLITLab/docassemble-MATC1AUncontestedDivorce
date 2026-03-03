@@ -208,10 +208,17 @@ subquestion: |
   - Choose how often you receive or pay each amount.
   - Check totals that the interview calculates for you.
 
+  **How long this usually takes**
+  Most people finish in about 20 to 40 minutes.
+
   **What to gather (if available)**
   - Recent pay stubs or benefit statements
   - Recent bills or statements for recurring expenses
   - Account balances for assets and debts
+
+  **Understanding legal terms**
+  If you see a green phrase like "gross annual income," tap it to see a
+  definition.
 
   **Save your progress**
   Your work is saved as you go. You can return later to continue.
@@ -838,6 +845,10 @@ question: |
   Download your financial statement
 subquestion: |
   Your financial statement is ready. You can download the forms below.
+
+  This tool does not file your forms for you. After you download, you may need
+  to file with the court and give copies to the other party, depending on your
+  case and court instructions.
 
   ${ action_button_html(url_action('review_fs'), label='Edit answers', color='info') }
 

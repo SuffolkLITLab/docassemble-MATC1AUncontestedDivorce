@@ -21,6 +21,17 @@ metadata:
   description: |
     This interview helps you prepare a Massachusetts financial statement for Probate and Family Court.
     You will answer questions about your income, expenses, assets, and debts.
+  before_you_start: |
+    Before you begin, gather what you have available:
+    - Recent pay stubs or benefit letters
+    - Recent bills and recurring expense statements
+    - Account balances for assets and debts
+
+    If you are not sure of an amount, use your best good-faith estimate.
+
+    If you see a green phrase like "gross annual income," tap it to see a definition.
+  estimated_completion_minutes: 30
+  estimated_completion_delta: 10
   LIST_topics:
     - Family law
     - Financial disclosure

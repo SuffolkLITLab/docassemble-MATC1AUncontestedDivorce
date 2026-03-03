@@ -44,9 +44,9 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MATC1AUncontestedDivorce',
-      version='1.38',
+      version='1.39',
       description=('An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)'),
-      long_description="# docassemble.MATC1AUncontestedDivorce\r\n\r\nA docassemble package for Massachusetts 1A no fault joint divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:\r\n\r\n- Joint Divorce Petition (CJD-101A)\r\n- Separation Agreement\r\n- Financial Statements (short & long forms) with Schedules A & B\r\n- Child Care & Custody Disclosure\r\n- Other required supporting documents\r\n\r\n## Status\r\n\r\nOngoing work.\r\n\r\n## What's Included\r\n\r\n- **Interview YAML files** — the question flows, logic, and PDF field mappings\r\n- **PDF form templates** — the court forms themselves\r\n\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n\r\n\r\n",
+      long_description="# docassemble.MATC1AUncontestedDivorce\r\n\r\nA docassemble package for Massachusetts 1A no fault joint divorce materials. This project aims to support the full set of forms and supporting documents needed for the 1A process:\r\n\r\n- Joint Divorce Petition (CJD-101A)\r\n- Separation Agreement\r\n- Financial Statements (short & long forms) with Schedules A & B\r\n- Child Care & Custody Disclosure\r\n- Other required supporting documents\r\n\r\n## Status\r\n\r\nOngoing work.\r\n\r\n## What's Included\r\n\r\n- **Interview YAML files** — the question flows, logic, and PDF field mappings\r\n- **PDF form templates** — the court forms themselves\r\n\r\n## Author\r\n\r\nCourt Forms Online\r\n\r\n\r\n",
       long_description_content_type='text/markdown',
       author='Court Forms Online',
       author_email='litlab@suffolk.edu',
