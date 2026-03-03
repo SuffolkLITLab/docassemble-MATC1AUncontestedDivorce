@@ -18,6 +18,7 @@ metadata:
   authors:
     - Court Forms Online
 ---
+initial: True
 code: |
   from docassemble.base.util import defined, log, value
 
@@ -207,10 +208,17 @@ subquestion: |
   - Choose how often you receive or pay each amount.
   - Check totals that the interview calculates for you.
 
+  **How long this usually takes**
+  Most people finish in about 20 to 40 minutes.
+
   **What to gather (if available)**
   - Recent pay stubs or benefit statements
   - Recent bills or statements for recurring expenses
   - Account balances for assets and debts
+
+  **Understanding legal terms**
+  If you see a green phrase like "gross annual income," tap it to see a
+  definition.
 
   **Save your progress**
   Your work is saved as you go. You can return later to continue.
@@ -365,18 +373,17 @@ id: user_employer_address
 question: |
   Employer address
 subquestion: |
-  Add your employer's address and phone if you have an employer and know it.
-  If you do not have this information, leave it blank.
+  Enter your employer's address and phone number if you have them.
+  These fields are optional. Leave blank if unknown.
 fields:
-  - Street address: user_employer_address.address
-    address autocomplete: True
+  - Street address: user_employer_address_street
     required: False
-  - City/Town: user_employer_address.city
+  - City/Town: user_employer_address_city
     required: False
-  - State: user_employer_address.state
+  - State: user_employer_address_state
     default: MA
     required: False
-  - ZIP: user_employer_address.zip
+  - ZIP: user_employer_address_zip
     required: False
   - Employer phone number: user_employer_phone
     required: False
@@ -414,11 +421,6 @@ fields:
     default: weekly
     help: |
       Choose the schedule that matches your main paycheck or most bills.
----
-code: |
-  fs_default_times_per_year = cadence_to_times_per_year(
-    value("financial_cadence_default") if defined("financial_cadence_default") else "weekly"
-  )
 ---
 id: fs_income_sources
 generic object: ALIncomeList
@@ -469,14 +471,14 @@ fields:
     input type: radio
     code: |
       times_per_year_list
-    default: fs_default_times_per_year
+    default: cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
     show if:
       variable: x[i].use_default_cadence
       is: False
 validation code: |
   x[i].display_name = fs_income_terms.get(x[i].source, x[i].source)
   if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
-    x[i].times_per_year = fs_default_times_per_year
+    x[i].times_per_year = cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
 ---
 generic object: ALIncomeList
 code: |
@@ -559,14 +561,14 @@ fields:
     input type: radio
     code: |
       times_per_year_for_expenses
-    default: fs_default_times_per_year
+    default: cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
     show if:
       variable: x[i].use_default_cadence
       is: False
 validation code: |
   x[i].display_name = fs_expense_terms.get(x[i].source, x[i].source)
   if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
-    x[i].times_per_year = fs_default_times_per_year
+    x[i].times_per_year = cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
 ---
 generic object: ALExpenseList
 code: |
@@ -714,15 +716,16 @@ subquestion: |
 ---
 code: |
   fs_log("income_totals")
-  income_total_weekly = income_list.total(times_per_year=52)
+  # Normalize mixed Decimal/float totals before arithmetic.
+  income_total_weekly = fs_safe_float(income_list.total(times_per_year=52))
 
   if defined("schedule_a_weekly_business_income"):
-    income_self_employment_weekly = schedule_a_weekly_business_income
+    income_self_employment_weekly = fs_safe_float(schedule_a_weekly_business_income)
   else:
     income_self_employment_weekly = 0
 
   if defined("schedule_b_weekly_rental_income"):
-    income_rental_weekly = schedule_b_weekly_rental_income
+    income_rental_weekly = fs_safe_float(schedule_b_weekly_rental_income)
   else:
     income_rental_weekly = 0
 
@@ -731,6 +734,11 @@ code: |
     + income_self_employment_weekly
     + income_rental_weekly
   )
+---
+id: confirm_no_income_nonzero_default
+if: income_total_weekly != 0
+code: |
+  confirm_no_income = False
 ---
 id: confirm_no_income
 if: income_total_weekly == 0
@@ -797,6 +805,12 @@ review:
       **Rental income**
       ${ "Yes" if defined("has_rental_income") and has_rental_income else ("No" if defined("has_rental_income") else "Not answered") }
 ---
+code: |
+  try:
+    fs_section_links = section_links(nav)
+  except:
+    fs_section_links = []
+---
 id: fs_review
 continue button field: fs_review
 question: |
@@ -814,7 +828,7 @@ subquestion: |
   - Expenses, assets, and liabilities
 
   **Jump to a section**
-  % for section in section_links(nav):
+  % for section in fs_section_links:
   * ${ section }
   % endfor
   % if defined("debug_log") and debug_log:
@@ -831,6 +845,10 @@ question: |
   Download your financial statement
 subquestion: |
   Your financial statement is ready. You can download the forms below.
+
+  This tool does not file your forms for you. After you download, you may need
+  to file with the court and give copies to the other party, depending on your
+  case and court instructions.
 
   ${ action_button_html(url_action('review_fs'), label='Edit answers', color='info') }
 
