@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.MATC1AUncontestedDivorce"
-version = "1.36"
+version = "1.38"
 description = "An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)"
 readme = "README.md"
 authors = [

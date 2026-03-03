@@ -16,15 +16,7 @@ Ongoing work.
 
 - **Interview YAML files** — the question flows, logic, and PDF field mappings
 - **PDF form templates** — the court forms themselves
-- **ALKiln test files** — `.feature` specs for automated testing
-- **Test scenarios** — JSON definitions covering short form, long form, schedules, and various edge cases
 
-## Testing
-
-The package includes a CI pipeline (GitHub Actions) that runs on every push to `main`:
-
-1. Static analysis — YAML syntax and interview logic validation
-2. Runtime tests — spins up a docassemble server, installs the package, and runs all 9 test scenarios against the REST API
 
 ## Author
 

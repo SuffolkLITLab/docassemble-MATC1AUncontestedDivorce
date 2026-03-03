@@ -59,7 +59,6 @@ objects:
   - users: ALPeopleList.using(target_number=1)
   - other_parties: ALPeopleList.using(target_number=1)
   - trial_court: MACourt
-  - user_employer_address: DAAddress
 ---
 objects:
   - fs_short: ALDocument.using(title="Financial Statement (Short Form)", filename="financial_statement_short", enabled=True, has_addendum=False)
@@ -109,7 +108,7 @@ code: |
   users[0].address.address
   user_employer_name
   if user_employer_name or user_job_title:
-    user_employer_address.address
+    user_employer_address_street
   user_has_health_insurance
 
   nav.set_section("Cadence")
@@ -126,7 +125,8 @@ code: |
   if has_rental_income:
     schedule_b_sections
   income_totals
-  confirm_no_income
+  if income_total_weekly == 0:
+    need("confirm_no_income")
 
   if financial_form_type == "short":
     short_form_sections
@@ -225,10 +225,10 @@ attachment:
     - "children_living_count": ${ showifdef('children_living_with_user_count') }
     - "user_occupation": ${ showifdef('user_job_title') }
     - "user_employer_name": ${ showifdef('user_employer_name') }
-    - "employer_address_street": ${ user_employer_address.address if defined('user_employer_address.address') else '' }
-    - "employer_address_city": ${ user_employer_address.city if defined('user_employer_address.city') else '' }
-    - "employer_address_state": ${ user_employer_address.state if defined('user_employer_address.state') else '' }
-    - "employer_address_zip": ${ user_employer_address.zip if defined('user_employer_address.zip') else '' }
+    - "employer_address_street": ${ showifdef('user_employer_address_street') }
+    - "employer_address_city": ${ showifdef('user_employer_address_city') }
+    - "employer_address_state": ${ showifdef('user_employer_address_state') }
+    - "employer_address_zip": ${ showifdef('user_employer_address_zip') }
     - "employer_phone": ${ showifdef('user_employer_phone') }
     - "health_insurance_yes": ${ user_has_health_insurance if defined('user_has_health_insurance') else False }
     - "health_insurance_no": ${ not user_has_health_insurance if defined('user_has_health_insurance') else False }
@@ -457,10 +457,10 @@ attachment:
     - "children_living_count": ${ showifdef('children_living_with_user_count') }
     - "user_occupation": ${ showifdef('user_job_title') }
     - "user_employer_name": ${ showifdef('user_employer_name') }
-    - "employer_address_street": ${ user_employer_address.address if defined('user_employer_address.address') else '' }
-    - "employer_address_city": ${ user_employer_address.city if defined('user_employer_address.city') else '' }
-    - "employer_address_state": ${ user_employer_address.state if defined('user_employer_address.state') else '' }
-    - "employer_address_zip": ${ user_employer_address.zip if defined('user_employer_address.zip') else '' }
+    - "employer_address_street": ${ showifdef('user_employer_address_street') }
+    - "employer_address_city": ${ showifdef('user_employer_address_city') }
+    - "employer_address_state": ${ showifdef('user_employer_address_state') }
+    - "employer_address_zip": ${ showifdef('user_employer_address_zip') }
     - "employer_phone": ${ showifdef('user_employer_phone') }
     - "health_insurance_yes": ${ user_has_health_insurance if defined('user_has_health_insurance') else False }
     - "health_insurance_no": ${ not user_has_health_insurance if defined('user_has_health_insurance') else False }

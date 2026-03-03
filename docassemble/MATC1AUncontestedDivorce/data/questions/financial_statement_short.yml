@@ -32,7 +32,8 @@ code: |
   set_progress(70)
   expense_list.gathered
   short_expenses_total
-  confirm_no_expenses_short
+  if short_expenses_total_weekly == 0:
+    need("confirm_no_expenses_short")
   nav.set_section("Assets")
   set_progress(80)
   short_counsel_fees
@@ -265,6 +266,11 @@ subquestion: |
   Total weekly expenses: ${ currency(short_expenses_total_weekly) }
 
   You can go back to edit expenses if needed.
+---
+id: confirm_no_expenses_short_nonzero_default
+if: short_expenses_total_weekly != 0
+code: |
+  confirm_no_expenses_short = False
 ---
 id: confirm_no_expenses_short
 if: short_expenses_total_weekly == 0
