@@ -270,7 +270,7 @@ subquestion: |
 fields: 
   - "We agree on the major issues": separation_agreement_reached
     datatype: yesnoradio
-  - "We have a detailed written agreement (digital or physical)": separation_agreement_documented
+  - "We have already prepared a detailed written agreement": separation_agreement_documented
     datatype: yesnoradio
     show if: separation_agreement_reached
 ---
@@ -278,9 +278,9 @@ id: Separation agreement format
 question: |
   Separation agreement format
 subquestion: |
-  Anyone filing a joint petition for divorce with the courts must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. 
+  Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. It is highly encouraged that you submit a complete, notorized agreement with initial filing. 
 
-    Here we will explain the different options available for filing a separation agreement with a joint (1A) divorce. 
+    Here we will further explain the different options available for filing a separation agreement with a joint petition for divorce. 
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
@@ -289,8 +289,9 @@ fields:
         show if: separation_agreement_reached
       - "File my complete, notorized separation agreement with the registry later" : wait
       - "Create a separation agreement using this interview tool.": interview
-        show if: not separation_agreement_reached
-  #- "Use ODR product": Link them there first? How are we connecting to API?
+        show if: separation_agreement_reached == False
+
+#- "Use ODR product": Link them there first? How are we connecting to API?
 ---
 id: Relationship background
 question: |
