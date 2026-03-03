@@ -10,9 +10,9 @@ metadata:
   short title: >-
         Divorce joint petition
   description: |-
-        This interview helps couples in Massachusetts ask the court for a joint, uncontested divorce under [G.L. c. 208 § 1A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
+        This interview helps couples in Massachusetts ask the court for a joint, uncontested divorce under [G.L. c. 208 § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
   can_I_use_this_form: |
-    If you are married, and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an uncontested divorce. 
+    If you are married and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an uncontested divorce. 
   before_you_start: |
     This interview will help you ask the court for a joint, uncontested divorce.
     
@@ -59,7 +59,7 @@ metadata:
     - Report of absolute divorce or annulment
     - Child care or custody disclosure affidavit
     - Supplemental child care or custody disclosure affidavit
-  form_numbers: [cjd101A, R408, TC0050, TC0050A]
+  form_numbers: [CJD101A, R408, TC0050, TC0050A]
   fees:
     - Filing fee: $200.00
     - Surcharge: $15.00
@@ -79,14 +79,14 @@ code: |
   github_repo_name = 'docassemble-MATC1AUncontestedDivorce'
 ---
 code: |
-    interview_short_title = "Jointly ask the court for a no fault divorce"
+    interview_short_title = "Jointly ask the court for a no fault divorce in Massachusetts"
 ---
 code: |
   al_form_type = "starts_case" 
 ---
 objects:
   - users: ALPeopleList.using(ask_number=True, target_number=2)
-  - children: ALPeopleList.using(target_number=children_of_marriage_number)
+  - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
   - attorneys: ALPeopleList.using(ask_number=True)
   - marital_home: ALAddress
 ---
@@ -136,10 +136,9 @@ code: |
   children_of_marriage
   if not children_of_marriage:
     children_of_marriage_number = 0
-  else:
-    children_of_marriage_number
   users.gather()
-  children.gather()
+  if children_of_marriage:
+    children.gather()
   set_progress(90)
   interview_order_divorcefilings = True
 ---
@@ -209,7 +208,7 @@ continue button field: cautionary_validation_message
 question: |
   Confirm information
 subquestion: |
-  You entered information 1 and information 2 and that is an unusual combination. Are you sure you want to proceed? Alternative you are allowed to proceed without doing blah, but are you really sure?
+  You entered (insert information summary here) and (custom warning accordingly). Are you sure you want to proceed? Alternative you are allowed to proceed without doing ___, but are you really sure?
 ---
 id: Identity screen
 question: |
@@ -226,7 +225,7 @@ continue button field: agent_guidance
 question: |
   Language clarification
 subquestion: |
-  The questions in this interview are written for people to facilitate preparation of paperwork for their own use. If you are completing this interview for someone else, respond to questions phrased with "you" as if you are the person for whom you are completing this paperwork - more specifically one spouse of the couple seeking a divorce.
+  The questions in this interview are written to help people prepare paperwork for their own use. If you are completing this interview for someone else, respond to questions phrased with "you" as if you are the person for whom you are completing this paperwork - more specifically one spouse of the couple seeking a divorce.
 ---
 id: Legal marriage
 question: |
@@ -235,9 +234,9 @@ subquestion: |
   Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?
 yesno: legal_marriage
 ---
-id: Confirm Jurisdiction
+id: Confirm jurisdiction
 question: |
-  Confirm Jurisdiction
+  Confirm jurisdiction
 subquestion: |
   ${  users[0].name.full()  } and ${  users[1].name.full()  }
 fields:
@@ -253,9 +252,13 @@ id: Divorce type
 question: |
   Divorce type 
 subquestion: |
-    Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
-    (1) you want to get divorced and 
-    (2) you want file together?
+  ### Joint petition for divorce under [G.L. c. 208, § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1a)
+  
+  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
+ 
+  1. you want to get divorced and 
+  2. you want file together?
+
 yesno: petition_is_joint
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
 ---
@@ -275,7 +278,7 @@ id: Separation agreement format
 question: |
   Separation agreement format
 subquestion: |
-  Anyone filing a joint petition for divorce with the courts must file a separation agreement within 90 days of initial filing. Separation agreement must be notorized and should completely address the major issues such as property division, child custody, and child support. 
+  Anyone filing a joint petition for divorce with the courts must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. 
 
     Here we will explain the different options available for filing a separation agreement with a joint (1A) divorce. 
 fields: 
@@ -283,8 +286,10 @@ fields:
     input type: radio
     choices: 
       - "Upload my complete, notorized separation agreement here": upload
+        show if: separation_agreement_reached
       - "File my complete, notorized separation agreement with the registry later" : wait
-      - "Create a separation agreement using this interview tool.": interview 
+      - "Create a separation agreement using this interview tool.": interview
+        show if: not separation_agreement_reached
   #- "Use ODR product": Link them there first? How are we connecting to API?
 ---
 id: Relationship background
@@ -405,11 +410,13 @@ question: |
   Previous actions
 subquestion: |
   Have ${  users[0].familiar()  } and ${  users[1].familiar()  } filed any previous action(s) for:
+  
   * divorce, annulment or affirmation of marriage, 
   * separate support,
   * desertion, 
-  * living apart for justifiable cause, or 
+  * living apart for justifiable cause, **or** 
   * custody of child(ren)?
+  
 yesno: previous_action
 ---
 id: Previous action details
@@ -794,10 +801,10 @@ review:
     button: |
       **Do you have any children of this marriage?**:
       ${ word(yesno(children_of_marriage)) }
-  - Edit: children_of_marriage_numnber
+  - Edit: children_of_marriage_number
     button: |
       **How many children of this marriage?**:
-      ${ children_of_marriage_numnber }
+      ${ children_of_marriage_number }
   - Edit: petitioners1_has_attorney
     button: |
       **Do you have a lawyer?**:
@@ -909,64 +916,6 @@ attachment:
   tagged pdf: True
 ---
 attachment:
-  name: affidirretrievablebreakdown
-  filename: affidirretrievablebreakdown
-  variable name: affidirretrievablebreakdown[i]
-  skip undefined: True
-  pdf template file: affidirretrievablebreakdown.pdf
-  fields:
-      - "trial_court_division": ${ trial_court.division }
-      - "trial_court_division": ${ trial_court.division }
-      - "trial_court_division": ${ trial_court.division }
-      - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "petitioners1_name_full__1": ${ users[0] }
-      - "petitioners1_name_full__2": ${ users[0] }
-      - "petitioners1_name_full__1": ${ users[0] }
-      - "petitioners1_name_full__2": ${ users[0] }
-      - "petitioners2_name_full__1": ${ users[1] }
-      - "petitioners2_name_full__2": ${ users[1] }
-      - "petitioners2_name_full__1": ${ users[1] }
-      - "petitioners2_name_full__2": ${ users[1] }
-      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
-      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
-      - "marriage_breakdown_justification": ${ marriage_breakdown_justification }
-      - "signature_date": ${ signature_date }
-      - "signature_date": ${ signature_date }
-      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
-      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
-      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
-      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
-      - "petitioners2_address_address": ${ petitioners[1].address.address }
-      - "petitioners2_address_address": ${ petitioners[1].address.address }
-      - "petitioners1_address_address": ${ petitioners[0].address.address }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city__2": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state__2": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip__2": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city__2": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state__2": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip__2": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
----
-attachment:
   name: cjd101a
   filename: cjd101a
   variable name: cjd101a[i]
@@ -979,75 +928,117 @@ attachment:
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
-      - "petitioners1_name_full__1": ${ petitioners[0] }
-      - "petitioners1_name_full__2": ${ petitioners[0] }
-      - "petitioners1_name_full__1": ${ petitioners[0] }
-      - "petitioners1_name_full__2": ${ petitioners[0] }
-      - "petitioners2_name_full__1": ${ petitioners[1] }
-      - "petitioners2_name_full__2": ${ petitioners[1] }
-      - "petitioners2_name_full__1": ${ petitioners[1] }
-      - "petitioners2_name_full__2": ${ petitioners[1] }
+      - "users1_name_full__1": ${ users[0] }
+      - "users1_name_full__2": ${ users[0] }
+      - "users1_name_full": ${ users[0] }
+      - "users2_name_full__1": ${ users[1] }
+      - "users2_name_full__2": ${ users[1] }
+      - "users2_name_full": ${ users[1] }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
-      - "signature_date": ${ signature_date }
-      - "signature_date": ${ signature_date }
-      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
-      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
-      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
-      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city__2": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state__2": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip__2": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city__2": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state__2": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip__2": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners1_address_on_one_line": ${ petitioners[0].address.on_one_line() }
-      - "petitioners1_address_on_one_line__2": ${ petitioners[0].address.on_one_line() }
-      - "petitioners2_address_on_one_line": ${ petitioners[1].address.on_one_line() }
-      - "petitioners2_address_on_one_line__2": ${ petitioners[1].address.on_one_line() }
+      - "signature_date": ${ signature_date.format() }
+      - "signature_date": ${ signature_date.format() }
+      - "users2_address_address": ${ users[1].address.address }
+      - "users2_address_address": ${ users[1].address.address }
+      - "users1_address_address": ${ users[0].address.address }
+      - "users1_address_address": ${ users[0].address.address }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users2_address_city": ${ users[1].address.city }
+      - "users2_address_city": ${ users[1].address.city }
+      - "users2_address_state": ${ users[1].address.state }
+      - "users2_address_state": ${ users[1].address.state }
+      - "users2_address_zip": ${ users[1].address.zip }
+      - "users2_address_zip": ${ users[1].address.zip }
       - "marriage_location": ${ marriage_location }
       - "marriage_location": ${ marriage_location }
       - "marriage_date": ${ marriage_date.format() }
       - "marriage_date": ${ marriage_date.format() }
-      - "petitioners_last_living_together_location": ${ petitioners_last_living_together_location }
-      - "petitioners_last_living_together_date": ${ petitioners_last_living_together_date.format() }
-      - "children2_name_full_plus_birthdate": ${ children2_name_full_plus_birthdate }
-      - "children1_name_full_plus_birthdate": ${ children1_name_full_plus_birthdate }
-      - "children3_name_full_plus_birthdate": ${ children3_name_full_plus_birthdate }
-      - "children4_name_full_plus_birthdate": ${ children4_name_full_plus_birthdate }
+      - "marital_home_address_on_one_line": ${ marital_home[0].address.on_one_line() }
+      - "last_living_together_date": ${ last_living_together_date.format() }
+      - "children2_name_full_plus_birthdate": ${ children2_name_full_plus[0].birthdate.format() }
+      - "children1_name_full_plus_birthdate": ${ children1_name_full_plus[0].birthdate.format() }
+      - "children3_name_full_plus_birthdate": ${ children3_name_full_plus[0].birthdate.format() }
+      - "children4_name_full_plus_birthdate": ${ children4_name_full_plus[0].birthdate.format() }
       - "previous_action_detail": ${ previous_action_detail }
       - "request_divorce_nofault": ${ request_divorce_nofault }
       - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
       - "request_merge_agreement": ${ request_merge_agreement }
       - "request_survive_agreement": ${ request_survive_agreement }
-      - "change_name_petitioners1": ${ change_name_petitioners1 }
-      - "petitioners1_former_name_last": ${ petitioners1_former_name_last }
-      - "change_name_petitioners2": ${ change_name_petitioners2 }
-      - "petitioners2_former_name_last": ${ petitioners2_former_name_last }
+      - "users1_request_name_change": ${ users1_request_name_change }
+      - "users1_former_name_last": ${ users1_former[0].name.last }
+      - "users2_request_name_change": ${ users2_request_name_change }
+      - "users2_former_name_last": ${ users2_former[0].name.last }
       - "additional_request": ${ additional_request }
       - "additonal_request_detail": ${ additonal_request_detail }
+      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
+      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
+      - "petitioners2_name_full": ${ petitioners[1] }
+      - "petitioners1_name_full": ${ petitioners[0] }
+      - "petitioners1_address_on_one_line": ${ petitioners[0].address.on_one_line() }
+      - "petitioners2_address_on_one_line": ${ petitioners[1].address.on_one_line() }
+      - "petitioners1_address_city": ${ petitioners[0].address.city }
+      - "petitioners1_address_state": ${ petitioners[0].address.state }
+      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
+      - "petitioners2_address_city": ${ petitioners[1].address.city }
+      - "petitioners2_address_city": ${ petitioners[1].address.city }
+      - "petitioners2_address_state": ${ petitioners[1].address.state }
+      - "petitioners2_address_state": ${ petitioners[1].address.state }
+      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
+      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
       - "petitioners1_phone_number": ${ petitioners[0].phone_number }
       - "petitioners2_phone_number": ${ petitioners[1].phone_number }
       - "attorneys1_bbo_number": ${ attorneys1_bbo_number }
       - "attorneys2_bbo_number": ${ attorneys2_bbo_number }
+---
+attachment:
+  name: affidirretrievablebreakdown
+  filename: affidirretrievablebreakdown
+  variable name: affidirretrievablebreakdown[i]
+  skip undefined: True
+  pdf template file: affidirretrievablebreakdown.pdf
+  fields:
+      - "trial_court_division": ${ trial_court.division }
+      - "docket_number": ${ docket_number }
+      - "users1_name_full__1": ${ users[0] }
+      - "users1_name_full__2": ${ users[0] }
+      - "users1_name_full": ${ users[0] }
+      - "users2_name_full__1": ${ users[1] }
+      - "users2_name_full__2": ${ users[1] }
+      - "users2_name_full": ${ users[1] }
+      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
+      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
+      - "marriage_breakdown_justification": ${ marriage_breakdown_justification }
+      - "signature_date": ${ signature_date.format() }
+      - "signature_date": ${ signature_date.format() }
+      - "users2_signature": ${ users[1].signature_if_final(i) }
+      - "users1_signature": ${ users[0].signature_if_final(i) }
+      - "users2_address_address": ${ users[1].address.address }
+      - "users2_address_address": ${ users[1].address.address }
+      - "users1_address_address": ${ users[0].address.address }
+      - "users1_address_address": ${ users[0].address.address }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users2_address_city": ${ users[1].address.city }
+      - "users2_address_city": ${ users[1].address.city }
+      - "users2_address_state": ${ users[1].address.state }
+      - "users2_address_state": ${ users[1].address.state }
+      - "users2_address_zip": ${ users[1].address.zip }
+      - "users2_address_zip": ${ users[1].address.zip }
 ---
 attachment:
   name: r408
@@ -1062,69 +1053,59 @@ attachment:
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
-      - "petitioners2_address_address": ${ petitioners[1].address.address }
-      - "petitioners2_address_address": ${ petitioners[1].address.address }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_city__2": ${ petitioners[0].address.city }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_state__2": ${ petitioners[0].address.state }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip__2": ${ petitioners[0].address.zip }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city__2": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state__2": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip__2": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_city": ${ users[0].address.city }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_state": ${ users[0].address.state }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
+      - "users1_address_zip": ${ users[0].address.zip }
       - "marriage_location": ${ marriage_location }
       - "marriage_location": ${ marriage_location }
       - "marriage_date": ${ marriage_date.format() }
       - "marriage_date": ${ marriage_date.format() }
+      - "petitioners2_address_city": ${ petitioners[1].address.city }
+      - "petitioners2_address_city": ${ petitioners[1].address.city }
+      - "petitioners2_address_state": ${ petitioners[1].address.state }
+      - "petitioners2_address_state": ${ petitioners[1].address.state }
+      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
+      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
       - "judgment_divorce": ${ judgment_divorce }
       - "judgment_annulment": ${ judgment_annulment }
       - "judgement_date": ${ judgement_date.format() }
       - "absolute_divorce_date": ${ absolute_divorce_date.format() }
       - "divorce_grounds": ${ divorce_grounds }
       - "submitting_official_fullname": ${ submitting_official_fullname }
-      - "petitioners1_is_plaintiff": ${ petitioners1_is_plaintiff }
-      - "petitioners1_name_first": ${ petitioners[0].name.first }
-      - "petitioners1_name_middle": ${ petitioners[0].name.middle }
-      - "petitioners1_name_last": ${ petitioners[0].name.last }
-      - "petitioners1_is_defendant": ${ petitioners1_is_defendant }
-      - "petitioners1_name_last_upon_divorce": ${ petitioners1_name_last_upon_divorce }
-      - "petitioners1_name_last_at_birth": ${ petitioners1_name_last_at_birth }
-      - "petitioners1_birthdate": ${ petitioners[0].birthdate.format() }
-      - "petitioners1_is_male": ${ petitioners1_is_male }
-      - "petitioners1_is_female": ${ petitioners1_is_female }
-      - "petitioners1_ssn": ${ petitioners1_ssn }
-      - "petitioners1_marriage_number": ${ petitioners1_marriage_number }
-      - "petitioners1_number_of_custodial_children": ${ petitioners1_number_of_custodial_children }
-      - "petitioners1_address_line_one": ${ petitioners[0].address.line_one() }
+      - "users1_is_plaintiff": ${ users1_is_plaintiff }
+      - "users1_name_first": ${ users[0].name.first }
+      - "users1_name_middle": ${ users[0].name.middle }
+      - "users1_name_last": ${ users[0].name.last }
+      - "users1_is_defendant": ${ users1_is_defendant }
+      - "users1_name_last_upon_divorce": ${ users1_name_last_upon_divorce }
+      - "users1_name_last_at_birth": ${ users1_name_last_at_birth }
+      - "users1_birthdate": ${ users[0].birthdate.format() }
+      - "users1_is_male": ${ users1_is_male }
+      - "users1_is_female": ${ users1_is_female }
+      - "users1_ssn": ${ users1_ssn }
+      - "users1_marriage_number": ${ users1_marriage_number }
+      - "users1_number_of_custodial_children": ${ users1_number_of_custodial_children }
+      - "users1_address_line_one": ${ users[0].address.line_one() }
       - "petitioners2_is_plaintiff": ${ petitioners2_is_plaintiff }
-      - "petitioners2_name_first": ${ petitioners[1].name.first }
-      - "petitioners2_name_middle": ${ petitioners[1].name.middle }
-      - "petitioners2_name_last": ${ petitioners[1].name.last }
-      - "petitioners2_is_defendant": ${ petitioners2_is_defendant }
-      - "petitioners2_birthdate": ${ petitioners[1].birthdate.format() }
-      - "petitioners2_name_last_upon_divorce": ${ petitioners2_name_last_upon_divorce }
-      - "petitioners2_name_last_at_birth": ${ petitioners2_name_last_at_birth }
-      - "petitioners2_is_female": ${ petitioners2_is_female }
-      - "petitioners2_is_male": ${ petitioners2_is_male }
+      - "users2_name_first": ${ users[1].name.first }
+      - "users2_name_middle": ${ users[1].name.middle }
+      - "users2_name_last": ${ users[1].name.last }
+      - "users2_is_defendant": ${ users2_is_defendant }
+      - "users2_birthdate": ${ users[1].birthdate.format() }
+      - "users2_name_last_upon_divorce": ${ users2_name_last_upon_divorce }
+      - "users2_name_last_at_birth": ${ users2_name_last_at_birth }
+      - "users2_is_female": ${ users2_is_female }
+      - "users2_is_male": ${ users2_is_male }
       - "petitioners2_number_of_custodial_children": ${ petitioners2_number_of_custodial_children }
-      - "petitioners2_ssn": ${ petitioners2_ssn }
+      - "users2_ssn": ${ users2_ssn }
       - "petitioners2_marriage_number": ${ petitioners2_marriage_number }
+      - "petitioners2_address_address": ${ petitioners[1].address.address }
       - "children1_birthdate": ${ children[0].birthdate.format() }
       - "children1_name_full": ${ children[0] }
       - "children_of_marriage_number": ${ children_of_marriage_number }
