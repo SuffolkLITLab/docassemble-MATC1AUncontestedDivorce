@@ -1,0 +1,96 @@
+{
+  "name": "MPC821 - Court No-Match Branch",
+  "description": "Forces court-selection path when no courts match guardian address, then selects from full list.",
+  "interview": "docassemble.MATCGuardiansCarePlanReportMpc821:guardians_care_plan_report_mpc_821.yml",
+  "max_steps": 220,
+  "variables": {
+    "al_intro_screen": true,
+    "guardians_care_plan_report_mpc_821_intro": true,
+
+    "docket_number": "MPC821-COURT-004",
+    "trial_court": "all_courts[155]",
+
+    "patient1_name_first": "Jordan",
+    "patient1_name_middleinitial": "A",
+    "patient1_name_last": "Ward",
+    "report_type": "annual",
+    "reportperiod_beginning": "2025-01-01",
+    "reportperiod_end": "2025-12-31",
+
+    "guardian_relationship": "parent",
+    "patient1_address_on_one_line": "1 Infinite Loop, Cupertino, CA 95014",
+
+    "housing_type": "private",
+    "is_housing": false,
+    "is_having_visitors": true,
+    "is_making_calls": true,
+    "is_mailing": true,
+    "is_participating": true,
+    "patient_restricted_living_explanation": "",
+
+    "patient_mental_condition": "good",
+    "patient_overall_condition_explanation": "Condition is stable with regular support.",
+    "patient_physical_condition": "good",
+    "patient_social_condition": "good",
+
+    "patient_services_list": "Primary care, counseling",
+    "medical_services_rating": "good",
+    "patient_education_list": "Adult day activities",
+    "education_services_rating": "fair",
+    "patient_other_services_list": "Transportation assistance",
+    "other_services_rating": "good",
+
+    "contact_frequency": "daily",
+    "if_decision_making": false,
+
+    "summary_interaction_explanation": "Weekly calls with providers and regular check-ins.",
+    "is_acute_medical": false,
+    "future_plans_explanation": "Continue current supports and routine follow-up.",
+    "should_guardianship_continue_change_explanation": "Guardianship should continue as-is.",
+
+    "is_crime_abuse_neglect_yes": false,
+    "is_fiduciary": false,
+
+    "guardians.there_are_any": true,
+    "guardians.there_is_another": false,
+    "guardians[0].name.first": "Pat",
+    "guardians[0].name.last": "Guardian",
+    "guardians[0].address.address": "1 Infinite Loop",
+    "guardians[0].address.city": "Cupertino",
+    "guardians[0].address.state": "CA",
+    "guardians[0].address.zip": "95014",
+    "guardians[0].phone_number": "(617) 555-0101",
+    "guardians[0].email": "pat.guardian@example.com",
+
+    "users.there_are_any": true,
+    "users.there_is_another": false,
+    "users[0].name.first": "Pat",
+    "users[0].name.last": "Guardian",
+
+    "is_guardian1_address_update": false,
+    "guardian1_signature_date": "2026-03-01",
+
+    "servicer_signature_date": "2026-03-01",
+    "is_adult_submission_method_hand": true,
+    "is_adult_submission_method_mail": false,
+    "is_attorney_submission_method_hand": false,
+    "is_attorney_submission_method_mail": true,
+    "is_attorney_submission_method_email": false,
+    "by_handing_it_to_them_3": false,
+    "by_mailing_it_to_the_address_they_provided_to_the_court": true,
+
+    "servicer_name_full": "Pat Guardian",
+    "servicer_address_address": "1 Infinite Loop",
+    "servicer_address_unit": "",
+    "servicer_address_city": "Cupertino",
+    "servicer_address_state": "CA",
+    "servicer_address_zip": "95014",
+    "servicer_phone_number": "(617) 555-0101",
+    "bbo_number": "",
+    "servicer_email": "pat.guardian@example.com",
+
+    "signature_date": "2026-03-01",
+    "basic_questions_signature_flow": true,
+    "servicer_signature": ""
+  }
+}

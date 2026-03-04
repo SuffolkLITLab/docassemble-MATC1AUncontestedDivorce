@@ -1,0 +1,126 @@
+{
+  "name": "MPC821 - Maximal Professional Branches",
+  "description": "Exercises the true side of major conditionals, including professional relationship and optional detail branches.",
+  "interview": "docassemble.MATCGuardiansCarePlanReportMpc821:guardians_care_plan_report_mpc_821.yml",
+  "max_steps": 260,
+  "variables": {
+    "al_intro_screen": true,
+    "guardians_care_plan_report_mpc_821_intro": true,
+
+    "docket_number": "MPC821-MAX-002",
+    "trial_court": "all_courts[155]",
+
+    "patient1_name_first": "Morgan",
+    "patient1_name_middleinitial": "",
+    "patient1_name_last": "Client",
+    "report_type": "sixty_day",
+    "reportperiod_beginning": "2026-01-01",
+    "reportperiod_end": "2026-03-01",
+
+    "guardian_relationship": "professional",
+    "relation_professional_description": "Licensed social worker guardian",
+    "patient1_address_on_one_line": "45 Elm St, Somerville, MA 02143",
+
+    "housing_type": "other",
+    "patient_housing_other_description": "Shared supported apartment",
+    "is_housing": true,
+    "other_patient_address_on_one_line": "45 Elm St Apt 3, Somerville, MA 02143",
+    "other_patient_address_explanation": "Moved within city during reporting period.",
+    "is_having_visitors": false,
+    "is_making_calls": true,
+    "is_mailing": true,
+    "is_participating": false,
+    "patient_restricted_living_explanation": "Temporary restrictions after hospitalization.",
+
+    "patient_mental_condition": "fair",
+    "patient_overall_condition_explanation": "Condition fluctuates; needs close follow-up.",
+    "patient_physical_condition": "fair",
+    "patient_social_condition": "poor",
+
+    "patient_services_list": "Psychiatry, primary care, OT",
+    "medical_services_rating": "fair",
+    "patient_education_list": "Vocational support workshops",
+    "education_services_rating": "good",
+    "patient_other_services_list": "Case management, transport",
+    "other_services_rating": "fair",
+
+    "contact_frequency": "other",
+    "contact_freq_other_explanation": "Every 2-3 days",
+    "if_decision_making": true,
+    "decision_making_areas": {
+      "medical": true,
+      "meals": true,
+      "other": true
+    },
+    "decision_making_other_explanation": "Housing and appointment scheduling",
+
+    "summary_interaction_explanation": "Coordinated care plan with providers and case team.",
+    "is_acute_medical": true,
+    "acute_medical_location": "Mass General Hospital",
+    "acute_medical_best": true,
+    "future_plans_explanation": "Maintain treatment, increase community support.",
+    "should_guardianship_continue_change_explanation": "Continue guardianship with current scope.",
+
+    "is_crime_abuse_neglect_yes": true,
+    "crime_abuse_neglect_explanation": "A report was filed and investigated; no substantiation.",
+
+    "is_fiduciary": true,
+    "fiduciary_types": {
+      "rep_payee": true,
+      "other": true
+    },
+    "fiduciary_type_other_explanation": "Authorized manager for ABLE deposits",
+
+    "guardians.there_are_any": true,
+    "guardians.there_is_another__sequence": [true, false],
+    "guardians[0].name.first": "Taylor",
+    "guardians[0].name.last": "ProGuardian",
+    "guardians[0].address.address": "500 Legal Ave",
+    "guardians[0].address.city": "Boston",
+    "guardians[0].address.state": "MA",
+    "guardians[0].address.zip": "02110",
+    "guardians[0].phone_number": "(617) 555-0201",
+    "guardians[0].email": "taylor.guardian@example.com",
+    "guardians[1].name.first": "Riley",
+    "guardians[1].name.last": "CoGuardian",
+    "guardians[1].address.address": "90 Harbor Way",
+    "guardians[1].address.city": "Boston",
+    "guardians[1].address.state": "MA",
+    "guardians[1].address.zip": "02109",
+    "guardians[1].phone_number": "(617) 555-0202",
+    "guardians[1].email": "riley.guardian@example.com",
+
+    "users.there_are_any": true,
+    "users.there_is_another": false,
+    "users[0].name.first": "Taylor",
+    "users[0].name.last": "ProGuardian",
+
+    "is_guardian1_address_update": true,
+    "guardian1_signature_date": "2026-03-02",
+    "is_guardian2_address_update": true,
+    "guardian2_signature_date": "2026-03-02",
+
+    "servicer_signature_date": "2026-03-02",
+    "is_adult_submission_method_hand": false,
+    "is_adult_submission_method_mail": true,
+    "is_attorney_submission_method_hand": true,
+    "is_attorney_submission_method_mail": false,
+    "is_attorney_submission_method_email": true,
+    "by_handing_it_to_them_3": true,
+    "by_mailing_it_to_the_address_they_provided_to_the_court": false,
+
+    "servicer_name_full": "Taylor ProGuardian",
+    "servicer_address_address": "500 Legal Ave",
+    "servicer_address_unit": "Suite 300",
+    "servicer_address_city": "Boston",
+    "servicer_address_state": "MA",
+    "servicer_address_zip": "02110",
+    "servicer_phone_number": "(617) 555-0201",
+    "bbo_number": "BBO123456",
+    "servicer_email": "taylor.guardian@example.com",
+
+    "signature_date": "2026-03-02",
+    "basic_questions_signature_flow": true,
+    "servicer_signature": ""
+  }
+}

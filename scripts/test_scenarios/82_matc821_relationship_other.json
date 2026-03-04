@@ -1,0 +1,96 @@
+{
+  "name": "MPC821 - Relationship Other Branch",
+  "description": "Targets guardian_relationship='other' and its conditional description path.",
+  "interview": "docassemble.MATCGuardiansCarePlanReportMpc821:guardians_care_plan_report_mpc_821.yml",
+  "max_steps": 220,
+  "variables": {
+    "al_intro_screen": true,
+    "guardians_care_plan_report_mpc_821_intro": true,
+
+    "docket_number": "MPC821-OTH-003",
+    "trial_court": "all_courts[155]",
+
+    "patient1_name_first": "Casey",
+    "patient1_name_middleinitial": "",
+    "patient1_name_last": "Example",
+    "report_type": "annual",
+    "reportperiod_beginning": "2025-06-01",
+    "reportperiod_end": "2026-05-31",
+
+    "guardian_relationship": "other",
+    "relation_other_description": "Long-time family friend",
+    "patient1_address_on_one_line": "78 Pine Rd, Quincy, MA 02169",
+
+    "housing_type": "assisted_living",
+    "is_housing": false,
+    "is_having_visitors": false,
+    "is_making_calls": false,
+    "is_mailing": false,
+    "is_participating": false,
+    "patient_restricted_living_explanation": "",
+
+    "patient_mental_condition": "good",
+    "patient_overall_condition_explanation": "Stable and engaged with services.",
+    "patient_physical_condition": "good",
+    "patient_social_condition": "good",
+
+    "patient_services_list": "Routine medical follow-up",
+    "medical_services_rating": "good",
+    "patient_education_list": "None",
+    "education_services_rating": "none",
+    "patient_other_services_list": "Meal support",
+    "other_services_rating": "good",
+
+    "contact_frequency": "weekly",
+    "if_decision_making": false,
+    "summary_interaction_explanation": "Regular guardian calls and monthly care meetings.",
+    "is_acute_medical": false,
+    "future_plans_explanation": "Continue current supports and maintain housing.",
+    "should_guardianship_continue_change_explanation": "No changes requested.",
+
+    "is_crime_abuse_neglect_yes": false,
+    "is_fiduciary": false,
+
+    "guardians.there_are_any": true,
+    "guardians.there_is_another": false,
+    "guardians[0].name.first": "Casey",
+    "guardians[0].name.last": "Guardian",
+    "guardians[0].address.address": "78 Pine Rd",
+    "guardians[0].address.city": "Quincy",
+    "guardians[0].address.state": "MA",
+    "guardians[0].address.zip": "02169",
+    "guardians[0].phone_number": "(617) 555-0301",
+    "guardians[0].email": "casey.guardian@example.com",
+
+    "users.there_are_any": true,
+    "users.there_is_another": false,
+    "users[0].name.first": "Casey",
+    "users[0].name.last": "Guardian",
+
+    "is_guardian1_address_update": false,
+    "guardian1_signature_date": "2026-03-03",
+
+    "servicer_signature_date": "2026-03-03",
+    "is_adult_submission_method_hand": true,
+    "is_adult_submission_method_mail": false,
+    "is_attorney_submission_method_hand": false,
+    "is_attorney_submission_method_mail": true,
+    "is_attorney_submission_method_email": false,
+    "by_handing_it_to_them_3": false,
+    "by_mailing_it_to_the_address_they_provided_to_the_court": true,
+
+    "servicer_name_full": "Casey Guardian",
+    "servicer_address_address": "78 Pine Rd",
+    "servicer_address_unit": "",
+    "servicer_address_city": "Quincy",
+    "servicer_address_state": "MA",
+    "servicer_address_zip": "02169",
+    "servicer_phone_number": "(617) 555-0301",
+    "bbo_number": "",
+    "servicer_email": "casey.guardian@example.com",
+
+    "signature_date": "2026-03-03",
+    "basic_questions_signature_flow": true,
+    "servicer_signature": ""
+  }
+}
