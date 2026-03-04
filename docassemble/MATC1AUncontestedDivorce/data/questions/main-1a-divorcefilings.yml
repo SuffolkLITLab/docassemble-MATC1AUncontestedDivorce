@@ -10,18 +10,18 @@ metadata:
   short title: >-
         Divorce joint petition
   description: |-
-        This interview helps couples in Massachusetts ask the court for a joint, uncontested divorce under [G.L. c. 208 § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
+        This interview helps couples in Massachusetts ask the court for a joint, no fault divorce under [G.L. c. 208 § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
   can_I_use_this_form: |
-    If you are married and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an uncontested divorce. 
+    If you are married and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an no fault divorce. 
   before_you_start: |
-    This interview will help you ask the court for a joint, uncontested divorce.
+    This interview will help you ask the court for a joint, no fault divorce.
     
     Before you get started, please gather:
     
     1. Marriage certificate
     2. Recent pay stub
     3. Budget or bills tracking
-    4. Most recent tax return
+    4. Most recent tax year documents (Any and all Form 1099 and W2)
 
     When you are finished, you will need to:
     
@@ -106,9 +106,6 @@ code: |
   is_agent
   if is_agent == True:
     agent_guidance
-  purpose_is_divorce
-  if purpose_is_divorce == False:
-    purpose_mismatch
   legal_marriage
   if legal_marriage == False:
     purpose_mismatch
@@ -136,6 +133,8 @@ code: |
   children_of_marriage
   if not children_of_marriage:
     children_of_marriage_number = 0
+  if children_of_marriage:
+    children_of_marriage_number
   users.gather()
   if children_of_marriage:
     children.gather()
@@ -184,13 +183,6 @@ subquestion: |
   If you are married, you can use this interview to jointly request an uncontested divorce.
 
   Most people take about 60 minutes to complete this interview.
----
-id: Purpose Screen 
-question: | 
-  Joint (1A) Divorce Petition - Massachusetts
-subquestion: |
-  Are you using this interview to ask the Massachusetts courts for a divorce?
-yesno: purpose_is_divorce
 ---
 id: Purpose screen offramp
 event: purpose_mismatch
@@ -254,10 +246,11 @@ question: |
 subquestion: |
   ### Joint petition for divorce under [G.L. c. 208, § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1a)
   
-  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that:
+  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that you want to:
  
-  1. you want to get divorced and 
-  2. you want file together?
+  1. get divorced  
+  2. file together and
+  3. file complete, notorized separation agreement at the time of filing or within 90 days thereafter
 
 yesno: petition_is_joint
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
@@ -279,18 +272,16 @@ question: |
   Separation agreement format
 subquestion: |
   Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. It is highly encouraged that you submit a complete, notorized agreement with initial filing. 
-
-    Here we will further explain the different options available for filing a separation agreement with a joint petition for divorce. 
+  
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
     choices: 
       - "Upload my complete, notorized separation agreement here": upload
-        show if: separation_agreement_reached
+        show if: separation_agreement_documented
       - "File my complete, notorized separation agreement with the registry later" : wait
       - "Create a separation agreement using this interview tool.": interview
-        show if: separation_agreement_reached == False
-
+        show if: separation_agreement_documented == False
 #- "Use ODR product": Link them there first? How are we connecting to API?
 ---
 id: Relationship background
@@ -308,7 +299,7 @@ fields:
   - "Briefly explain what caused the marriage breakdown": marriage_breakdown_justification
     input type: area
     maxlength: 810
-#Need to include guidance on how to write this portion of the affidavit effectively
+#Need to include guidance on how to write this portion of the affidavit effectively. "Irreconcilabile differences have led to an irretrievable breakdown of the marriage."
 ---
 id: Living arrangements
 question: |
@@ -340,6 +331,8 @@ fields:
 
 #marital_home.normalized_address().county
 #if marital_home.normalized_address().county == users[0].normalized_address().county:
+
+#write as a for loop and put into address info placeholder near bottom of this file. 
 ---
 code: |
   request_divorce_nofault = petition_is_joint and separation_agreement_reached
@@ -368,12 +361,12 @@ question: |
 fields:
   - "Does ${  users[0].familiar()  } want to change their last name to their former last name?": users[0].name_change
     datatype: yesnoradio
-  - "${  users[0].familiar()  }'s former last name": users[0].former_name_last
+  - "${  users[0].familiar()  }'s last name before marriage": users[0].former_name_last
     maxlength: 48
     show if: users[0].name_change
   - "Does ${  users[1].familiar()  } want to change their last name to their former last name?": users[1].name_change
     datatype: yesnoradio
-  - "${  users[1]  }'s former last name": users[1].former_name_last
+  - "${  users[1]  }'s last name before marriage'": users[1].former_name_last
     maxlength: 48
     show if: users[1].name_change
 ---
@@ -400,8 +393,17 @@ fields:
   - "Petitioners1 marriage number": petitioners1_marriage_number
     maxlength: 10
 ---
-# ask for binary sex and explain why
-#  - "Petitioners1 is male": petitioners1_is_male
+id: Petitioner B Information
+question: |
+  Petitioner B Information
+fields:
+  - "Petitioners2 marriage number": petitioners2_marriage_number
+    maxlength: 10
+  - "Petitioners2 name last at birth": petitioners2_name_last_at_birth
+    maxlength: 26
+---
+# ask for binary sex for each user and explain why
+#  - "users1 is male": users1_is_male
 #    datatype: yesno
 #  - "Petitioners1 is female": petitioners1_is_female
 #    datatype: yesno
@@ -429,27 +431,7 @@ fields:
   - "List details for all previous actions": previous_action_detail
     input type: area
     maxlength: 252
-    required: False
----
-id: Petitioner B Information
-question: |
-  Petitioner B Information
-fields:
-  - "Petitioners2 marriage number": petitioners2_marriage_number
-    maxlength: 10
-  - "Petitioners2 name last at birth": petitioners2_name_last_at_birth
-    maxlength: 26
-  - "Petitioners2 is female": petitioners2_is_female
-    datatype: yesno
-  - "Petitioners2 is male": petitioners2_is_male
-    datatype: yesno
----
-id: Eligibility and input confirmation 
-event: Introduction summary 
-question: |
-  Confirm summary
-subquestion: |
-  Provide summary of user inputs and requests to confirm before moving forward. 
+    required: False 
 ---
 id: Miscellaneous Calculated Values
 question: |
@@ -502,9 +484,6 @@ fields:
     datatype: integer
     min: 0
     max: 8
-    show if:
-      variable: children_of_marriage
-      is: True
 ---
 id: Children
 question: |
@@ -547,7 +526,8 @@ subquestion: |
 continue button field: divorcefilings_preview_question    
 ---
 code: |
-  signature_fields = ['petitioners[1].signature', 'petitioners[0].signature']
+  signature_fields = ['users[0].signature', 'users[1].signature']
+  
 ---
 code: |
   # This is a placeholder for the addresses that will be searched
@@ -818,10 +798,6 @@ review:
     button: |
       **Have one or both spouses lived in Massachusetts for at least one year?**:
       ${ word(yesno(massachusetts_residency)) }
-  - Edit: breakdown_in_massachusetts
-    button: |
-      **Did the cause of the breakdown of the marriage occur in Massachusetts?**:
-      ${ word(yesno(breakdown_in_massachusetts)) }
 ---
 continue button field: petitioners.revisit
 question: |
@@ -923,8 +899,6 @@ attachment:
   skip undefined: True
   pdf template file: cjd101a.pdf
   fields:
-      - "trial_court_division": ${ trial_court.division }
-      - "trial_court_division": ${ trial_court.division }
       - "trial_court_division": ${ trial_court.division }
       - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
