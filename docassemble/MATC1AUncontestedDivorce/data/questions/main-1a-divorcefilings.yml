@@ -2,7 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALMassachusetts:al_massachusetts.yml
-  - docassemble.MassAccess:massaccess.yml #is this necessary?
+  - docassemble.MassAccess:massaccess.yml 
 ---
 metadata:
   title: >-
@@ -12,7 +12,7 @@ metadata:
   description: |-
         This interview helps couples in Massachusetts ask the court for a joint, no fault divorce under [G.L. c. 208 § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1A).
   can_I_use_this_form: |
-    If you are married and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request an no fault divorce. 
+    If you are married and one or both spouses have lived in Massachusetts for at least a year, you can use this interview to jointly request a no fault divorce. 
   before_you_start: |
     This interview will help you ask the court for a joint, no fault divorce.
     
@@ -89,6 +89,7 @@ objects:
   - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
   - attorneys: ALPeopleList.using(ask_number=True)
   - marital_home: ALAddress
+  - trial_court: MACourt
 ---
 sections:
   - review_divorcefilings: Review your answers
@@ -124,6 +125,16 @@ code: |
   marriage_date
   live_together
   marital_home.address
+  marital_home_occupant
+  if marital_home_occupant == none:
+    users[0].address.address
+    users[1].address.address
+  if marital_home_occupant == users1:
+    users[0].address.address = marital_home.address
+    users[1].address.address
+  if marital_home_occupant == users2:
+    users[0].address.address
+    users[1].address.address
   users[0].name_change
   request_merge_agreement
   previous_action
@@ -166,21 +177,20 @@ continue button field: divorcefilings_intro
 question: |
   Uncontested Divorce Joint Petition
 subquestion: |
-  This interview will help you ask the court for a joint, uncontested divorce
+  This interview will help you ask the court for a joint no fault divorce in Massachusetts.
   
   Before you get started, please gather:
-  
-    1. Marriage certificate
-    2. Recent pay stub
-    3. Budget or bills tracking
-    4. Most recent tax return
+    
+  1. Marriage certificate
+  2. Recent pay stub
+  3. Budget or bills tracking
+  4. Most recent tax year documents (Any and all Form 1099 and W2)
 
   When you are finished, you will need to:
-  
+    
   1. 
   2.
 
-  If you are married, you can use this interview to jointly request an uncontested divorce.
 
   Most people take about 60 minutes to complete this interview.
 ---
@@ -251,7 +261,7 @@ subquestion: |
   1. get divorced  
   2. file together and
   3. file complete, notorized separation agreement at the time of filing or within 90 days thereafter
-
+#Turn these into checkboxes?
 yesno: petition_is_joint
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
 ---
@@ -263,7 +273,7 @@ subquestion: |
 fields: 
   - "We agree on the major issues": separation_agreement_reached
     datatype: yesnoradio
-  - "We have already prepared a detailed written agreement": separation_agreement_documented
+  - "We have already prepared a detailed written separtion agreement": separation_agreement_documented
     datatype: yesnoradio
     show if: separation_agreement_reached
 ---
@@ -322,7 +332,7 @@ sets:
 question: |
   Marital home address
 subquestion:  |
-  Address of the marital home
+  Where did ${  users[0]  } and ${  users[1]  } last live together?
 fields: 
   - code: |
       marital_home.address_fields(show_county=True)
@@ -334,11 +344,38 @@ fields:
 
 #write as a for loop and put into address info placeholder near bottom of this file. 
 ---
-code: |
-  request_divorce_nofault = petition_is_joint and separation_agreement_reached
+id: Marital home occupant(s)
+question: |
+  Marital home occupancy
+subquestion: |
+  Does ${  users[0]  } or ${  users[1]  } still live at ${  marital_home.address.address  }? 
+fields: 
+  - "Who lives at ${  marital_home.address.address  }?": marital_home_occupant
+    input type: radio
+    choices: 
+      - "No, neither still lives there": none
+      - "${  users[0]  } lives at ${   marital_home.address.address  }": users0
+      - "${  users[1]  } lives at ${   marital_home.address.address  }": users1
 ---
-code: |
-  request_separation_agreement_approval = separation_agreement_reached
+id: users 1 address
+sets:
+  - users[0].address.address
+  - users[0].address.city
+question: |
+  ${  users[0]  }'s home address
+fields:
+  - code: |
+      users[0].address_fields(show_county=False)
+---
+id: users 2 address
+sets:
+  - users[1].address.address
+  - users[1].address.city
+question: |
+  ${  users[1]  }'s home address
+fields:
+  - code: |
+      users[1].address_fields(show_county=False)
 ---
 id: merger survival
 question: | 
@@ -388,7 +425,7 @@ id: Petitioner A Information
 question: |
   Petitioner A Information
 fields:
-  - "{  users[0].familair()  } last name at birth": users[0].name_last_at_birth
+  - "{  users[0].familiar()  } last name at birth": users[0].name_last_at_birth
     maxlength: 26
   - "Petitioners1 marriage number": petitioners1_marriage_number
     maxlength: 10
@@ -1023,29 +1060,14 @@ attachment:
   pdf template file: r408.pdf
   fields:
       - "trial_court_division": ${ trial_court.division }
-      - "trial_court_division": ${ trial_court.division }
-      - "trial_court_division": ${ trial_court.division }
-      - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
       - "docket_number": ${ docket_number }
       - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
       - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_zip": ${ users[0].address.zip }
-      - "users1_address_zip": ${ users[0].address.zip }
       - "users1_address_zip": ${ users[0].address.zip }
       - "marriage_location": ${ marriage_location }
-      - "marriage_location": ${ marriage_location }
-      - "marriage_date": ${ marriage_date.format() }
       - "marriage_date": ${ marriage_date.format() }
       - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
       - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
       - "petitioners2_address_zip": ${ petitioners[1].address.zip }
       - "judgment_divorce": ${ judgment_divorce }
       - "judgment_annulment": ${ judgment_annulment }
@@ -1093,6 +1115,3 @@ attachment:
       - "children5_birthdate": ${ children[4].birthdate.format() }
       - "children5_name_full": ${ children[4] }
       - "r408_addendum": ${ r408_addendum }
-
-
-
