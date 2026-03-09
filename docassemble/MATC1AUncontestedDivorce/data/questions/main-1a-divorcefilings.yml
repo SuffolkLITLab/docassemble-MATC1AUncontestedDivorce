@@ -123,18 +123,10 @@ code: |
   if separation_agreement_format == "wait":
     cautionary_validation_message
   marriage_date
-  live_together
   marital_home.address
-  marital_home_occupant
-  if marital_home_occupant == none:
-    users[0].address.address
-    users[1].address.address
-  if marital_home_occupant == users1:
-    users[0].address.address = marital_home.address
-    users[1].address.address
-  if marital_home_occupant == users2:
-    users[0].address.address
-    users[1].address.address
+  live_together
+  users[0].address.address
+  users[1].address.address
   users[0].name_change
   request_merge_agreement
   previous_action
@@ -282,7 +274,6 @@ question: |
   Separation agreement format
 subquestion: |
   Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. It is highly encouraged that you submit a complete, notorized agreement with initial filing. 
-  
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
@@ -292,7 +283,6 @@ fields:
       - "File my complete, notorized separation agreement with the registry later" : wait
       - "Create a separation agreement using this interview tool.": interview
         show if: separation_agreement_documented == False
-#- "Use ODR product": Link them there first? How are we connecting to API?
 ---
 id: Relationship background
 question: |
@@ -320,7 +310,7 @@ fields:
     choices: 
       - We live together: True
       - We live in separate households: False
-  - "When did you last live together?": last_living_together_date
+  - "When did ${  users[0].familiar()  } and ${  users[1].familiar()  } last live together?": last_living_together_date
     datatype: date
     show if:
       variable: live_together
@@ -332,30 +322,10 @@ sets:
 question: |
   Marital home address
 subquestion:  |
-  Where did ${  users[0]  } and ${  users[1]  } last live together?
+  What is the address of the marital home? In other words, where did ${  users[0]  } and ${  users[1]  } last live together?
 fields: 
   - code: |
       marital_home.address_fields(show_county=True)
----
-#refer to marital_home.normalized_address().county to the logic for venue
-
-#marital_home.normalized_address().county
-#if marital_home.normalized_address().county == users[0].normalized_address().county:
-
-#write as a for loop and put into address info placeholder near bottom of this file. 
----
-id: Marital home occupant(s)
-question: |
-  Marital home occupancy
-subquestion: |
-  Does ${  users[0]  } or ${  users[1]  } still live at ${  marital_home.address.address  }? 
-fields: 
-  - "Who lives at ${  marital_home.address.address  }?": marital_home_occupant
-    input type: radio
-    choices: 
-      - "No, neither still lives there": none
-      - "${  users[0]  } lives at ${   marital_home.address.address  }": users0
-      - "${  users[1]  } lives at ${   marital_home.address.address  }": users1
 ---
 id: users 1 address
 sets:
@@ -365,7 +335,7 @@ question: |
   ${  users[0]  }'s home address
 fields:
   - code: |
-      users[0].address_fields(show_county=False)
+      users[0].address_fields(show_county=True)
 ---
 id: users 2 address
 sets:
@@ -375,7 +345,12 @@ question: |
   ${  users[1]  }'s home address
 fields:
   - code: |
-      users[1].address_fields(show_county=False)
+      users[1].address_fields(show_county=True)
+---
+#refer to marital_home.normalized_address().county to the logic for venue
+
+#marital_home.normalized_address().county
+#if marital_home.normalized_address().county == users[0].normalized_address().county:
 ---
 id: merger survival
 question: | 
@@ -936,49 +911,28 @@ attachment:
   skip undefined: True
   pdf template file: cjd101a.pdf
   fields:
-      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ trial_court.county }
       - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "users1_name_full__1": ${ users[0] }
-      - "users1_name_full__2": ${ users[0] }
       - "users1_name_full": ${ users[0] }
-      - "users2_name_full__1": ${ users[1] }
-      - "users2_name_full__2": ${ users[1] }
       - "users2_name_full": ${ users[1] }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
-      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
-      - "signature_date": ${ signature_date.format() }
       - "signature_date": ${ signature_date.format() }
       - "users2_address_address": ${ users[1].address.address }
-      - "users2_address_address": ${ users[1].address.address }
-      - "users1_address_address": ${ users[0].address.address }
       - "users1_address_address": ${ users[0].address.address }
       - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
       - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_zip": ${ users[0].address.zip }
-      - "users1_address_zip": ${ users[0].address.zip }
       - "users1_address_zip": ${ users[0].address.zip }
       - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_state": ${ users[1].address.state }
       - "users2_address_state": ${ users[1].address.state }
       - "users2_address_zip": ${ users[1].address.zip }
-      - "users2_address_zip": ${ users[1].address.zip }
       - "marriage_location": ${ marriage_location }
-      - "marriage_location": ${ marriage_location }
-      - "marriage_date": ${ marriage_date.format() }
       - "marriage_date": ${ marriage_date.format() }
       - "marital_home_address_on_one_line": ${ marital_home[0].address.on_one_line() }
       - "last_living_together_date": ${ last_living_together_date.format() }
-      - "children2_name_full_plus_birthdate": ${ children2_name_full_plus[0].birthdate.format() }
-      - "children1_name_full_plus_birthdate": ${ children1_name_full_plus[0].birthdate.format() }
-      - "children3_name_full_plus_birthdate": ${ children3_name_full_plus[0].birthdate.format() }
-      - "children4_name_full_plus_birthdate": ${ children4_name_full_plus[0].birthdate.format() }
+      - "children2_name_full_plus_birthdate": ${ f"{children[1]} {children[1].birthdate.format()}"}
+      - "children1_name_full_plus_birthdate": ${ f"{children[0]} {children[0].birthdate.format()}"}
+      - "children3_name_full_plus_birthdate": ${ f"{children[2]} {children[2].birthdate.format()}"}
+      - "children4_name_full_plus_birthdate": ${ f"{children[3]} {children[3].birthdate.format()}"}
       - "previous_action_detail": ${ previous_action_detail }
       - "request_divorce_nofault": ${ request_divorce_nofault }
       - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
@@ -990,23 +944,20 @@ attachment:
       - "users2_former_name_last": ${ users2_former[0].name.last }
       - "additional_request": ${ additional_request }
       - "additonal_request_detail": ${ additonal_request_detail }
-      - "petitioners1_signature": ${ petitioners[0].signature_if_final(i) }
-      - "petitioners2_signature": ${ petitioners[1].signature_if_final(i) }
-      - "petitioners2_name_full": ${ petitioners[1] }
-      - "petitioners1_name_full": ${ petitioners[0] }
-      - "petitioners1_address_on_one_line": ${ petitioners[0].address.on_one_line() }
-      - "petitioners2_address_on_one_line": ${ petitioners[1].address.on_one_line() }
-      - "petitioners1_address_city": ${ petitioners[0].address.city }
-      - "petitioners1_address_state": ${ petitioners[0].address.state }
-      - "petitioners1_address_zip": ${ petitioners[0].address.zip }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_city": ${ petitioners[1].address.city }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_state": ${ petitioners[1].address.state }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners2_address_zip": ${ petitioners[1].address.zip }
-      - "petitioners1_phone_number": ${ petitioners[0].phone_number }
-      - "petitioners2_phone_number": ${ petitioners[1].phone_number }
+      - "users1_signer_signature": ${ petitioners[0].signature_if_final(i) }
+      - "users2_signer_signature": ${ petitioners[1].signature_if_final(i) }
+      - "users2_signer_name_full": ${ petitioners[1] }
+      - "users1_signer_name_full": ${ petitioners[0] }
+      - "users1_signer_address_on_one_line": ${ petitioners[0].address.on_one_line() }
+      - "users2_signer_address_on_one_line": ${ petitioners[1].address.on_one_line() }
+      - "users1_signer_address_city": ${ petitioners[0].address.city }
+      - "users1_signer_address_state": ${ petitioners[0].address.state }
+      - "users1_signer_address_zip": ${ petitioners[0].address.zip }
+      - "users2_signer_address_city": ${ petitioners[1].address.city }
+      - "users2_signer_address_state": ${ petitioners[1].address.state }
+      - "users2_signer_address_zip": ${ petitioners[1].address.zip }
+      - "users1_signer_phone_number": ${ petitioners[0].phone_number }
+      - "users2_signer_phone_number": ${ petitioners[1].phone_number }
       - "attorneys1_bbo_number": ${ attorneys1_bbo_number }
       - "attorneys2_bbo_number": ${ attorneys2_bbo_number }
 ---
@@ -1017,39 +968,24 @@ attachment:
   skip undefined: True
   pdf template file: affidirretrievablebreakdown.pdf
   fields:
-      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ trial_court.county }
       - "docket_number": ${ docket_number }
       - "users1_name_full__1": ${ users[0] }
       - "users1_name_full__2": ${ users[0] }
-      - "users1_name_full": ${ users[0] }
       - "users2_name_full__1": ${ users[1] }
       - "users2_name_full__2": ${ users[1] }
-      - "users2_name_full": ${ users[1] }
-      - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
       - "marriage_breakdown_date": ${ marriage_breakdown_date.format() }
       - "marriage_breakdown_justification": ${ marriage_breakdown_justification }
-      - "signature_date": ${ signature_date.format() }
       - "signature_date": ${ signature_date.format() }
       - "users2_signature": ${ users[1].signature_if_final(i) }
       - "users1_signature": ${ users[0].signature_if_final(i) }
       - "users2_address_address": ${ users[1].address.address }
-      - "users2_address_address": ${ users[1].address.address }
-      - "users1_address_address": ${ users[0].address.address }
       - "users1_address_address": ${ users[0].address.address }
       - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
       - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_zip": ${ users[0].address.zip }
-      - "users1_address_zip": ${ users[0].address.zip }
       - "users1_address_zip": ${ users[0].address.zip }
       - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_city": ${ users[1].address.city }
       - "users2_address_state": ${ users[1].address.state }
-      - "users2_address_state": ${ users[1].address.state }
-      - "users2_address_zip": ${ users[1].address.zip }
       - "users2_address_zip": ${ users[1].address.zip }
 ---
 attachment:
@@ -1059,7 +995,7 @@ attachment:
   skip undefined: True
   pdf template file: r408.pdf
   fields:
-      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ trial_court.county }
       - "docket_number": ${ docket_number }
       - "users1_address_city": ${ users[0].address.city }
       - "users1_address_state": ${ users[0].address.state }
