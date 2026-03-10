@@ -93,8 +93,6 @@ auto terms:
     The date a divorce becomes final
   affivavit: |
     A written statement of facts
-  agreement: |
-    A written document addressing issues in the case that are agreed to and signed by all parties in a case
   alternative service: |
     A court allowed process to inform a party that a case has been started against them.
   capias: |
@@ -148,9 +146,9 @@ auto terms:
 #Source note: Most definitions in the section above from litigant "COMMONLY USED TECHNOLOGY" handout provided by the Suffolk Probate and Family Court Register
 ---
 objects:
-  - users: ALPeopleList.using(ask_number=True, target_number=2)
+  - users: ALPeopleList.using(ask_number=False, target_number=2)
   - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
-  - attorneys: ALPeopleList.using(ask_number=True)
+  - attorneys: ALPeopleList.using(ask_number=False)
   - marital_home: ALAddress
   - trial_court: MACourt
 ---
@@ -186,10 +184,17 @@ code: |
   if separation_agreement_format == "wait":
     cautionary_validation_message
   marriage_date
-  marital_home.address
   live_together
-  users[0].address.address
-  users[1].address.address
+  if marital_home_occupied == False:
+    marital_home.address
+    users[0].address.address
+    users[1].address.address
+  else: 
+    marital_home.address
+  if marital_home_occupant == 0:
+    users[1].address.address
+  elif marital_home_occupant == 1:
+    users[0].address.address
   users[0].name_change
   request_merge_agreement
   previous_action
@@ -344,7 +349,7 @@ fields:
       - "Upload my complete, notorized separation agreement here": upload
         show if: separation_agreement_documented
       - "File my complete, notorized separation agreement with the registry later" : wait
-      - "Create a separation agreement using this interview tool.": interview
+      - "Create a separation agreement using this interview": interview
         show if: separation_agreement_documented == False
 ---
 id: Relationship background
@@ -378,7 +383,19 @@ fields:
     show if:
       variable: live_together
       is: False
-  - "Does either ${  users[0]  } or ${  users[1]  } live in the marital home?"
+  - "Does either ${  users[0].familiar()  } or ${  users[1].familiar()  } live in the marital home?": marital_home_occupied
+    datatype: yesnoradio
+    show if:
+      variable: live_together
+      is: False
+  - "Who lives in the marital home?": marital_home_occupant
+    datatype: radio
+    choices:
+      - "${users[0]}": 0
+      - "${users[1]}": 1
+    show if:
+      variable: marital_home_occupied
+      is: True
 ---
 id: Marital home address
 sets:
@@ -410,6 +427,17 @@ question: |
 fields:
   - code: |
       users[1].address_fields(show_county=True)
+---
+code: |
+  if live_together:
+    users[0].address = marital_home
+    users[1].address = marital_home
+---
+code: |
+  if marital_home_occupant == 0:
+    users[0].address = marital_home
+  elif marital_home_occupant == 1:
+    users[1].address = marital_home
 ---
 #refer to marital_home.normalized_address().county to the logic for venue
 
