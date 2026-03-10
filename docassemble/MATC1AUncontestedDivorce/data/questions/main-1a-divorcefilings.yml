@@ -84,6 +84,69 @@ code: |
 code: |
   al_form_type = "starts_case" 
 ---
+auto terms:
+  children of the marriage: |
+    Children of the marriage includes all children over whom the couple shares legal custody. This typically includes all children born to either spouse during the marriage and any other children legally adopted by one or both parents but does not include step-children born or adopted to one spouse outside of the marriage and not legally adopted by the second spouse. 
+  marital home: |
+    The last residential address shared by divorcing parties
+  divorce absolute: |
+    The date a divorce becomes final
+  affivavit: |
+    A written statement of facts
+  agreement: |
+    A written document addressing issues in the case that are agreed to and signed by all parties in a case
+  alternative service: |
+    A court allowed process to inform a party that a case has been started against them.
+  capias: |
+    An arrest warrant issued by the judge 
+  certificate of service: |
+    Proof that the other parties have been notified of the pending case and received a copy of the motion or pleading that was filed 
+  child support guidelines: |
+    Mathematical formula used by the court to determine an appropriate amount of child support 
+  citation: |
+    A legal notice issued by the court informing the public of a pending court proceeding 
+  complaint for modification: |
+    A complaint filed to change an existing judgement due to a change in circumstances 
+  conservator: |
+    A person who is appointed by a court to manage the estate of a protected person
+  constable: |
+    A licensed law enforcement officer authorized to perform certain legal tasks, such as serving court documents. 
+  devisee: |
+    A person identified in a will to receive under the will. 
+  financial statement: |
+    A form summarizing a party's estimated income and expenses, assets, liabilities, and health insurance, etc. 
+  guardian: |
+    A person with the legal duty and power to care for a minor or for a person who is legally incapacitated. 
+  guardian ad litem: |
+    An attorney appointed by the court to promote and protect the interests of a person affected by the legislation 
+  GAL: |
+    An attorney appointed by the court to promote and protect the interests of a person affected by the legislation
+  heir: |
+    A person who is related by blood or marriage and may be entitled to inherit someone's estate
+  incapacitated person: |
+    A person who is alleged intellectually disabled or who cannot legally take care of themselves
+  motion: |
+    A written form that allows parties to request what they want the court to establish in their current (active) case 
+  notice of hearing: |
+    A written notice to a party of the time, date, place, and reasoning for a court hearing 
+  pretrial conference: |
+    A hearing scheduled to resolve any issues the parties may have in order to prevent a trial. Trial may still be necessary if full resolution of the case cannot be established 
+  process server: |
+    A person, usually a constable or deputy sheriff, authorized to deliver a summons or complaint to a person listed as a defendant in a case
+  return date: |
+    A date to reference when making proper service and to indicate the last date and time the public can object to the citation
+  return of service: |
+    The summons completed by process server, indicating that the other party received notice and is aware of the case being filed against them
+  separation agreement: |
+    A written document listing all things the parties agree on in their divorce, like child support, taxes, parenting time, and property division
+  service of process: |
+    A document notifying the other party to the case that a legal procedure has started against them
+  summons: |
+    A notice to a party stating that a case was filed against them
+  under advisement: |
+    The judge is holding the case for further review before making a decision on the case. 
+#Source note: Most definitions in the section above from litigant "COMMONLY USED TECHNOLOGY" handout provided by the Suffolk Probate and Family Court Register
+---
 objects:
   - users: ALPeopleList.using(ask_number=True, target_number=2)
   - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
@@ -315,6 +378,7 @@ fields:
     show if:
       variable: live_together
       is: False
+  - "Does either ${  users[0]  } or ${  users[1]  } live in the marital home?"
 ---
 id: Marital home address
 sets:
@@ -322,7 +386,7 @@ sets:
 question: |
   Marital home address
 subquestion:  |
-  What is the address of the marital home? In other words, where did ${  users[0]  } and ${  users[1]  } last live together?
+  What is the address of the marital home?
 fields: 
   - code: |
       marital_home.address_fields(show_county=True)
@@ -905,7 +969,7 @@ attachment:
   tagged pdf: True
 ---
 attachment:
-  name: cjd101a
+  name: Joint-Petition-for-Divorce-cjd101a
   filename: cjd101a
   variable name: cjd101a[i]
   skip undefined: True
@@ -989,8 +1053,8 @@ attachment:
       - "users2_address_zip": ${ users[1].address.zip }
 ---
 attachment:
-  name: r408
-  filename: r408
+  name: Report of Absolute Divorce r408
+  filename: Report-of-Absolute-Divorce
   variable name: r408[i]
   skip undefined: True
   pdf template file: r408.pdf
