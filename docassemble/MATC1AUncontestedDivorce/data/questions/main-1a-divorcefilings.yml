@@ -93,8 +93,6 @@ auto terms:
     The date a divorce becomes final
   affivavit: |
     A written statement of facts
-  agreement: |
-    A written document addressing issues in the case that are agreed to and signed by all parties in a case
   alternative service: |
     A court allowed process to inform a party that a case has been started against them.
   capias: |
@@ -186,8 +184,8 @@ code: |
   if separation_agreement_format == "wait":
     cautionary_validation_message
   marriage_date
-  marital_home.address
   live_together
+  marital_home.address
   users[0].address.address
   users[1].address.address
   users[0].name_change
@@ -201,7 +199,6 @@ code: |
     children_of_marriage_number = 0
   if children_of_marriage:
     children_of_marriage_number
-  users.gather()
   if children_of_marriage:
     children.gather()
   set_progress(90)
@@ -344,7 +341,7 @@ fields:
       - "Upload my complete, notorized separation agreement here": upload
         show if: separation_agreement_documented
       - "File my complete, notorized separation agreement with the registry later" : wait
-      - "Create a separation agreement using this interview tool.": interview
+      - "Create a separation agreement using this interview tool": interview
         show if: separation_agreement_documented == False
 ---
 id: Relationship background
@@ -378,7 +375,19 @@ fields:
     show if:
       variable: live_together
       is: False
-  - "Does either ${  users[0]  } or ${  users[1]  } live in the marital home?"
+  - "Does either ${  users[0]  } or ${  users[1]  } live in the marital home?": marital_home_occupied
+    datatype: yesnoradio
+    show if:
+      variable: live_together
+      is: False
+  - "Who lives in the marital home?": marital_home_occupant
+    datatype: radio
+    show if:
+      variable: marital_home_occupied
+      is: True
+    choices: 
+      - "${  users[0]  }": 0
+      - "${  users[1]  }": 1
 ---
 id: Marital home address
 sets:
