@@ -91,8 +91,6 @@ auto terms:
     The last residential address shared by divorcing parties
   divorce absolute: |
     The date a divorce becomes final
-  affivavit: |
-    A written statement of facts
   alternative service: |
     A court allowed process to inform a party that a case has been started against them.
   capias: |
@@ -113,10 +111,6 @@ auto terms:
     A person identified in a will to receive under the will. 
   financial statement: |
     A form summarizing a party's estimated income and expenses, assets, liabilities, and health insurance, etc. 
-  guardian: |
-    A person with the legal duty and power to care for a minor or for a person who is legally incapacitated. 
-  guardian ad litem: |
-    An attorney appointed by the court to promote and protect the interests of a person affected by the legislation 
   GAL: |
     An attorney appointed by the court to promote and protect the interests of a person affected by the legislation
   heir: |
@@ -146,13 +140,17 @@ auto terms:
 #Source note: Most definitions in the section above from litigant "COMMONLY USED TECHNOLOGY" handout provided by the Suffolk Probate and Family Court Register
 ---
 objects:
-  - users: ALPeopleList.using(ask_number=True, target_number=2)
+  - users: ALPeopleList.using(ask_number=False, target_number=1)
   - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
   - attorneys: ALPeopleList.using(ask_number=True)
   - marital_home: ALAddress
   - trial_court: MACourt
 ---
 sections:
+  - relationship_background: Relationship Background and Eligibility
+  - court_requests: Requests for the court
+  - party_information: Party Information
+  - children_information: Children
   - review_divorcefilings: Review your answers
 ---
 #################### Interview order #####################
@@ -162,12 +160,9 @@ id: interview_order_divorcefilings
 code: |
   # Set the allowed courts for this interview
   allowed_courts = ['Probate and Family Court']
-  nav.set_section("review_divorcefilings")
+  nav.set_section("relationship_background")
   user_role = "plaintiff"
   user_ask_role = "plaintiff"
-  is_agent
-  if is_agent == True:
-    agent_guidance
   legal_marriage
   if legal_marriage == False:
     purpose_mismatch
@@ -186,22 +181,22 @@ code: |
   marriage_date
   live_together
   marital_home.address
-  users[0].address.address
-  users[1].address.address
+  nav.set_section("party_information")
+  users.gather()
   users[0].name_change
   request_merge_agreement
   previous_action
   if previous_action == True:
     previous_action_detail
   additional_request
+  nav.set_section("children_information")
   children_of_marriage
-  if not children_of_marriage:
-    children_of_marriage_number = 0
   if children_of_marriage:
     children_of_marriage_number
   if children_of_marriage:
     children.gather()
   set_progress(90)
+  nav.set_section("review_divorcefilings")
   interview_order_divorcefilings = True
 ---
 ###################### Main order ######################
@@ -264,16 +259,6 @@ question: |
 subquestion: |
   You entered (insert information summary here) and (custom warning accordingly). Are you sure you want to proceed? Alternative you are allowed to proceed without doing ___, but are you really sure?
 ---
-id: Identity screen
-question: |
-  Your role
-subquestion: | 
-  Are you completing this interview for yourself (including your spouse) or for someone else? 
-field: is_agent
-buttons: 
-  - Myself/Ourselves: False
-  - Someone Else: True
----
 id: Identity language clarification
 continue button field: agent_guidance
 question: |
@@ -325,9 +310,10 @@ subquestion: |
 fields: 
   - "We agree on the major issues": separation_agreement_reached
     datatype: yesnoradio
-  - "We have already prepared a detailed written separtion agreement": separation_agreement_documented
+  - "We have prepared a detailed written separtion agreement": separation_agreement_documented
     datatype: yesnoradio
     show if: separation_agreement_reached
+  - "Upload agreement": separation_agreement_upload
 ---
 id: Separation agreement format
 question: |
@@ -420,10 +406,20 @@ fields:
   - code: |
       users[1].address_fields(show_county=True)
 ---
+#if live together, users both live in marital_home
+code: |
+  if live_together: 
+    marital_home = users[0].address = users[1].address
+---
+code: |
+  if marital_home_occupant == 0: marital_home = users[0].address
+  elif marital_home_occupant == 1: marital_home = users[1].address
+---
 #refer to marital_home.normalized_address().county to the logic for venue
 
 #marital_home.normalized_address().county
 #if marital_home.normalized_address().county == users[0].normalized_address().county:
+
 ---
 id: merger survival
 question: | 
@@ -518,66 +514,34 @@ fields:
     maxlength: 252
     required: False 
 ---
-id: Miscellaneous Calculated Values
-question: |
-  Miscellaneous Calculated Values:
-subquestion: |
-  Each of these fields will be calulated from other values/inputs generally in code blocks
-fields: 
-  - "Children2 name full plus birthdate": children2_name_full_plus_birthdate
-    maxlength: 39
-  - "Children1 name full plus birthdate": children1_name_full_plus_birthdate
-    maxlength: 39
-  - "Children3 name full plus birthdate": children3_name_full_plus_birthdate
-    maxlength: 39
-  - "Children4 name full plus birthdate": children4_name_full_plus_birthdate
-    maxlength: 39
----
-id: Miscellaneous Blanks
-question: |
-  Miscellaneous Blanks
-subquestion: |
-  Each of the fields on this screen will be blank 
-fields:
-  - "Judgment divorce": judgment_divorce
-    datatype: yesno
-  - "Judgment annulment": judgment_annulment
-    datatype: yesno
-  - "Date of judgement": judgement_date
-    datatype: date
-  - "Date of absolute divorce": absolute_divorce_date
-    datatype: date
-  - "Divorce grounds": divorce_grounds
-    maxlength: 90
-  - "Submitting official fullname": submitting_official_fullname
-    maxlength: 88
----
 id: Children of the Marriage
 question: |
   Children of the Marriage
 subquestion: |
-  Children of the marriage are defined as...
+  Were any children born or adopted during the marriage between ${  users[0]  } and ${ users[1]  }?
 fields:
   - "Are there any children of this marriage?": children_of_marriage
     datatype: yesnoradio
----
-id: Children of the marriage number
-question: |
-  Number of children of the marriage
-fields:
   - "How many children came from the marriage between ${ users[0].familiar() } and ${ users[1].familiar() }?": children_of_marriage_number
     datatype: integer
     min: 0
     max: 8
+    show if: children_of_marriage
+
+#The template forms and child support guidelines contemplate 8 children maximum
 ---
-id: Children
+id: Custodial children
 question: |
-  Children
+  Custodial Children 
+subquestion: |
+  How many custodial children do ${  users[0]  } and ${ users[1]  } each have? 
+
+  Unlike with children of the marriage, custodial children includes all children in the custody of each individual spouse regardless of whether and with whom custody is shared. 
 fields:
-  - "Petitioners1 number of custodial children": petitioners1_number_of_custodial_children
-    maxlength: 10
-  - "Petitioners2 number of custodial children": petitioners2_number_of_custodial_children
-    maxlength: 10
+  - "${  users[0]  } number of custodial children": user1_number_of_custodial_children
+    datatype: integer
+  - "${users[1]  } number of custodial children": users2_number_of_custodial_children
+    datatype: integer
 ---
  # "R408 addendum": r408_addendum
  #   input type: area
@@ -587,11 +551,11 @@ id: Social security
 question: |
   Social security numbers
 subquestion: |
-  r408 asks for demographic information including social security number (cite statute from intstuctions sheet)
+  r408 asks for social security number as required by statute
 fields:
-  - "Petitioners1 ssn": petitioners1_ssn
+  - "Petitioners1 ssn": users1_ssn
     maxlength: 23
-  - "Petitioners2 ssn": petitioners2_ssn
+  - "Petitioners2 ssn": users2_ssn
     maxlength: 23
 ---
 id: preview divorcefilings
@@ -612,7 +576,12 @@ continue button field: divorcefilings_preview_question
 ---
 code: |
   signature_fields = ['users[0].signature', 'users[1].signature']
-  
+---
+#Set petition values
+---
+#Set affidavit values
+---
+#Set r408 values
 ---
 code: |
   # This is a placeholder for the addresses that will be searched
