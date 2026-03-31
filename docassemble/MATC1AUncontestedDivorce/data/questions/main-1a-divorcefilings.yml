@@ -19,7 +19,7 @@ metadata:
   before_you_start: |
     This interview will help you ask the court for a joint, no fault divorce.
     
-    Before you get started, please gather:
+    Before you get started, gather:
     
     1. Marriage certificate
     2. Recent pay stub for all current employment
@@ -28,7 +28,7 @@ metadata:
 
     When you are finished, you will need to:
     
-    1. Notorize separation agreement before filing
+    1. Notorize separation agreement before filing with the registry
     2.
     
   maturity: production
@@ -91,7 +91,7 @@ code: |
 ---
 auto terms:
   children of the marriage: |
-    Children of the marriage includes all children over whom the couple shares legal custody. This typically includes all children born to either spouse during the marriage and any other children legally adopted by one or both parents but does not include step-children born or adopted to one spouse outside of the marriage and not legally adopted by the second spouse. 
+    Children of the marriage includes all children over whom the couple shares legal custody. This typically includes all children born to either spouse during the marriage and any other children legally adopted by one or both parents but not include step-children born or adopted to one spouse outside of the marriage and not legally adopted by the second spouse. 
   marital home: |
     The last residential address shared by divorcing parties
   notorize: |
@@ -143,15 +143,16 @@ auto terms:
 objects:
   - users: ALPeopleList.using(ask_number=False, target_number=2)
   - children: ALPeopleList.using(ask_number=False, target_number=children_of_marriage_number)
-  - attorneys: ALPeopleList.using(ask_number=True)
+  - attorneys: ALPeopleList.using(ask_number=False)
   - signers: ALPeopleList.using(ask_number=False, target_number=2)
   - marital_home: ALAddress
+  - proper_venue: ALAddress
   - trial_court: MACourt
 ---
 sections:
-  - relationship_background: Relationship Background and Eligibility
+  - relationship_background: Relationship background and eligibility
   - court_requests: Requests for the court
-  - party_information: Party Information
+  - party_information: Party information
   - children_information: Children
   - review_divorcefilings: Review your answers
 ---
@@ -165,12 +166,12 @@ code: |
   nav.set_section("relationship_background")
   user_role = "plaintiff"
   user_ask_role = "plaintiff"
-  users[1].name.first
   legal_marriage
   if legal_marriage == False:
     purpose_mismatch
   massachusetts_residency
   if massachusetts_residency == False:
+    cautionary_message_jurisdiction
     purpose_mismatch
   petition_is_joint
   if petition_is_joint == False:
@@ -184,17 +185,25 @@ code: |
   elif separation_agreement_format == "upload":
     separation_agreement_upload
   marriage_date
+  previous_action
+  if previous_action == True:
+    previous_action_detail
   live_together
   marital_home.address
   nav.set_section("party_information")
   users.gather()
+  for i in range(len(users)):
+    users[i].address
+  if users[0].has_attorney == True: 
+    attorneys[0].name.first
+  if users[1].has_attorney == True:
+    attorneys[1].name.first
+  nav.set_section("court_requests")
   users[0].name_change
   request_merge_agreement
-  previous_action
-  if previous_action == True:
-    previous_action_detail
   additional_request
   nav.set_section("children_information")
+  set_progress(70)
   children_of_marriage
   if children_of_marriage:
     children_of_marriage_number
@@ -231,7 +240,7 @@ question: |
 subquestion: |
   This interview will help you ask the court for a joint no fault divorce in Massachusetts.
   
-  Before you get started, please gather:
+  Before you get started, gather:
     
   1. Marriage certificate
   2. Recent pay stub
@@ -240,7 +249,7 @@ subquestion: |
 
   When you are finished, you will need to:
     
-  1. 
+  1. Notorize separation agreement before filing with the registry
   2.
 
 
@@ -255,16 +264,23 @@ subquestion: |
 
   More information about Divorce in Massachusetts:
 
-  * Mass.gov/Divorce()
+  * [Mass.gov/Divorce](https://www.mass.gov/divorce)
 buttons: 
   - Exit: exit
 ---
-id: Cautionary validation
+id: Cautionary validation template
 continue button field: cautionary_validation_message
 question: |
   Confirm information
 subquestion: |
   You entered (insert information summary here) and (custom warning accordingly). Are you sure you want to proceed? Alternative you are allowed to proceed without doing ___, but are you really sure?
+---
+id: Cautionary message jurisdiction
+continue button field: cautionary_message_jurisdiction
+question: |
+  Caution
+subquestion: |
+  If neither spouse has lived in Massachusetts for at least one year, this tool cannot help you file for divorce in Massachusetts. You may wish to speak to an attorney licensed to practice in MA to discuss your options. 
 ---
 id: Cautionary message notorized separation agreement
 continue button field: cautionary_message_delay_agreement
@@ -286,7 +302,7 @@ subquestion: |
   The questions in this interview are written to help people prepare paperwork for their own use. If you are completing this interview for someone else, respond to questions phrased with "you" as if you are the person for whom you are completing this paperwork - more specifically one spouse of the couple seeking a divorce.
 ---
 id: Party B name
-sets: |
+sets:
   users[1].name.first
 question: |
   Spouse name
@@ -311,6 +327,8 @@ subquestion: |
 fields:
   - "Have either or both  lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
+    help: |
+      If neither party has lived in Massachusetts for at least one year, this interview cannot help you ask the court for a 1A divorce. 
   #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     #datatype: yesnoradio
     #showif:
@@ -328,10 +346,76 @@ fields:
   - "${ users[1] } has a lawyer": users[1].has_attorney
     datatype: yesnoradio
 ---
-#code: |
-# Default: spouses sign
-#If users0_has_attorney then attorney0 signs
-#If users1_has_attorney then attorney1 signs
+#Add question screen for each person to enter attorney info, make trigger conditional on users[0].has_attorney and users[1].has_attorney
+id: Attorney information Party A
+sets: 
+  attorneys[0].name.first
+  attorneys[0].address.address
+  attorneys[0].phone_number
+  attorneys[0].bbo_number  
+question: |
+  Attorney for ${ users[0] }
+fields: 
+  - code: |
+      attorneys[0].name_fields()
+  - code: |
+      attorneys[0].address_fields()
+  - "Attorney phone number": attorneys[0].phone_number
+  - "Board of Bar Overseers (BBO) Number": attorneys[0].bbo_number
+---
+id: Attorney information Party B
+sets: 
+  attorneys[1].name.first
+  attorneys[1].address.address
+  attorneys[1].phone_number
+  attorneys[1].bbo_number  
+question: |
+  Attorney for ${ users[1] }
+fields: 
+  - code: |
+      attorneys[1].name_fields()
+  - code: |
+      attorneys[1].address_fields()
+  - "Attorney phone number": attorneys[1].phone_number
+  - "Board of Bar Overseers (BBO) Number": attorneys[1].bbo_number
+---
+#if represented, attorney signs the petition for the user
+code: |
+  if users[0].has_attorney: 
+    users1_signer_signature = attorneys[0].signature
+    users1_signer_name_full = attorneys[0].name.full()
+    users1_signer_address_address = attorneys[0].address_address
+    users1_signer_address_city = attorneys[0].address_city
+    users1_signer_address_state = attorneys[0].address_state
+    users1_signer_address_zip = attorneys[0].address_zip
+    users1_signer_phone_number = attorneys[0].phone_number
+  else:
+    users1_signer_signature = users[0].signature
+    users1_signer_name_full = users[0].name.full()
+    users1_signer_address_address = users[0].address_address
+    users1_signer_address_city = users[0].address_city
+    users1_signer_address_state = users[0].address_state
+    users1_signer_address_zip = users[0].address_zip
+    users1_signer_phone_number = users[0].phone_number
+---
+#if represented, attorney signs the petition for the user
+code: |
+  if users[1].has_attorney: 
+    users2_signer_signature = attorneys[1].signature
+    users2_signer_name_full = attorneys[1].name.full()
+    users2_signer_address_address = attorneys[1].address_address
+    users2_signer_address_city = attorneys[1].address_city
+    users2_signer_address_state = attorneys[1].address_state
+    users2_signer_address_zip = attorneys[1].address_zip
+    users2_signer_phone_number = attorneys[1].phone_number
+  else:
+    users2_signer_signature = users[1].signature
+    users2_signer_name_full = users[1].name.full()
+    users2_signer_address_address = users[1].address_address
+    users2_signer_address_city = users[1].address_city
+    users2_signer_address_state = users[1].address_state
+    users2_signer_address_zip = users[1].address_zip
+    users2_signer_phone_number = users[1].phone_number
 ---
 id: Divorce type
 question: |
@@ -351,6 +435,7 @@ fields:
     show if: joint_petition_affirm
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
 ---
+#If the user is able to affirm that the separation agreement needs to be notorized, then they have already affirmed that they want a 1A divorce 
 code: |
   if notorize_affirm: petition_is_joint = True 
 ---
@@ -359,18 +444,22 @@ question: |
   Agreement on major issues
 subquestion: |
   Do ${  users[0].name.full()  } and ${  users[1].name.full()  } agree on how to resolve the major issues, such as property division, child custody, and child support?
+
+  *Note:* Many married couples begin the joint no-fault (1A) divorce process by writing a separation agreement (on their own or with the help of attorneys). A separation agreement is not required at the time of filing for divorce but it is highly encouraged to submit a complete, notorized agreement with initial filing.
 fields: 
   - "We agree on the major issues": separation_agreement_reached
     datatype: yesnoradio
-  - "We have prepared a detailed written separtion agreement": separation_agreement_documented
+  - "We have prepared a detailed written separation agreement that fully captures our agreement on all relevant issues": separation_agreement_documented
     datatype: yesnoradio
     show if: separation_agreement_reached
+    help: |
+      If you do not already have a complete written separation agreement you will be able to create one using this interview tool.
 ---
 id: Separation agreement format
 question: |
   Separation agreement format
 subquestion: |
-  Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. It is highly encouraged that you submit a complete, notorized agreement with initial filing. 
+  Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. You are highly encouraged to submit a complete, notorized agreement with initial filing. 
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
@@ -447,37 +536,63 @@ fields:
       marital_home.address_fields(show_county=True)
 ---
 id: users home address
-sets:
-  - users[i].address
 question: |
-  Address: ${  users[i]  }
+  Address: ${ users[i] }
 subquestion: |
-  What is ${   users[i]  }'s address?
-fields: 
+  What is ${ users[i].familiar() }'s address?
+fields:
   - code: |
       users[i].address_fields(show_county=True)
 ---
+id: Venue choice
+question: |
+  Choose venue
+subquestion: |
+  Where do you want to file?
+fields:
+  - "{  Choose county  }": venue_choice
+    input type: radio
+    choices:
+      - "{  users[0].address.county  }": users[0].address
+      - "{  users[1].address.county  }": users[1].address
+---
+# If they live together, both spouses have the marital home address
 code: |
-  # If they live together, both spouses have the marital home address
   if live_together:
     users[0].address = marital_home
-    users[1].address = marital_home
-    
+    users[1].address = marital_home    
 ---
+# If they do not live together, but one spouse lives in the marital home,
+# copy the marital home address onto that spouse
 code: |
-  # If they do not live together, but one spouse lives in the marital home,
-  # copy the marital home address onto that spouse
   if (not live_together) and marital_home_occupied:
     if marital_home_occupant == 0:
       users[0].address = marital_home
     elif marital_home_occupant == 1:
       users[1].address = marital_home
 ---
-#refer to marital_home.normalized_address().county to the logic for venue
-
-#marital_home.normalized_address().county
-#if marital_home.normalized_address().county == users[0].normalized_address().county:
-
+# set trial_court.address.county
+code: |
+  trial_court_county = proper_venue.address.county
+---
+#if live together then venue is proper in marital home county
+code: |
+ if live_together: proper_venue = marital_home.normalized_address()
+---
+# if living together last living together date overridden with text string for petition 
+code: |
+  if live_together: last_living_together_date = "Currently living together"
+---
+# set venue address 
+code: |
+  if (not marital_home_occupied): proper_venue = venue_choice.normalized_address()
+---
+#if (not live_together) and marital_home_occupied:
+code: |
+    if marital_home_occupant == 0:
+      proper_venue = users[0].normalized_address()
+    elif marital_home_occupant == 1:
+      proper_venue = users[1].normalized_address()
 ---
 id: merger survival
 question: | 
@@ -529,26 +644,61 @@ question: |
 sets:
   - users[0].name_last_at_birth
   - users[0].binary_sex
+  - users[0].marriage_number
 fields:
-  - "{  users[0]  } last name at birth": users[0].name_last_at_birth
+  - "{  users[0]  }'s last name at birth": users[0].name_last_at_birth
     maxlength: 26
+  - "{  users[0]  }'s binary sex": users[0].binary_sex
+    help: |
+      This information is needed to complete form r408 which is required by  G.L. c. 208 §6(b) and 46, and G.L. c.111 §2
+    input type: radio
+    choices:
+      - "Male": M
+      - "Female": F
   - "How many times has ${  users[0]  } been married? (including this marriage to ${  users[1]  } ": users[0].marriage_number
     datatype: integer
 ---
 id: Party B information
 question: |
   ${  users[1]  } information
+sets:
+  - users[1].name_last_at_birth
+  - users[1].binary_sex
+  - users[1].marriage_number
 fields:
-  - "{  users[1]  } last name at birth": users[1].name_last_at_birth
+  - "{  users[1]  }'s last name at birth": users[1].name_last_at_birth
     maxlength: 26
-  - "How many times has ${  users[1]  } been married? (including this marriage to ${  users[0]  } ": users[1].marriage_number
+  - "{  users[1]  }'s binary sex": users[1].binary_sex
+    help: |
+      This information is needed to fill in form r408 which is required by  G.L. c. 208 §6(b) and 46, and G.L. c.111 §2
+    input type: radio
+    choices:
+      - "Male": m
+      - "Female": f
+  - "How many times has ${  users[1]  } been married? (including this marriage to ${  users[0]  } ": users[0].marriage_number
     datatype: integer
 ---
-# ask for binary sex for each user and explain why
-#  - "users1 is male": users1_is_male
-#    datatype: yesno
-#  - "users1 is female": users1_is_female
-#    datatype: yesno
+# prevent asking if there is a third user
+code: |
+  users.there_is_another = False
+---
+# set users[0] binary sex for form output based on user input 
+code: |
+  if users[0].binary_sex == "m": 
+    users1_is_male = True
+    users1_is_female = False
+  elif users[0].binary_sex == "f": 
+    users1_is_male = False
+    users1_is_female = True
+---
+# set users[1] binary sex for form output based on user input 
+code: |
+  if users[1].binary_sex == "m": 
+    users2_is_male = True
+    users2_is_female = False
+  elif users[1].binary_sex == "f": 
+    users2_is_male = False
+    users2_is_female = True
 ---
 id: Previous actions
 question: |
@@ -561,7 +711,7 @@ subquestion: |
   * desertion, 
   * living apart for justifiable cause, **or** 
   * custody of child(ren)?
-  
+
 yesno: previous_action
 ---
 id: Previous action details
@@ -579,7 +729,7 @@ id: Children of the Marriage
 question: |
   Children of the Marriage
 subquestion: |
-  Were any children born or adopted during the marriage between ${  users[0]  } and ${ users[1]  }?
+  Were any children born or adopted during the marriage between ${  users[0]  } and ${  users[1]  }?
 fields:
   - "Are there any children of this marriage?": children_of_marriage
     datatype: yesnoradio
@@ -617,9 +767,9 @@ subquestion: |
   r408 asks for social security number as required by statute
 fields:
   - "${  users[0]  } Social Security Number (ssn)": users[0].ssn
-    datatype: integer
+    datatype: ssn
   - "${  users[1]  } Social Security Number (ssn)": users[1].ssn
-    datatype: integer
+    datatype: ssn
 ---
 id: preview divorcefilings
 question: |
@@ -638,26 +788,18 @@ subquestion: |
 continue button field: divorcefilings_preview_question    
 ---
 code: |
-  signature_fields = ['users[0].signature', 'users[1].signature']
----
-#Set petition values
----
-#Set affidavit values
----
-#Set r408 values
+  signature_fields = ['users[0].signature', 'users[1].signature', 'attorneys[0].signature', 'attorneys[1].signature' ]
 ---
 code: |
   # This is a placeholder for the addresses that will be searched
-  # for matching address to court. Edit if court venue is based on 
-  # a different address than the user's
-  [user.address.address for user in users.complete_elements()]
-  addresses_to_search = [user.address for user in users.complete_elements()]
+  # for matching address to court. 
+  [proper_venue.normalized_address()]
+  addresses_to_search = [proper_venue.normalized_address()]
 
-  #Need to set venue based on address of marital home if parties live together or if either party lives in the same county as the marital home
-  
+#proper_venue is an address object which is coded to hold the address upon which venue should be based. 
 ---
-id: divorcefilings review screen
-event: review_divorcefilings
+id: joint no fault divorce review screen
+event: review_joint_no_fault_divorce
 question: |
   Review your answers
 review:
@@ -665,6 +807,9 @@ review:
     button: |
       **Trial court**
   
+      % if defined("trial_court.address.county"):
+      * address: ${ trial_court.address.block() }
+      % endif
       % if defined("trial_court.division"):
       * division: ${ trial_court.division }
       % endif
@@ -672,16 +817,16 @@ review:
     button: |
       **Docket number**:
       ${ docket_number }
-  - Edit: petitioners.revisit
+  - Edit: users.revisit
     button: |
-      **Petitioners**
+      **Users**
 
-      % for item in petitioners:
+      % for item in users:
         * ${ item }
       % endfor
   - Edit: marriage_breakdown_date
     button: |
-      **When did the marriage breakdown occur?**:
+      **Date of marriage breakdown**:
       ${ marriage_breakdown_date }
   - Edit: marriage_breakdown_justification
     button: |
@@ -693,99 +838,163 @@ review:
       ${ signature_date }
   - Edit: marriage_location
     button: |
-      **Where were you married?**:
+      **Location of marriage**:
       ${ marriage_location }
   - Edit: marriage_date
     button: |
-      **When were you married?**:
+      **Where were you married? (City, State or City, Country if outside USA)**:
       ${ marriage_date }
-  - Edit: petitioners_last_living_together_location
+  - Edit: marital_home_address_on_one_line
     button: |
-      **Where did you last live together?**:
-      ${ petitioners_last_living_together_location }
-  - Edit: petitioners_last_living_together_date
+      **What is the address of the marital home?**:
+      ${ marital_home_address_on_one_line }
+  - Edit: last_living_together_date
     button: |
-      **When did you last live together?**:
-      ${ petitioners_last_living_together_date }
+      **When did ${  users[0].familiar()  } and ${  users[1].familiar()  } last live together?**:
+      ${ last_living_together_date }
   - Edit: children2_name_full_plus_birthdate
     button: |
-      **Children2 name full plus birthdate**:
+      **Child 2 name and birthdate**:
       ${ children2_name_full_plus_birthdate }
   - Edit: children1_name_full_plus_birthdate
     button: |
-      **Children1 name full plus birthdate**:
+      **Child 1 name and birthdate**:
       ${ children1_name_full_plus_birthdate }
   - Edit: children3_name_full_plus_birthdate
     button: |
-      **Children3 name full plus birthdate**:
+      **Child 3 name and birthdate**:
       ${ children3_name_full_plus_birthdate }
   - Edit: children4_name_full_plus_birthdate
     button: |
-      **Children4 name full plus birthdate**:
+      **Child 4 name and birthdate**:
       ${ children4_name_full_plus_birthdate }
   - Edit: previous_action_detail
     button: |
-      **Previous action(s) detail**:
+      **List details for all previous actions**:
       > ${ single_paragraph(previous_action_detail) }
   - Edit: request_divorce_nofault
     button: |
-      **Request divorce nofault**:
+      **Request no fault divorce**:
       ${ word(yesno(request_divorce_nofault)) }
   - Edit: request_separation_agreement_approval
     button: |
-      **Request separation agreement approval**:
+      **Request to approve agreement**:
       ${ word(yesno(request_separation_agreement_approval)) }
   - Edit: request_merge_agreement
     button: |
-      **Request merge agreement**:
+      **Request to merge agreement**:
       ${ word(yesno(request_merge_agreement)) }
   - Edit: request_survive_agreement
     button: |
-      **Request survive agreement**:
+      **Request to survive agreement**:
       ${ word(yesno(request_survive_agreement)) }
-  - Edit: change_name_petitioners1
+  - Edit: request_users1_name_change
     button: |
-      **Change name petitioners1**:
-      ${ word(yesno(change_name_petitioners1)) }
-  - Edit: petitioners1_former_name_last
+      **Request ${ users1  } change to previous last name**:
+      ${ word(yesno(request_users1_name_change)) }
+  - Edit: users1_former_name_last
     button: |
-      **Petitioners1 former name last**:
-      ${ petitioners1_former_name_last }
-  - Edit: change_name_petitioners2
+      **${ users1  } last name before marriage**:
+      ${ users1_former_name_last }
+  - Edit: request_users2_name_change
     button: |
-      **Change name petitioners2**:
-      ${ word(yesno(change_name_petitioners2)) }
-  - Edit: petitioners2_former_name_last
+      **Request ${ users2  } change to previous last name**:
+      ${ word(yesno(request_users2_name_change)) }
+  - Edit: users2_former_name_last
     button: |
-      **Petitioners2 former name last**:
-      ${ petitioners2_former_name_last }
+      **${ users2  } last name before marriage**:
+      ${ users2_former_name_last }
   - Edit: additional_request
     button: |
-      **Additional request**:
+      **Any additional request(s) (RARE)**:
       ${ word(yesno(additional_request)) }
   - Edit: additonal_request_detail
     button: |
-      **Additonal request detail**:
+      **Details of additional request(s)**:
       ${ additonal_request_detail }
+  - Edit: users1_signer_signature
+    button: |
+      **users1_signer_signature**:
+      ${ users1_signer_signature }
+  - Edit: users2_signer_signature
+    button: |
+      **users2_signer_signature**:
+      ${ users2_signer_signature }
+  - Edit: users2_signer_name_full
+    button: |
+      **User 2 signer full name**:
+      ${ users2_signer_name_full }
+  - Edit: users1_signer_name_full
+    button: |
+      **User 1 signer full name**:
+      ${ users1_signer_name_full }
+  - Edit: users1_signer_address_address
+    button: |
+      **User 1 signer address**:
+      ${ users1_signer_address_address }
+  - Edit: users2_signer_address_address
+    button: |
+      **User 2 signer address**:
+      ${ users2_signer_address_address }
+  - Edit: users1_signer_address_city
+    button: |
+      **User 1 signer city**:
+      ${ users1_signer_address_city }
+  - Edit: users1_signer_address_state
+    button: |
+      **User 1 signer state**:
+      ${ users1_signer_address_state }
+  - Edit: users1_signer_address_zip
+    button: |
+      **User 1 signer zip code**:
+      ${ users1_signer_address_zip }
+  - Edit: users2_signer_address_city
+    button: |
+      **User 2 signer city**:
+      ${ users2_signer_address_city }
+  - Edit: users2_signer_address_state
+    button: |
+      **User 2 signer state**:
+      ${ users2_signer_address_state }
+  - Edit: users2_signer_address_zip
+    button: |
+      **User 2 signer zip code**:
+      ${ users2_signer_address_zip }
+  - Edit: users1_signer_phone_number
+    button: |
+      **User 1 signer phone number**:
+      ${ users1_signer_phone_number }
+  - Edit: users2_signer_phone_number
+    button: |
+      **User 2 signer phone number**:
+      ${ users2_signer_phone_number }
   - Edit: attorneys1_bbo_number
     button: |
-      **Attorneys1 bbo number**:
+      **Attorney 1 BBO number**:
       ${ attorneys1_bbo_number }
   - Edit: attorneys2_bbo_number
     button: |
-      **Attorneys2 bbo number**:
+      **Attorney 2 BBO number**:
       ${ attorneys2_bbo_number }
   - Edit: judgment_divorce
     button: |
-      **Judgment divorce**:
+      **Type of judgement is Absolute Divorce**:
       ${ word(yesno(judgment_divorce)) }
   - Edit: judgment_annulment
     button: |
-      **Judgment annulment**:
+      **Type of judgement is Annulment**:
       ${ word(yesno(judgment_annulment)) }
+  - Edit: trial_court__department_plus_county
+    button: |
+      **Court department and county**:
+      ${ trial_court__department_plus_county }
+  - Edit: marriage_state_or_country
+    button: |
+      **State or country of marriage**:
+      ${ marriage_state_or_country }
   - Edit: judgement_date
     button: |
-      **Date of judgement**:
+      **Date of judgment**:
       ${ judgement_date }
   - Edit: absolute_divorce_date
     button: |
@@ -793,84 +1002,68 @@ review:
       ${ absolute_divorce_date }
   - Edit: divorce_grounds
     button: |
-      **Divorce grounds**:
+      **Grounds for divorce**:
       ${ divorce_grounds }
   - Edit: submitting_official_fullname
     button: |
-      **Submitting official fullname**:
+      **Full name of official**:
       ${ submitting_official_fullname }
-  - Edit: petitioners1_is_plaintiff
+  - Edit: users1_is_plaintiff
     button: |
-      **Petitioners1 is plaintiff**:
-      ${ word(yesno(petitioners1_is_plaintiff)) }
-  - Edit: petitioners1_is_defendant
+      **${  users1   } is plaintiff**:
+      ${ word(yesno(users1_is_plaintiff)) }
+  - Edit: users1_is_defendant
     button: |
-      **Petitioners1 is defendant**:
-      ${ word(yesno(petitioners1_is_defendant)) }
-  - Edit: petitioners1_name_last_upon_divorce
+      **${  users1   } is defendant**:
+      ${ word(yesno(users1_is_defendant)) }
+  - Edit: users1_name_last_upon_divorce
     button: |
-      **Petitioners1 name last upon divorce**:
-      ${ petitioners1_name_last_upon_divorce }
-  - Edit: petitioners1_name_last_at_birth
+      **${  users1   } last name after divorce**:
+      ${ users1_name_last_upon_divorce }
+  - Edit: users1_name_last_at_birth
     button: |
-      **Petitioners1 name last at birth**:
-      ${ petitioners1_name_last_at_birth }
-  - Edit: petitioners1_is_male
+      **${  users1   } last name at birth**:
+      ${ users1_name_last_at_birth }
+  - Edit: users1_ssn
     button: |
-      **Petitioners1 is male**:
-      ${ word(yesno(petitioners1_is_male)) }
-  - Edit: petitioners1_is_female
+      **${  users1   } social security number**:
+      ${ users1_ssn }
+  - Edit: users1_marriage_number
     button: |
-      **Petitioners1 is female**:
-      ${ word(yesno(petitioners1_is_female)) }
-  - Edit: petitioners1_ssn
+      **${  users1   } marriage number**:
+      ${ users1_marriage_number }
+  - Edit: users1_number_of_custodial_children
     button: |
-      **Petitioners1 ssn**:
-      ${ petitioners1_ssn }
-  - Edit: petitioners1_marriage_number
+      **${  users1   } number of children**:
+      ${ users1_number_of_custodial_children }
+  - Edit: users2_is_plaintiff
     button: |
-      **Petitioners1 marriage number**:
-      ${ petitioners1_marriage_number }
-  - Edit: petitioners1_number_of_custodial_children
+      **${  users2   } is plaintiff**:
+      ${ word(yesno(users2_is_plaintiff)) }
+  - Edit: users2_is_defendant
     button: |
-      **Petitioners1 number of custodial children**:
-      ${ petitioners1_number_of_custodial_children }
-  - Edit: petitioners2_is_plaintiff
+      **${  users2   } is defendant**:
+      ${ word(yesno(users2_is_defendant)) }
+  - Edit: users2_name_last_upon_divorce
     button: |
-      **Petitioners2 is plaintiff**:
-      ${ word(yesno(petitioners2_is_plaintiff)) }
-  - Edit: petitioners2_is_defendant
+      **${  users2   } last name after divorce**:
+      ${ users2_name_last_upon_divorce }
+  - Edit: users2_name_last_at_birth
     button: |
-      **Petitioners2 is defendant**:
-      ${ word(yesno(petitioners2_is_defendant)) }
-  - Edit: petitioners2_name_last_upon_divorce
+      **${  users2   } last name at birth**:
+      ${ users2_name_last_at_birth }
+  - Edit: users2_number_of_custodial_children
     button: |
-      **Petitioners2 name last upon divorce**:
-      ${ petitioners2_name_last_upon_divorce }
-  - Edit: petitioners2_name_last_at_birth
+      **${  users2   } number of children**:
+      ${ users2_number_of_custodial_children }
+  - Edit: users2_ssn
     button: |
-      **Petitioners2 name last at birth**:
-      ${ petitioners2_name_last_at_birth }
-  - Edit: petitioners2_is_female
+      **${  users2   } social security number**:
+      ${ users2_ssn }
+  - Edit: users2_marriage_number
     button: |
-      **Petitioners2 is female**:
-      ${ word(yesno(petitioners2_is_female)) }
-  - Edit: petitioners2_is_male
-    button: |
-      **Petitioners2 is male**:
-      ${ word(yesno(petitioners2_is_male)) }
-  - Edit: petitioners2_number_of_custodial_children
-    button: |
-      **Petitioners2 number of custodial children**:
-      ${ petitioners2_number_of_custodial_children }
-  - Edit: petitioners2_ssn
-    button: |
-      **Petitioners2 ssn**:
-      ${ petitioners2_ssn }
-  - Edit: petitioners2_marriage_number
-    button: |
-      **Petitioners2 marriage number**:
-      ${ petitioners2_marriage_number }
+      **${  users2   } marriage number**:
+      ${ users2_marriage_number }
   - Edit: children.revisit
     button: |
       **Children**
@@ -880,48 +1073,62 @@ review:
       % endfor
   - Edit: children_of_marriage_number
     button: |
-      **Children of marriage number**:
+      **Number of children of the marriage**:
       ${ children_of_marriage_number }
   - Edit: r408_addendum
     button: |
-      **R408 addendum**:
+      **R408 addendum details**:
       > ${ single_paragraph(r408_addendum) }
-  - Edit: live_together
+  - Edit: legal_marriage
     button: |
-      **Are you and your spouse currently living together?**:
-      ${ word(yesno(live_together)) }
-  - Edit: petitioners_last_living_together_date
-    button: |
-      **When did you last live together?**:
-      ${ petitioners_last_living_together_date }
-  - Edit: petitioners_last_living_together_location
-    button: |
-      **Where did you last live together? (County)**:
-      ${ petitioners_last_living_together_location }
-  - Edit: children_of_marriage
-    button: |
-      **Do you have any children of this marriage?**:
-      ${ word(yesno(children_of_marriage)) }
-  - Edit: children_of_marriage_number
-    button: |
-      **How many children of this marriage?**:
-      ${ children_of_marriage_number }
-  - Edit: petitioners1_has_attorney
-    button: |
-      **Do you have a lawyer?**:
-      ${ word(yesno(petitioners1_has_attorney)) }
-  - Edit: petitioners2_has_attorney
-    button: |
-      **Is your spouse represented by a lawyer?**:
-      ${ word(yesno(petitioners2_has_attorney)) }
+      **Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?**:
+      ${ legal_marriage }
   - Edit: massachusetts_residency
     button: |
-      **Have one or both spouses lived in Massachusetts for at least one year?**:
-      ${ word(yesno(massachusetts_residency)) }
+      **Have either of both lived in Massachusetts for at least one year?**:
+      ${ massachusetts_residency }
+  - Edit: petition_is_joint
+    button: |
+      **Joint petition - do you both agree that...**:
+      ${ word(yesno(petition_is_joint)) }
+  - Edit: separation_agreement_reached
+    button: |
+      **We agree on the major issues**:
+      ${ separation_agreement_reached }
+  - Edit: separation_agreement_documented
+    button: |
+      **We have already prepared a detailed written separtion agreement**:
+      ${ separation_agreement_documented }
+  - Edit: separation_agreement_file
+    button: |
+      **Upload your separation agreement**:
+
+      ${ separation_agreement_file }
+  - Edit: live_together
+    button: |
+      **Do ${  users[0]  } and ${  users[1]  } currently live together?**:
+      ${ live_together }
+  - Edit: marital_home_occupied
+    button: |
+      **Does either ${  users[0]  } or ${  users[1]  } live in the marital home?**:
+      ${ marital_home_occupied }
+  - Edit: marital_home_occupant
+    button: |
+      **Who lives in the marital home?**:
+      ${ marital_home_occupant }
+  - Edit: users1_has_attorney
+    button: |
+      **Does ${  users[0]  } have an attorney?**:
+      ${ users1_has_attorney }
+  - Edit: users2_has_attorney
+    button: |
+      **Does ${  users[1]  } have an attorney?**:
+      ${ users2_has_attorney }
 ---
-continue button field: petitioners.revisit
+id: edit users
+continue button field: users.revisit
 question: |
-  Edit parties
+  Edit users
 subquestion: |
   ${ users.table }
 
@@ -931,24 +1138,28 @@ table: users.table
 rows: users
 columns:
   - Name: |
-      row_item.name.full() if defined("row_item.name.last") else ""
+      row_item.name_full() if defined("row_item.name.last") else ""
   - Signature: |
       row_item.signature if defined("row_item.signature") else ""
   - Address: |
-      row_item.address.block() if defined("row_item.address.address") else ""
-  - Phone number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
+      row_item.address.block() if defined("row_item.address.zip") else ""
   - Birthdate: |
       row_item.birthdate if defined("row_item.birthdate") else ""
+  - Gender male: |
+      row_item.gender_male if defined("row_item.gender_male") else ""
+  - Gender female: |
+      row_item.gender_female if defined("row_item.gender_female") else ""
 edit:
   - name.last
   - signature
-  - address.address
-  - phone_number
+  - address.zip
   - birthdate
+  - gender_male
+  - gender_female
 confirm: True
 
 ---
+id: edit children
 continue button field: children.revisit
 question: |
   Edit children
@@ -963,7 +1174,7 @@ columns:
   - Birthdate: |
       row_item.birthdate if defined("row_item.birthdate") else ""
   - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
+      row_item.name_full() if defined("row_item.name.first") else ""
 edit:
   - birthdate
   - name.first
@@ -1034,24 +1245,24 @@ attachment:
       - "users2_address_city": ${ users[1].address.city }
       - "users2_address_state": ${ users[1].address.state }
       - "users2_address_zip": ${ users[1].address.zip }
-      - "trial_court_division": ${ trial_court.division }
+      - "trial_court_division": ${ proper_venue.address.county }
       - "marriage_location": ${ marriage_location }
       - "marriage_date": ${ marriage_date.format() }
-      - "marital_home_address_on_one_line": ${ marital_home_address_on_one_line }
+      - "marital_home_address_on_one_line": ${ marital_home.address_on_one_line }
       - "last_living_together_date": ${ last_living_together_date.format() }
-      - "children2_name_full_plus_birthdate": f"{  children[1].name_full  } {children[1].birthdate.format() }"
-      - "children1_name_full_plus_birthdate": f"{  children[0].name_full  } {children[0].birthdate.format() }"
-      - "children3_name_full_plus_birthdate": f"{  children[2].name_full  } {children[2].birthdate.format() }"
-      - "children4_name_full_plus_birthdate": f"{  children[3].name_full  } {children[3].birthdate.format() }"
+      - "children2_name_full_plus_birthdate": f"{  children[1].name_full  } {  children[1].birthdate.format() }"
+      - "children1_name_full_plus_birthdate": f"{  children[0].name_full  } {  children[0].birthdate.format() }"
+      - "children3_name_full_plus_birthdate": f"{  children[2].name_full  } {  children[2].birthdate.format() }"
+      - "children4_name_full_plus_birthdate": f"{  children[3].name_full  } {  children[3].birthdate.format() }"
       - "previous_action_detail": ${ cjd101a.safe_value("previous_action_detail") }
       - "request_divorce_nofault": ${ request_divorce_nofault }
       - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
       - "request_merge_agreement": ${ request_merge_agreement }
       - "request_survive_agreement": ${ request_survive_agreement }
       - "request_users1_name_change": ${ request_users1_name_change }
-      - "users1_former_name_last": ${ users1_former_name_last }
+      - "users1_former_name_last": ${ users[0].former_name_last }
       - "request_users2_name_change": ${ request_users2_name_change }
-      - "users2_former_name_last": ${ users2_former_name_last }
+      - "users2_former_name_last": ${ users[1].former_name_last }
       - "additional_request": ${ additional_request }
       - "additonal_request_detail": ${ additonal_request_detail }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
@@ -1080,7 +1291,7 @@ attachment:
   skip undefined: True
   pdf template file: affidirretrievablebreakdown.pdf
   fields:
-      - "trial_court_county": ${ trial_court.address.county }
+      - "trial_court_county": ${ proper_venue.address.county }
       - "docket_number": ${ docket_number }
       - "users1_name_full": ${ users[0] }
       - "users1_name_full__1": ${ users[0] }
@@ -1108,38 +1319,19 @@ attachment:
   pdf template file: r408.pdf
   fields:
       - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "docket_number": ${ docket_number }
-      - "users2_address_address": ${ users[1].address.address }
-      - "users2_address_address": ${ users[1].address.address }
       - "users2_address_address": ${ users[1].address.address }
       - "users1_address_address": ${ users[0].address.address }
-      - "users1_address_address": ${ users[0].address.address }
-      - "users1_address_address": ${ users[0].address.address }
-      - "users1_address_city": ${ users[0].address.city }
-      - "users1_address_city": ${ users[0].address.city }
       - "users1_address_city": ${ users[0].address.city }
       - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_state": ${ users[0].address.state }
-      - "users1_address_zip": ${ users[0].address.zip }
-      - "users1_address_zip": ${ users[0].address.zip }
       - "users1_address_zip": ${ users[0].address.zip }
       - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_city": ${ users[1].address.city }
-      - "users2_address_state": ${ users[1].address.state }
-      - "users2_address_state": ${ users[1].address.state }
       - "users2_address_state": ${ users[1].address.state }
       - "users2_address_zip": ${ users[1].address.zip }
-      - "users2_address_zip": ${ users[1].address.zip }
-      - "users2_address_zip": ${ users[1].address.zip }
-      - "marriage_date": ${ marriage_date.format() }
       - "marriage_date": ${ marriage_date.format() }
       - "judgment_divorce": ${ judgment_divorce }
       - "judgment_annulment": ${ judgment_annulment }
-      - "trial_court__department_plus_county": ${ trial_court__department_plus_county }
-      - "marriage_state_or_country": ${ marriage_state_or_country }
+      - "trial_court__department_plus_county": f"{  trial_court.department  }{  trial_court.county }"
+      - "marriage_state_or_country": ${ marriage_location }
       - "judgement_date": ${ judgement_date.format() }
       - "absolute_divorce_date": ${ absolute_divorce_date.format() }
       - "divorce_grounds": ${ divorce_grounds }
@@ -1185,5 +1377,5 @@ attachment:
 ---
 code: |
   cjd101a.overflow_fields["previous_action_detail"].overflow_trigger = 252
-  cjd101a.overflow_fields["previous_action_detail"].label = "List details for all previous actions"
+  cjd101a.overflow_fields["previous_action_detail"].label = "Details for previous actions continued:"
   cjd101a.overflow_fields.gathered = True
