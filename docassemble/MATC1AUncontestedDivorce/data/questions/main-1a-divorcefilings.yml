@@ -185,6 +185,12 @@ code: |
   elif separation_agreement_format == "upload":
     separation_agreement_upload
   marriage_date
+  live_together
+  marital_home.address
+  nav.set_section("party_information")
+  users.gather()
+  users[0].name_change
+  request_merge_agreement
   previous_action
   if previous_action == True:
     previous_action_detail
