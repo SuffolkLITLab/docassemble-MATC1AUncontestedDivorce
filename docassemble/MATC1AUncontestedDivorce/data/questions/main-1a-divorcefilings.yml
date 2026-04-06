@@ -21,14 +21,14 @@ metadata:
     
     Before you get started, gather:
     
-    1. Marriage certificate
+    1. Certified copy of marriage certificate
     2. Recent pay stub for all current employment
     3. Budget or bills tracking information
     4. Most recent tax year documents (Any and all Form 1099 and W2)
 
     When you are finished, you will need to:
     
-    1. Notorize separation agreement before filing with the registry
+    1. notarize separation agreement before filing with the registry
     2.
     
   maturity: production
@@ -66,8 +66,8 @@ metadata:
     #- Sample Separation Agreement
   form_numbers: [CJD101A, R408, TC0050, TC0050A]
   fees:
-    - Filing fee: $200.00
-    - Surcharge: $15.00
+    - Divorce Filing fee: $200.00
+    - Divorce Surcharge: $15.00
 
   update_notes: |
     (none)
@@ -94,9 +94,9 @@ auto terms:
     Children of the marriage includes all children over whom the couple shares legal custody. This typically includes all children born to either spouse during the marriage and any other children legally adopted by one or both parents but not include step-children born or adopted to one spouse outside of the marriage and not legally adopted by the second spouse. 
   marital home: |
     The last residential address shared by divorcing parties
-  notorize: |
-    process where a notory public witnesses signatures and places a seal on document to ensure authenticity
-  notorized: |
+  notarize: |
+    process where a notary public witnesses signatures and places a seal on document to ensure authenticity
+  notarized: |
     a document that has been signed in the presence of a notary public and the notary has placed their seal upon it
   notary public: |
     a public officer authorized by law to administer oaths, certify documents, and perform other official duties
@@ -109,27 +109,13 @@ auto terms:
   certificate of service: |
     Proof that the other parties have been notified of the pending case and received a copy of the motion or pleading that was filed 
   child support guidelines: |
-    Mathematical formula used by the court to determine an appropriate amount of child support 
-  citation: |
-    A legal notice issued by the court informing the public of a pending court proceeding 
-  complaint for modification: |
-    A complaint filed to change an existing judgement due to a change in circumstances 
-  constable: |
-    A licensed law enforcement officer authorized to perform certain legal tasks, such as serving court documents.  
+    Mathematical formula used by the court to determine an appropriate amount of child support  
   financial statement: |
     A form summarizing a party's estimated income and expenses, assets, liabilities, and health insurance, etc. 
-  incapacitated person: |
-    A person who is alleged intellectually disabled or who cannot legally take care of themselves
   notice of hearing: |
     A written notice to a party of the time, date, place, and reasoning for a court hearing 
   pretrial conference: |
     A hearing scheduled to resolve any issues the parties may have in order to prevent a trial. Trial may still be necessary if full resolution of the case cannot be established 
-  process server: |
-    A person, usually a constable or deputy sheriff, authorized to deliver a summons or complaint to a person listed as a defendant in a case
-  return date: |
-    A date to reference when making proper service and to indicate the last date and time the public can object to the citation
-  return of service: |
-    The summons completed by process server, indicating that the other party received notice and is aware of the case being filed against them
   separation agreement: |
     A written document listing all things the parties agree on in their divorce, like child support, taxes, parenting time, and property division
   service of process: |
@@ -146,13 +132,14 @@ objects:
   - attorneys: ALPeopleList.using(ask_number=False)
   - signers: ALPeopleList.using(ask_number=False, target_number=2)
   - marital_home: ALAddress
-  - proper_venue: ALAddress
+  - venue_basis_address: ALAddress
   - trial_court: MACourt
 ---
 sections:
-  - relationship_background: Relationship background and eligibility
-  - court_requests: Requests for the court
+  - divorce_eligibility: Eligibility
+  - relationship_background: Relationship background
   - party_information: Party information
+  - court_requests: Requests for the court
   - children_information: Children
   - review_divorcefilings: Review your answers
 ---
@@ -163,9 +150,9 @@ id: interview_order_divorcefilings
 code: |
   # Set the allowed courts for this interview
   allowed_courts = ['Probate and Family Court']
-  nav.set_section("relationship_background")
   user_role = "plaintiff"
   user_ask_role = "plaintiff"
+  nav.set_section("divorce_eligibility")
   legal_marriage
   if legal_marriage == False:
     purpose_mismatch
@@ -173,8 +160,8 @@ code: |
   if massachusetts_residency == False:
     cautionary_message_jurisdiction
     purpose_mismatch
-  petition_is_joint
-  if petition_is_joint == False:
+  divorce_affirm
+  if notarize_affirm == False:
     purpose_mismatch
   separation_agreement_reached
   if separation_agreement_reached == False:
@@ -184,22 +171,18 @@ code: |
     cautionary_message_delay_agreement
   elif separation_agreement_format == "upload":
     separation_agreement_upload
+  nav.set_section("relationship_background")
   marriage_date
-  live_together
-  marital_home.address
-  nav.set_section("party_information")
-  users.gather()
-  users[0].name_change
-  request_merge_agreement
   previous_action
   if previous_action == True:
     previous_action_detail
-  live_together
-  marital_home.address
   nav.set_section("party_information")
+  live_together
+  marital_home.zip
+  if not live_together:
+    users[0].address.zip
+    users[1].address.zip
   users.gather()
-  for i in range(len(users)):
-    users[i].address
   if users[0].has_attorney == True: 
     attorneys[0].name.first
   if users[1].has_attorney == True:
@@ -255,7 +238,7 @@ subquestion: |
 
   When you are finished, you will need to:
     
-  1. Notorize separation agreement before filing with the registry
+  1. notarize separation agreement before filing with the registry
   2.
 
 
@@ -288,15 +271,15 @@ question: |
 subquestion: |
   If neither spouse has lived in Massachusetts for at least one year, this tool cannot help you file for divorce in Massachusetts. You may wish to speak to an attorney licensed to practice in MA to discuss your options. 
 ---
-id: Cautionary message notorized separation agreement
+id: Cautionary message notarized separation agreement
 continue button field: cautionary_message_delay_agreement
 question: |
   Confirm information
 subquestion: |
-  You have indicated that you will file your notorized separation agreement later. Confirm that you understand:
+  You have indicated that you will file your notarized separation agreement later. Confirm that you understand:
   
   * You must file a separation agreement within 90 days of filing a joint petition for divorce (1A)
-  * Your separation agreement must be notorized
+  * Your separation agreement must be notarized
   * Your separation agreement should address all issues such as property division, child custody, and child support
   
 ---
@@ -323,7 +306,9 @@ question: |
   Legal marriage confirmation
 subquestion: |
   Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?
-yesno: legal_marriage
+fields: 
+  - " " : legal_marriage
+    datatype: yesnoradio
 ---
 id: Confirm jurisdiction
 question: |
@@ -334,7 +319,7 @@ fields:
   - "Have either or both  lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
     help: |
-      If neither party has lived in Massachusetts for at least one year, this interview cannot help you ask the court for a 1A divorce. 
+      If neither party has lived in Massachusetts for at least one year, this interview cannot help you ask the court for a 1A divorce. You may want to consult with an attorney. 
   #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     #datatype: yesnoradio
     #showif:
@@ -352,10 +337,18 @@ fields:
   - "${ users[1] } has a lawyer": users[1].has_attorney
     datatype: yesnoradio
 ---
+id: Party A attorney name
+sets:
+  attorneys[0].name.first
+question: |
+  Attorney for ${ users[0] }
+fields:
+  - code: |
+      attorneys[0].name_fields()
+---
 #Add question screen for each person to enter attorney info, make trigger conditional on users[0].has_attorney and users[1].has_attorney
 id: Attorney information Party A
 sets: 
-  attorneys[0].name.first
   attorneys[0].address.address
   attorneys[0].phone_number
   attorneys[0].bbo_number  
@@ -369,9 +362,17 @@ fields:
   - "Attorney phone number": attorneys[0].phone_number
   - "Board of Bar Overseers (BBO) Number": attorneys[0].bbo_number
 ---
+id: Party B attorney name
+sets:
+  attorneys[1].name.first
+question: |
+  Attorney for ${ users[1] }
+fields:
+  - code: |
+      attorneys[1].name_fields()
+---
 id: Attorney information Party B
 sets: 
-  attorneys[1].name.first
   attorneys[1].address.address
   attorneys[1].phone_number
   attorneys[1].bbo_number  
@@ -379,49 +380,47 @@ question: |
   Attorney for ${ users[1] }
 fields: 
   - code: |
-      attorneys[1].name_fields()
-  - code: |
       attorneys[1].address_fields()
   - "Attorney phone number": attorneys[1].phone_number
   - "Board of Bar Overseers (BBO) Number": attorneys[1].bbo_number
 ---
-#if represented, attorney signs the petition for the user
+#if represented, attorney signs the petition for the user Party A
 code: |
   if users[0].has_attorney: 
-    users1_signer_signature = attorneys[0].signature
-    users1_signer_name_full = attorneys[0].name.full()
-    users1_signer_address_address = attorneys[0].address_address
-    users1_signer_address_city = attorneys[0].address_city
-    users1_signer_address_state = attorneys[0].address_state
-    users1_signer_address_zip = attorneys[0].address_zip
-    users1_signer_phone_number = attorneys[0].phone_number
+    signers[0].signature = attorneys[0].signature
+    signers[0].name.full = attorneys[0].name.full()
+    signers[0].address.address = attorneys[0].address.address
+    signers[0].address.city = attorneys[0].address.city
+    signers[0].address.state = attorneys[0].address.state
+    signers[0].address.zip = attorneys[0].address.zip
+    signers[0].phone_number = attorneys[0].phone_number
   else:
-    users1_signer_signature = users[0].signature
-    users1_signer_name_full = users[0].name.full()
-    users1_signer_address_address = users[0].address_address
-    users1_signer_address_city = users[0].address_city
-    users1_signer_address_state = users[0].address_state
-    users1_signer_address_zip = users[0].address_zip
-    users1_signer_phone_number = users[0].phone_number
+    signers[0].signature = users[0].signature
+    signers[0].name.full = users[0].name.full()
+    signers[0].address.address = users[0].address.address
+    signers[0].address.city = users[0].address.city
+    signers[0].address.state = users[0].address.state
+    signers[0].address.zip = users[0].address.zip
+    signers[0].phone_number = users[0].phone_number
 ---
-#if represented, attorney signs the petition for the user
+#if represented, attorney signs the petition for the user Party B
 code: |
   if users[1].has_attorney: 
-    users2_signer_signature = attorneys[1].signature
-    users2_signer_name_full = attorneys[1].name.full()
-    users2_signer_address_address = attorneys[1].address_address
-    users2_signer_address_city = attorneys[1].address_city
-    users2_signer_address_state = attorneys[1].address_state
-    users2_signer_address_zip = attorneys[1].address_zip
-    users2_signer_phone_number = attorneys[1].phone_number
+    signers[1].signature = attorneys[1].signature
+    signers[1].name.full = attorneys[1].name.full()
+    signers[1].address.address = attorneys[1].address.address
+    signers[1].address.city = attorneys[1].address.city
+    signers[1].address.state = attorneys[1].address.state
+    signers[1].address.zip = attorneys[1].address.zip
+    signers[1].phone_number = attorneys[1].phone_number
   else:
-    users2_signer_signature = users[1].signature
-    users2_signer_name_full = users[1].name.full()
-    users2_signer_address_address = users[1].address_address
-    users2_signer_address_city = users[1].address_city
-    users2_signer_address_state = users[1].address_state
-    users2_signer_address_zip = users[1].address_zip
-    users2_signer_phone_number = users[1].phone_number
+    signers[1].signature = users[1].signature
+    signers[1].name.full = users[1].name.full()
+    signers[1].address.address = users[1].address.address
+    signers[1].address.city = users[1].address.city
+    signers[1].address.state = users[1].address.state
+    signers[1].address.zip = users[1].address.zip
+    signers[1].phone_number = users[1].phone_number
 ---
 id: Divorce type
 question: |
@@ -436,14 +435,17 @@ fields:
   - "file together (jointly)": joint_petition_affirm
     datatype: yesno
     show if: divorce_affirm
-  - "file a complete, notorized separation agreement at the time of filing or within 90 days thereafter": notorize_affirm
+  - "file a complete, notarized separation agreement at the time of filing or within 90 days thereafter": notarize_affirm
     datatype: yesno
     show if: joint_petition_affirm
 #add helptext about the reasons one might choose 1B or 1A - mass.gov has useful information about this
 ---
-#If the user is able to affirm that the separation agreement needs to be notorized, then they have already affirmed that they want a 1A divorce 
+# Set joint petition [cJD101A] request checkboxes for requests always made on 1A joint petition see form part 5 and appropriate r408 info
 code: |
-  if notorize_affirm: petition_is_joint = True 
+  if notarize_affirm:
+    request_divorce_nofault = True
+    request_separation_agreement_approval = True
+    judgment_divorce = True
 ---
 id: Agreement status
 question: |
@@ -451,7 +453,7 @@ question: |
 subquestion: |
   Do ${  users[0].name.full()  } and ${  users[1].name.full()  } agree on how to resolve the major issues, such as property division, child custody, and child support?
 
-  *Note:* Many married couples begin the joint no-fault (1A) divorce process by writing a separation agreement (on their own or with the help of attorneys). A separation agreement is not required at the time of filing for divorce but it is highly encouraged to submit a complete, notorized agreement with initial filing.
+  *Note:* Many married couples begin the joint no-fault (1A) divorce process by writing a separation agreement (on their own or with the help of attorneys). A separation agreement is not required at the time of filing for divorce but it is highly encouraged to submit a complete, notarized agreement with initial filing.
 fields: 
   - "We agree on the major issues": separation_agreement_reached
     datatype: yesnoradio
@@ -465,14 +467,14 @@ id: Separation agreement format
 question: |
   Separation agreement format
 subquestion: |
-  Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notorized and should completely address all major issues such as property division, child custody, and child support. You are highly encouraged to submit a complete, notorized agreement with initial filing. 
+  Anyone filing a joint petition for divorce must file a separation agreement within 90 days of initial filing. The separation agreement must be notarized and should completely address all major issues such as property division, child custody, and child support. You are highly encouraged to submit a complete, notarized agreement with initial filing. 
 fields: 
   - "How would you like to file your separation agreement?": separation_agreement_format
     input type: radio
     choices: 
-      - "Upload my complete, notorized separation agreement here": upload
+      - "Upload my complete, notarized separation agreement here": upload
         show if: separation_agreement_documented
-      - "File my complete, notorized separation agreement with the registry later" : wait
+      - "File my complete, notarized separation agreement with the registry later" : wait
       - "Create a separation agreement using this interview tool": interview
         show if: separation_agreement_documented == False
 ---
@@ -530,75 +532,72 @@ fields:
       - "${  users[0]  }": 0
       - "${  users[1]  }": 1
 ---
-id: Marital home address
+id: marital household address
 sets:
-  - marital_home.address
+  - marital_home.zip
 question: |
   Marital home address
-subquestion:  |
-  What is the address of the marital home?
 fields: 
   - code: |
       marital_home.address_fields(show_county=True)
 ---
-id: users home address
+id: Party A home address
+sets:
+  - users[0].address.zip
 question: |
-  Address: ${ users[i] }
+  Address: ${ users[0] }
 subquestion: |
-  What is ${ users[i].familiar() }'s address?
+  What is ${ users[0].familiar() }'s address?
 fields:
   - code: |
-      users[i].address_fields(show_county=True)
+      users[0].address_fields(show_county=True)
 ---
-id: Venue choice
+id: Party B home address
+sets:
+  - users[1].address.zip
 question: |
-  Choose venue
+  Address: ${ users[1] }
 subquestion: |
-  Where do you want to file?
+  What is ${ users[1].familiar() }'s address?
 fields:
-  - "{  Choose county  }": venue_choice
-    input type: radio
-    choices:
-      - "{  users[0].address.county  }": users[0].address
-      - "{  users[1].address.county  }": users[1].address
+  - code: |
+      users[1].address_fields(show_county=True)
 ---
-# If they live together, both spouses have the marital home address
 code: |
   if live_together:
-    users[0].address = marital_home
-    users[1].address = marital_home    
+    # Copy values
+    for u in users:
+      u.address.address = marital_home.address
+      u.address.unit = marital_home.unit
+      u.address.city = marital_home.city
+      u.address.state = marital_home.state
+      u.address.zip = marital_home.zip
+      u.address.county = marital_home.county
 ---
-# If they do not live together, but one spouse lives in the marital home,
-# copy the marital home address onto that spouse
+#decide venue 
 code: |
-  if (not live_together) and marital_home_occupied:
-    if marital_home_occupant == 0:
-      users[0].address = marital_home
-    elif marital_home_occupant == 1:
-      users[1].address = marital_home
+  mh_county = marital_home.county
+  u0_county = users[0].address.county
+  u1_county = users[1].address.county
+
+  if (u0_county == mh_county) or (u1_county == mh_county):
+    venue_county = mh_county
+    venue_needs_choice = False
+  else:
+    venue_needs_choice = True
+    venue_choice
+    venue_county = users[int(venue_choice)].address.county
 ---
-# set trial_court.address.county
-code: |
-  trial_court_county = proper_venue.address.county
----
-#if live together then venue is proper in marital home county
-code: |
- if live_together: proper_venue = marital_home.normalized_address()
----
-# if living together last living together date overridden with text string for petition 
-code: |
-  if live_together: last_living_together_date = "Currently living together"
----
-# set venue address 
-code: |
-  if (not marital_home_occupied): proper_venue = venue_choice.normalized_address()
----
-#if (not live_together) and marital_home_occupied:
-code: |
-    if marital_home_occupant == 0:
-      proper_venue = users[0].normalized_address()
-    elif marital_home_occupant == 1:
-      proper_venue = users[1].normalized_address()
+id: venue_choice
+question: |
+  Choose filing county
+fields:
+  - "Which county will you file in?": venue_choice
+    input type: radio
+    choices:
+      - "${ users[0].address.county }": "0"
+      - "${ users[1].address.county }": "1"
+    show if: venue_needs_choice
 ---
 id: merger survival
 question: | 
@@ -718,7 +717,9 @@ subquestion: |
   * living apart for justifiable cause, **or** 
   * custody of child(ren)?
 
-yesno: previous_action
+fields:
+  - "": previous_action
+    datatype: yesnoradio
 ---
 id: Previous action details
 question: |
@@ -799,10 +800,15 @@ code: |
 code: |
   # This is a placeholder for the addresses that will be searched
   # for matching address to court. 
-  [proper_venue.normalized_address()]
-  addresses_to_search = [proper_venue.normalized_address()]
+  # Use marital_home as the "basis" address whenever venue county is marital_home county,
+  # otherwise use the chosen spouse's current address.
+  if venue_county == marital_home.county:
+    venue_basis_address = marital_home
+  else:
+    # venue_choice was asked because venue_needs_choice is True
+    venue_basis_address = users[int(venue_choice)].address
 
-#proper_venue is an address object which is coded to hold the address upon which venue should be based. 
+  addresses_to_search = [venue_basis_address.normalized_address()]
 ---
 id: joint no fault divorce review screen
 event: review_joint_no_fault_divorce
@@ -1251,7 +1257,7 @@ attachment:
       - "users2_address_city": ${ users[1].address.city }
       - "users2_address_state": ${ users[1].address.state }
       - "users2_address_zip": ${ users[1].address.zip }
-      - "trial_court_division": ${ proper_venue.address.county }
+      - "trial_court_division": ${ venue_county }
       - "marriage_location": ${ marriage_location }
       - "marriage_date": ${ marriage_date.format() }
       - "marital_home_address_on_one_line": ${ marital_home.address_on_one_line }
@@ -1272,23 +1278,23 @@ attachment:
       - "additional_request": ${ additional_request }
       - "additonal_request_detail": ${ additonal_request_detail }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "users1_signer_signature": ${ signer[0].signature if i == "final" else '' }
+      - "signers1_signature": ${ signers[0].signature if i == "final" else '' }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "users2_signer_signature": ${ signer[1].signature if i == "final" else '' }
-      - "users2_signer_name_full": ${ signer[1].name_full }
-      - "users1_signer_name_full": ${ signer[0].name_full }
-      - "users1_signer_address_address": ${ signer[0].address_address }
-      - "users2_signer_address_address": ${ signer[1].address_address }
-      - "users1_signer_address_city": ${ signer[0].address_city }
-      - "users1_signer_address_state": ${ signer[0].address_state }
-      - "users1_signer_address_zip": ${ signer[0].address_zip }
-      - "users2_signer_address_city": ${ signer[1].address_city }
-      - "users2_signer_address_state": ${ signer[1].address_state }
-      - "users2_signer_address_zip": ${ signer[1].address_zip }
-      - "users1_signer_phone_number": ${ signer[0].phone_number } 
-      - "users2_signer_phone_number": ${ signer[1].phone_number }
-      - "attorneys1_bbo_number": ${ attorneys1_bbo_number }
-      - "attorneys2_bbo_number": ${ attorneys2_bbo_number }
+      - "signers2_signature": ${ signers[1].signature if i == "final" else '' }
+      - "signers1_name_full": ${ signers[0].name.full() }
+      - "signers2_name_full": ${ signers[1].name.full() }
+      - "signers1_address_address": ${ signers[0].address.address }
+      - "signers2_address_address": ${ signers[1].address.address }
+      - "signers1_address_city": ${ signers[0].address.city }
+      - "signers1_address_state": ${ signers[0].address.state }
+      - "signers1_signer_address_zip": ${ signers[0].address.zip }
+      - "signers2_address_city": ${ signers[1].address.city }
+      - "signers2_address_state": ${ signers[1].address.state }
+      - "signers2_address_zip": ${ signers[1].address.zip }
+      - "signers1_phone_number": ${ signers[0].phone_number } 
+      - "signers2_phone_number": ${ signers[1].phone_number }
+      - "attorneys1_bbo_number": ${ attorneys[0].bbo_number }
+      - "attorneys2_bbo_number": ${ attorneys[1].bbo_number }
 ---
 attachment:
   name: affidirretrievablebreakdown
@@ -1297,7 +1303,7 @@ attachment:
   skip undefined: True
   pdf template file: affidirretrievablebreakdown.pdf
   fields:
-      - "trial_court_county": ${ proper_venue.address.county }
+      - "trial_court_county": ${ venue_county }
       - "docket_number": ${ docket_number }
       - "users1_name_full": ${ users[0] }
       - "users1_name_full__1": ${ users[0] }
