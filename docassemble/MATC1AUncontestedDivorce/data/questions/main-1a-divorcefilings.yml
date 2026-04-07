@@ -296,7 +296,7 @@ sets:
 question: |
   Spouse name
 subquestion: |
-  Who is married to ${  users[0].name.full()  }?
+  Who is married to ${  users[0].name_full()  }?
 fields:
   - code: |
       users[1].name_fields()  
@@ -305,7 +305,7 @@ id: Legal marriage
 question: |
   Legal marriage confirmation
 subquestion: |
-  Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?
+  Are ${  users[0].name_full()  } and ${  users[1].name_full()  } legally married?
 fields: 
   - " " : legal_marriage
     datatype: yesnoradio
@@ -314,7 +314,7 @@ id: Confirm jurisdiction
 question: |
   Confirm jurisdiction
 subquestion: |
-  ${  users[0].name.full()  } and ${  users[1].name.full()  }
+  ${  users[0].name_full()  } and ${  users[1].name_full()  }
 fields:
   - "Have either or both  lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
@@ -330,7 +330,7 @@ id: Attorneys involved
 question: |
   Attorneys
 subquestion: |
-  Does either ${ users[0].name.full() } or ${ users[1].name.full() } have a lawyer in this divorce?
+  Does either ${ users[0].name_full() } or ${ users[1].name_full() } have a lawyer in this divorce?
 fields:
   - "${ users[0] } has a lawyer": users[0].has_attorney
     datatype: yesnoradio
@@ -388,7 +388,7 @@ fields:
 code: |
   if users[0].has_attorney: 
     signers[0].signature = attorneys[0].signature
-    signers[0].name.full = attorneys[0].name.full()
+    signers[0].name = attorneys[0].name
     signers[0].address.address = attorneys[0].address.address
     signers[0].address.city = attorneys[0].address.city
     signers[0].address.state = attorneys[0].address.state
@@ -396,7 +396,7 @@ code: |
     signers[0].phone_number = attorneys[0].phone_number
   else:
     signers[0].signature = users[0].signature
-    signers[0].name.full = users[0].name.full()
+    signers[0].name = users[0].name
     signers[0].address.address = users[0].address.address
     signers[0].address.city = users[0].address.city
     signers[0].address.state = users[0].address.state
@@ -407,7 +407,7 @@ code: |
 code: |
   if users[1].has_attorney: 
     signers[1].signature = attorneys[1].signature
-    signers[1].name.full = attorneys[1].name.full()
+    signers[1].name = attorneys[1].name
     signers[1].address.address = attorneys[1].address.address
     signers[1].address.city = attorneys[1].address.city
     signers[1].address.state = attorneys[1].address.state
@@ -415,7 +415,7 @@ code: |
     signers[1].phone_number = attorneys[1].phone_number
   else:
     signers[1].signature = users[1].signature
-    signers[1].name.full = users[1].name.full()
+    signers[1].name = users[1].name
     signers[1].address.address = users[1].address.address
     signers[1].address.city = users[1].address.city
     signers[1].address.state = users[1].address.state
@@ -428,7 +428,7 @@ question: |
 subquestion: |
   **Joint petition for divorce under [G.L. c. 208, § 1 A](https://malegislature.gov/Laws/GeneralLaws/PartII/TitleIII/Chapter208/Section1a)**
   
-  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } both agree that you want to:
+  Do ${  users[0].name_full()  } and ${  users[1].name_full()  } both agree that you want to:
 fields:
   - "get divorced": divorce_affirm
     datatype: yesno
@@ -451,7 +451,7 @@ id: Agreement status
 question: |
   Agreement on major issues
 subquestion: |
-  Do ${  users[0].name.full()  } and ${  users[1].name.full()  } agree on how to resolve the major issues, such as property division, child custody, and child support?
+  Do ${  users[0].name_full()  } and ${  users[1].name_full()  } agree on how to resolve the major issues, such as property division, child custody, and child support?
 
   *Note:* Many married couples begin the joint no-fault (1A) divorce process by writing a separation agreement (on their own or with the help of attorneys). A separation agreement is not required at the time of filing for divorce but it is highly encouraged to submit a complete, notarized agreement with initial filing.
 fields: 
@@ -489,7 +489,7 @@ id: Relationship background
 question: |
   Relationship background
 subquestion: |
-  ${  users[0].name.full()  } and ${  users[1].name.full()  }
+  ${  users[0].name_full()  } and ${  users[1].name_full()  }
 fields:
   - "When were you married?": marriage_date
     datatype: date
@@ -1093,7 +1093,7 @@ review:
       > ${ single_paragraph(r408_addendum) }
   - Edit: legal_marriage
     button: |
-      **Are ${  users[0].name.full()  } and ${  users[1].name.full()  } legally married?**:
+      **Are ${  users[0].name_full()  } and ${  users[1].name_full()  } legally married?**:
       ${ legal_marriage }
   - Edit: massachusetts_residency
     button: |
@@ -1262,10 +1262,10 @@ attachment:
       - "marriage_date": ${ marriage_date.format() }
       - "marital_home_address_on_one_line": ${ marital_home.address_on_one_line }
       - "last_living_together_date": ${ last_living_together_date.format() }
-      - "children2_name_full_plus_birthdate": f"{  children[1].name_full  } {  children[1].birthdate.format() }"
-      - "children1_name_full_plus_birthdate": f"{  children[0].name_full  } {  children[0].birthdate.format() }"
-      - "children3_name_full_plus_birthdate": f"{  children[2].name_full  } {  children[2].birthdate.format() }"
-      - "children4_name_full_plus_birthdate": f"{  children[3].name_full  } {  children[3].birthdate.format() }"
+      - "children1_name_full_plus_birthdate": f"{ children[0].name_full() } {children[0].birthdate.format()}"
+      - "children2_name_full_plus_birthdate": f"{children[1].name_full()} {children[1].birthdate.format()}"
+      - "children3_name_full_plus_birthdate": f"{ children[2].name_full() } { children[2].birthdate.format() }"
+      - "children4_name_full_plus_birthdate": f"{ children[3].name_full() } { children[3].birthdate.format() }"
       - "previous_action_detail": ${ cjd101a.safe_value("previous_action_detail") }
       - "request_divorce_nofault": ${ request_divorce_nofault }
       - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
@@ -1281,8 +1281,8 @@ attachment:
       - "signers1_signature": ${ signers[0].signature if i == "final" else '' }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "signers2_signature": ${ signers[1].signature if i == "final" else '' }
-      - "signers1_name_full": ${ signers[0].name.full() }
-      - "signers2_name_full": ${ signers[1].name.full() }
+      - "signers1_name_full": ${ signers[0].name_full() }
+      - "signers2_name_full": ${ signers[1].name_full() }
       - "signers1_address_address": ${ signers[0].address.address }
       - "signers2_address_address": ${ signers[1].address.address }
       - "signers1_address_city": ${ signers[0].address.city }
