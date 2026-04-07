@@ -28,8 +28,8 @@ metadata:
 
     When you are finished, you will need to:
     
-    1. notarize separation agreement before filing with the registry
-    2.
+    1. notarize separation agreement before filing
+    2. 
     
   maturity: production
   estimated_completion_minutes: 60
@@ -182,11 +182,16 @@ code: |
   if not live_together:
     users[0].address.zip
     users[1].address.zip
+  if venue_needs_choice:
+    venue_choice
+  users[0].ssn
   users.gather()
   if users[0].has_attorney == True: 
     attorneys[0].name.first
+    attorneys[0].address.address
   if users[1].has_attorney == True:
     attorneys[1].name.first
+    attorneys[1].address.address
   nav.set_section("court_requests")
   users[0].name_change
   request_merge_agreement
@@ -196,7 +201,7 @@ code: |
   children_of_marriage
   if children_of_marriage:
     children_of_marriage_number
-  if children_of_marriage:
+    users1_number_of_custodial_children
     children.gather()
   set_progress(90)
   nav.set_section("review_divorcefilings")
@@ -239,7 +244,7 @@ subquestion: |
   When you are finished, you will need to:
     
   1. notarize separation agreement before filing with the registry
-  2.
+  2. next step 
 
 
   Most people take about 60 minutes to complete this interview.
@@ -319,7 +324,7 @@ fields:
   - "Have either or both  lived in Massachusetts for at least one year?": massachusetts_residency
     datatype: yesnoradio
     help: |
-      If neither party has lived in Massachusetts for at least one year, this interview cannot help you ask the court for a 1A divorce. You may want to consult with an attorney. 
+      If neither party has lived in Massachusetts for at least one year, you may not be able to file for divorce in MA. You may want to consult with an attorney. 
   #- "Did the cause of the breakdown of the marriage occur in Massachusetts?": breakdown_in_massachusetts
     #datatype: yesnoradio
     #showif:
@@ -360,6 +365,7 @@ fields:
   - code: |
       attorneys[0].address_fields()
   - "Attorney phone number": attorneys[0].phone_number
+    datatype: 
   - "Board of Bar Overseers (BBO) Number": attorneys[0].bbo_number
 ---
 id: Party B attorney name
@@ -442,7 +448,7 @@ fields:
 ---
 # Set joint petition [cJD101A] request checkboxes for requests always made on 1A joint petition see form part 5 and appropriate r408 info
 code: |
-  if notarize_affirm:
+  if notarize_affirm == True:
     request_divorce_nofault = True
     request_separation_agreement_approval = True
     judgment_divorce = True
@@ -563,9 +569,11 @@ fields:
   - code: |
       users[1].address_fields(show_county=True)
 ---
+#decide venue and if live together set adresses
 code: |
+  mh_county = marital_home.county
+  
   if live_together:
-    # Copy values
     for u in users:
       u.address.address = marital_home.address
       u.address.unit = marital_home.unit
@@ -573,12 +581,11 @@ code: |
       u.address.state = marital_home.state
       u.address.zip = marital_home.zip
       u.address.county = marital_home.county
----
-#decide venue 
-code: |
-  mh_county = marital_home.county
-  u0_county = users[0].address.county
-  u1_county = users[1].address.county
+    u0_county = mh_county
+    u1_county = mh_county
+  else:
+    u0_county = users[0].address.county
+    u1_county = users[1].address.county
 
   if (u0_county == mh_county) or (u1_county == mh_county):
     venue_county = mh_county
@@ -595,9 +602,8 @@ fields:
   - "Which county will you file in?": venue_choice
     input type: radio
     choices:
-      - "${ users[0].address.county }": "0"
-      - "${ users[1].address.county }": "1"
-    show if: venue_needs_choice
+      - "${ users[0].address.county if defined('users[0].address.county') else marital_home.county }": "0"
+      - "${ users[1].address.county if defined('users[1].address.county') else marital_home.county }": "1"
 ---
 id: merger survival
 question: | 
@@ -747,18 +753,27 @@ fields:
     show if: children_of_marriage
 #The template forms and child support guidelines contemplate 8 children maximum so perhaps families with more than 8 children should be directed to the registry or to the PDF forms?
 ---
+code: |
+  if defined('children_of_marriage') and children_of_marriage:
+    children.there_is_another = False
+---
 id: Custodial children
 question: |
-  Custodial Children 
-subquestion: |
-  How many custodial children do ${  users[0]  } and ${ users[1]  } each have? 
-
-  Unlike with children of the marriage, custodial children includes all children in the custody of each individual spouse regardless of whether and with whom custody is shared. 
+  Custodial Children
 fields:
-  - "${  users[0]  } number of custodial children": user1_number_of_custodial_children
+  - "${ users[0] } number of custodial children": users1_number_of_custodial_children
     datatype: integer
-  - "${users[1]  } number of custodial children": users2_number_of_custodial_children
+    min: 0
+    max: 8
+    default: ${ children_of_marriage_number }
+  - "${ users[1] } number of custodial children": users2_number_of_custodial_children
     datatype: integer
+    min: 0
+    max: 8
+    default: ${ children_of_marriage_number }
+---
+code: |
+  if children_of_marriage: children.there_are_any = True
 ---
  # "R408 addendum": r408_addendum
  #   input type: area
@@ -808,7 +823,7 @@ code: |
     # venue_choice was asked because venue_needs_choice is True
     venue_basis_address = users[int(venue_choice)].address
 
-  addresses_to_search = [venue_basis_address.normalized_address()]
+  addresses_to_search = [venue_basis_address]
 ---
 id: joint no fault divorce review screen
 event: review_joint_no_fault_divorce
@@ -1262,7 +1277,7 @@ attachment:
       - "marriage_date": ${ marriage_date.format() }
       - "marital_home_address_on_one_line": ${ marital_home.address_on_one_line }
       - "last_living_together_date": ${ last_living_together_date.format() }
-      - "children1_name_full_plus_birthdate": f"{ children[0].name_full() } {children[0].birthdate.format()}"
+      - "children1_name_full_plus_birthdate": ${f"{ children[0].name_full() } {children[0].birthdate.format()}"}
       - "children2_name_full_plus_birthdate": f"{children[1].name_full()} {children[1].birthdate.format()}"
       - "children3_name_full_plus_birthdate": f"{ children[2].name_full() } { children[2].birthdate.format() }"
       - "children4_name_full_plus_birthdate": f"{ children[3].name_full() } { children[3].birthdate.format() }"
