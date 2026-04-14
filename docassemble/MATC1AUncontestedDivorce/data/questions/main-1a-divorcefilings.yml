@@ -184,6 +184,8 @@ code: |
     users[1].address.zip
   if venue_needs_choice:
     venue_choice
+  users[0].name_last_at_birth
+  users[1].name_last_at_birth
   users[0].ssn
   users.gather()
   if users[0].has_attorney == True: 
@@ -204,6 +206,9 @@ code: |
     users1_number_of_custodial_children
     children.gather()
   set_progress(90)
+  petition_signers_set
+  petition_requests_set
+  users1_sex_set
   nav.set_section("review_divorcefilings")
   interview_order_divorcefilings = True
 ---
@@ -408,6 +413,7 @@ code: |
     signers[0].address.state = users[0].address.state
     signers[0].address.zip = users[0].address.zip
     signers[0].phone_number = users[0].phone_number
+  petition_signers1_set = True
 ---
 #if represented, attorney signs the petition for the user Party B
 code: |
@@ -427,6 +433,7 @@ code: |
     signers[1].address.state = users[1].address.state
     signers[1].address.zip = users[1].address.zip
     signers[1].phone_number = users[1].phone_number
+  petition_signers2_set = True
 ---
 id: Divorce type
 question: |
@@ -452,6 +459,7 @@ code: |
     request_divorce_nofault = True
     request_separation_agreement_approval = True
     judgment_divorce = True
+  petition_requests_set = True
 ---
 id: Agreement status
 question: |
@@ -594,6 +602,9 @@ code: |
     venue_needs_choice = True
     venue_choice
     venue_county = users[int(venue_choice)].address.county
+
+  petiton_venue_set = True
+  
 ---
 id: venue_choice
 question: |
@@ -689,9 +700,10 @@ fields:
   - "How many times has ${  users[1]  } been married? (including this marriage to ${  users[0]  } ": users[0].marriage_number
     datatype: integer
 ---
-# prevent asking if there is a third user
+# prevent asking if there is a third user or additional children
 code: |
   users.there_is_another = False
+  children.there_is_another = False
 ---
 # set users[0] binary sex for form output based on user input 
 code: |
@@ -701,6 +713,7 @@ code: |
   elif users[0].binary_sex == "f": 
     users1_is_male = False
     users1_is_female = True
+  users1_sex_set = True
 ---
 # set users[1] binary sex for form output based on user input 
 code: |
@@ -710,6 +723,7 @@ code: |
   elif users[1].binary_sex == "f": 
     users2_is_male = False
     users2_is_female = True
+  users2_sex_set = True
 ---
 id: Previous actions
 question: |
@@ -754,7 +768,7 @@ fields:
 #The template forms and child support guidelines contemplate 8 children maximum so perhaps families with more than 8 children should be directed to the registry or to the PDF forms?
 ---
 code: |
-  if defined('children_of_marriage') and children_of_marriage:
+  if defined('children_of_marriage'):
     children.there_is_another = False
 ---
 id: Custodial children
@@ -779,7 +793,7 @@ code: |
  #   input type: area
  #  maxlength: 425
 ---
-id: Social security 
+id: Social security numbers
 sets: 
   - users[0].ssn
   - users[1].ssn
@@ -810,7 +824,7 @@ subquestion: |
 continue button field: divorcefilings_preview_question    
 ---
 code: |
-  signature_fields = ['users[0].signature', 'users[1].signature', 'attorneys[0].signature', 'attorneys[1].signature' ]
+  signature_fields = ['users[0].signature', 'users[1].signature', 'attorneys[0].signature', 'attorneys[1].signature', 'signers[0].signature', 'signers[1].signature']
 ---
 code: |
   # This is a placeholder for the addresses that will be searched
@@ -1272,15 +1286,15 @@ attachment:
       - "users2_address_city": ${ users[1].address.city }
       - "users2_address_state": ${ users[1].address.state }
       - "users2_address_zip": ${ users[1].address.zip }
-      - "trial_court_division": ${ venue_county }
+      - "trial_court_division": ${ trial_court.division }
       - "marriage_location": ${ marriage_location }
       - "marriage_date": ${ marriage_date.format() }
-      - "marital_home_address_on_one_line": ${ marital_home.address_on_one_line }
+      - "marital_home_address_on_one_line": ${ marital_home.address.on_one_line }
       - "last_living_together_date": ${ last_living_together_date.format() }
       - "children1_name_full_plus_birthdate": ${f"{ children[0].name_full() } {children[0].birthdate.format()}"}
-      - "children2_name_full_plus_birthdate": f"{children[1].name_full()} {children[1].birthdate.format()}"
-      - "children3_name_full_plus_birthdate": f"{ children[2].name_full() } { children[2].birthdate.format() }"
-      - "children4_name_full_plus_birthdate": f"{ children[3].name_full() } { children[3].birthdate.format() }"
+      - "children2_name_full_plus_birthdate": ${f"{children[1].name_full()} {children[1].birthdate.format()}"}
+      - "children3_name_full_plus_birthdate": ${f"{ children[2].name_full() } { children[2].birthdate.format() }"}
+      - "children4_name_full_plus_birthdate": ${f"{ children[3].name_full() } { children[3].birthdate.format() }"}
       - "previous_action_detail": ${ cjd101a.safe_value("previous_action_detail") }
       - "request_divorce_nofault": ${ request_divorce_nofault }
       - "request_separation_agreement_approval": ${ request_separation_agreement_approval }
@@ -1318,7 +1332,7 @@ attachment:
   skip undefined: True
   pdf template file: affidirretrievablebreakdown.pdf
   fields:
-      - "trial_court_county": ${ venue_county }
+      - "trial_court_county": ${ trial_court.division }
       - "docket_number": ${ docket_number }
       - "users1_name_full": ${ users[0] }
       - "users1_name_full__1": ${ users[0] }
