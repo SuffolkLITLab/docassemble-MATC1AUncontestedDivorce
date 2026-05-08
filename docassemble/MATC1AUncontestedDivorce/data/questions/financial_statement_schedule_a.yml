@@ -127,11 +127,45 @@ code: |
   )
   schedule_a_expenses[i].complete = True
 ---
+code: |
+  if defined("schedule_a_expenses.there_are_any"):
+    if schedule_a_expenses.there_are_any:
+      for expense in schedule_a_expenses.elements:
+        expense.value
+    schedule_a_expenses.revisit = True
+---
+table: schedule_a_expenses.table
+rows: schedule_a_expenses
+columns:
+  - Expense: |
+      row_item.display_name if hasattr(row_item, "display_name") else row_item.source
+  - Monthly amount: |
+      currency(row_item.total(times_per_year=12))
+edit:
+  - source
+  - description
+  - value
+---
+id: schedule_a_expenses_revisit
+continue button field: schedule_a_expenses.revisit
+question: |
+  Edit business expenses
+subquestion: |
+  % if defined("schedule_a_expenses.there_are_any") and schedule_a_expenses.there_are_any and len(schedule_a_expenses):
+  ${ schedule_a_expenses.table }
+  % else:
+  You have not added any business expenses yet.
+  % endif
+
+  Use "Add another" if you need to add an expense now.
+
+  ${ schedule_a_expenses.add_action() }
+---
 id: schedule_a_expenses_more
 question: |
   Do you have another business expense to add?
 subquestion: |
-  If you have listed all expenses, choose "No."
+  Check this box only if you have another business expense to add.
 fields:
   - Do you have another business expense to add?: schedule_a_expenses.there_is_another
     datatype: yesno
