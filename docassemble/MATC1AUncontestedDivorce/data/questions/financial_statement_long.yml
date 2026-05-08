@@ -62,26 +62,74 @@ data: !!omap
   - visitation_travel: "Extraordinary travel for visitation"
   - other: "Other"
 ---
+variable name: long_expense_checkbox_terms
+data: !!omap
+  - rent: "I pay rent"
+  - mortgage: "I pay a mortgage (principal, interest, taxes, insurance if escrowed)"
+  - property_tax: "I pay property taxes or assessments"
+  - home_insurance: "I pay for homeowner or tenant insurance"
+  - maintenance_fees: "I pay maintenance fees or condo fees"
+  - heat: "I pay for heat"
+  - electric: "I pay for electricity"
+  - gas: "I pay for propane or natural gas"
+  - phone: "I pay for telephone service"
+  - water: "I pay for water or sewer"
+  - food: "I pay for food"
+  - supplies: "I pay for house supplies"
+  - laundry: "I pay for laundry"
+  - dry_cleaning: "I pay for dry cleaning"
+  - clothing: "I pay for clothing"
+  - life_insurance: "I pay for life insurance"
+  - medical_insurance: "I pay for medical insurance"
+  - dental_insurance: "I pay for dental insurance"
+  - vision_insurance: "I pay for vision insurance"
+  - uninsured_medical: "I pay uninsured medical expenses"
+  - uninsured_dental: "I pay uninsured dental expenses"
+  - motor_vehicle: "I pay motor vehicle expenses"
+  - fuel: "I pay for fuel"
+  - vehicle_insurance: "I pay for motor vehicle insurance"
+  - vehicle_maintenance: "I pay for motor vehicle maintenance"
+  - loan_payments: "I make loan payments"
+  - entertainment: "I pay entertainment expenses"
+  - vacation: "I pay vacation expenses"
+  - cable: "I pay for cable TV"
+  - child_support: "I pay child support"
+  - child_day_care: "I pay child care expenses"
+  - child_education: "I pay child education expenses"
+  - education_self: "I pay my own education expenses"
+  - uniforms: "I pay for employment-related uniforms"
+  - employment_travel: "I pay employment-related travel expenses"
+  - continuing_education: "I pay employment continuing education expenses"
+  - employment_other: "I pay other employment expenses"
+  - lottery: "I buy lottery tickets"
+  - charity: "I make charitable contributions"
+  - child_allowance: "I pay a child allowance"
+  - visitation_travel: "I pay extraordinary travel costs for visitation"
+  - other: "I have other expenses"
+---
 objects:
   - long_expense_list: ALExpenseList.using(auto_gather=False)
   - long_expense_terms_ordered: DAOrderedDict.using(elements=long_expense_terms, auto_gather=False, gathered=True)
+  - long_expense_checkbox_terms_ordered: DAOrderedDict.using(elements=long_expense_checkbox_terms, auto_gather=False, gathered=True)
 ---
 id: long_form_sections
 sets:
   - long_form_sections
 code: |
-  nav.set_section("Deductions")
+  nav.set_section("deductions")
   set_progress(60)
   long_deductions
   long_net_income
   long_prior_year
-  nav.set_section("Expenses")
+  fs_checkpoint_deductions
+  nav.set_section("expenses")
   set_progress(70)
   long_expense_list.gathered
   long_expenses_total
-  if long_expenses_total_weekly == 0:
-    need("confirm_no_expenses_long")
-  nav.set_section("Assets")
+  if long_expenses_require_confirmation:
+    confirm_no_expenses_long_screen
+  fs_checkpoint_expenses
+  nav.set_section("assets")
   set_progress(80)
   long_counsel_fees
   long_real_estate_primary
@@ -90,13 +138,15 @@ code: |
   pensions.gather()
   other_assets.gather()
   long_assets_total
-  nav.set_section("Liabilities")
+  fs_checkpoint_assets
+  nav.set_section("liabilities")
   set_progress(90)
   liabilities.gather()
   long_liabilities_total
   long_certification
   long_notary
   attorney_statement
+  fs_checkpoint_liabilities
   long_form_sections = True
 ---
 id: long_expense_sources
@@ -104,13 +154,18 @@ generic object: ALExpenseList
 question: |
   Expense categories
 subquestion: |
-  Choose the expense categories that apply to your household. You will enter
-  amounts and how often you pay them. If a category is missing, choose "Other."
+  Choose the expense categories that apply to your household.
+
+  You will enter the amount and how often you pay it on the next screen.
+  If a category is missing, choose "Other."
+
+  We will pause after the expenses section so you can review or edit it before
+  you move on.
 fields:
   - no label: x.selected_types
     datatype: checkboxes
     code: |
-      long_expense_terms_ordered
+      long_expense_checkbox_terms_ordered
 ---
 generic object: ALExpenseList
 code: |
@@ -127,15 +182,15 @@ subquestion: |
   payment and how often you pay it. We will convert everything to weekly totals.
 
   **Example:** If your electricity is $120 monthly, enter 120 and choose "Monthly."
+
+  ${ collapse_template(fs_amount_entry_help) }
 fields:
   - Type of expense: x[i].source
     code: |
       long_expense_terms_ordered
     default: other
-  - Other expense type: x[i].source
-    show if:
-      variable: x[i].source
-      is: other
+  - Description (if needed): x[i].description
+    required: False
   - Amount: x[i].value
     datatype: currency
   - How often do you pay this amount?: x[i].times_per_year
@@ -144,7 +199,10 @@ fields:
       times_per_year_for_expenses
     default: cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
 validation code: |
-  x[i].display_name = long_expense_terms.get(x[i].source, x[i].source)
+  if x[i].source in ("employment_other", "other"):
+    x[i].display_name = fs_text_or_default(getattr(x[i], "description", ""), long_expense_terms.get(x[i].source, x[i].source))
+  else:
+    x[i].display_name = long_expense_terms.get(x[i].source, x[i].source)
 ---
 generic object: ALExpenseList
 code: |
@@ -175,7 +233,8 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Look over your entries. Use "Add another" to include more expenses.
+  Look over your entries. If something is missing, use "Add another" to include
+  more expenses.
 
   ${ x.add_action() }
 ---
@@ -190,7 +249,7 @@ subquestion: |
   Use your chosen cadence (${ financial_cadence_default }).
   These are amounts withheld from your gross pay.
 
-  **Tip:** If you do not know an exact amount, enter your best estimate.
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - Federal tax withholding/estimated payments: long_deduction_federal
     datatype: currency
@@ -302,7 +361,9 @@ continue button field: long_prior_year
 question: |
   Prior year income
 subquestion: |
-  Use your most recent tax year or best estimate.
+  Use your most recent tax year or your best estimate.
+
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - Gross income from prior year: prior_year_gross_amount
     datatype: currency
@@ -485,25 +546,27 @@ question: |
 subquestion: |
   Total weekly expenses: ${ currency(long_expenses_total_weekly) }
 
-  You can go back to edit expenses if needed.
+  You can still go back and edit any expense before you finish.
 ---
-id: confirm_no_expenses_long_nonzero_default
-if: long_expenses_total_weekly != 0
 code: |
-  confirm_no_expenses_long = False
+  if not long_expenses_require_confirmation:
+    confirm_no_expenses_long = False
 ---
-id: confirm_no_expenses_long
-if: long_expenses_total_weekly == 0
-continue button field: confirm_no_expenses_long
+id: confirm_no_expenses_long_screen
+continue button field: confirm_no_expenses_long_screen
 question: |
   Confirm no expenses
 subquestion: |
   You entered $0 for expenses.
 
-  Choose "Yes" to continue, or "No" to go back and edit expenses.
+  Choose "Yes" only if you truly do not have household expenses to list.
 fields:
-  - Yes, I do not have expenses to list: confirm_no_expenses_long
-    datatype: yesno
+  - Yes, I do not have household expenses to list right now: confirm_no_expenses_long
+    datatype: yesnoradio
+    required: True
+---
+code: |
+  long_expenses_require_confirmation = long_expenses_total_weekly == 0
 ---
 id: long_counsel_fees
 sets:
@@ -512,7 +575,9 @@ continue button field: long_counsel_fees
 question: |
   Counsel fees
 subquestion: |
-  Only fill this section if you have an attorney.
+  Fill out this section only if you have an attorney.
+
+  If you do not have an attorney, you can leave every field on this page blank.
 fields:
   - Retainer amount(s) paid to your attorney(s): long_counsel_retainer
     datatype: currency
@@ -535,6 +600,9 @@ question: |
   Real estate - primary residence
 subquestion: |
   If you do not own real estate, you can leave these blank.
+
+  Use the best values you have for assessed value, market value, mortgage
+  balances, and equity.
 fields:
   - Street address: long_primary_real_estate_address
     required: False
@@ -578,6 +646,8 @@ question: |
   Real estate - vacation or second home
 subquestion: |
   Leave blank if you do not own a vacation home or second property.
+
+  Use estimates if you do not have the exact values in front of you.
 fields:
   - Street address: long_secondary_real_estate_address
     required: False
@@ -647,13 +717,13 @@ continue button field: long_assets_total
 question: |
   Assets summary
 subquestion: |
-  Here is what you listed:
+  Here is a quick summary of the assets you listed:
 
   - **Motor vehicles:** ${ len(motor_vehicles) if defined('motor_vehicles') and motor_vehicles.there_are_any else 0 }
   - **Retirement plans:** ${ len(pensions) if defined('pensions') and pensions.there_are_any else 0 }
   - **Other assets:** ${ len(other_assets) if defined('other_assets') and other_assets.there_are_any else 0 }
 
-  Use **Back** if you want to make changes.
+  Use **Back** if you want to make changes before the form is generated.
 ---
 id: long_liabilities_total
 continue button field: long_liabilities_total
@@ -662,7 +732,7 @@ question: |
 subquestion: |
   **Liabilities listed:** ${ len(liabilities) if defined('liabilities') and liabilities.there_are_any else 0 }
 
-  Use **Back** if you want to make changes.
+  Use **Back** if you want to add or edit debts before you finish.
 ---
 code: |
   _long_liab_due = fs_sum_list_attr(liabilities, "amount_due") if defined("liabilities") else 0.0
@@ -679,6 +749,8 @@ question: |
 subquestion: |
   Sign to certify that the information you provided is true to the best of
   your knowledge.
+
+  Enter your signature and the date you are signing this statement.
 fields:
   - Signature: user_signature
     required: False
@@ -693,7 +765,9 @@ continue button field: long_notary
 question: |
   Notary
 subquestion: |
-  If you plan to have the statement notarized now, enter the notary details.
+  Fill this out only if you are completing the notarization right now.
+
+  If the statement will be notarized later, leave this page blank for now.
 fields:
   - Will you have this notarized now?: will_notarize_now
     datatype: yesno

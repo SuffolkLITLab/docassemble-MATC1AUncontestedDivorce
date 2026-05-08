@@ -1,19 +1,19 @@
 [build-system]
 requires = [
-    "setuptools==80.9.0",
+    "setuptools>=80.9.0",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.MATC1AUncontestedDivorce"
-version = "1.39"
+version = "1.48"
 description = "An in-progress collection of forms related to 1A uncontested divorces in MA (including: Joint Divorce Petition, Separation Agreement, Financial Forms, Child Custody, and other relevant documents)"
 readme = "README.md"
 authors = [
     { name = "Court Forms Online", email = "litlab@suffolk.edu" },
 ]
 dependencies = [
-    "docassemble.ALMassachusetts>=0.1.2",
+    "docassemble.ALMassachusetts @ git+https://github.com/suffolklitlab/docassemble-ALMassachusetts.git@main",
     "docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main",
     "docassemble.MassAccess @ git+https://github.com/SuffolkLITLab/docassemble-MassAccess.git@main",
 ]

@@ -107,11 +107,45 @@ code: |
   )
   schedule_b_expenses[i].complete = True
 ---
+code: |
+  if defined("schedule_b_expenses.there_are_any"):
+    if schedule_b_expenses.there_are_any:
+      for expense in schedule_b_expenses.elements:
+        expense.value
+    schedule_b_expenses.revisit = True
+---
+table: schedule_b_expenses.table
+rows: schedule_b_expenses
+columns:
+  - Expense: |
+      row_item.display_name if hasattr(row_item, "display_name") else row_item.source
+  - Annual amount: |
+      currency(row_item.total(times_per_year=1))
+edit:
+  - source
+  - description
+  - value
+---
+id: schedule_b_expenses_revisit
+continue button field: schedule_b_expenses.revisit
+question: |
+  Edit rental expenses
+subquestion: |
+  % if defined("schedule_b_expenses.there_are_any") and schedule_b_expenses.there_are_any and len(schedule_b_expenses):
+  ${ schedule_b_expenses.table }
+  % else:
+  You have not added any rental expenses yet.
+  % endif
+
+  Use "Add another" if you need to add an expense now.
+
+  ${ schedule_b_expenses.add_action() }
+---
 id: schedule_b_expenses_more
 question: |
   Do you have another rental expense to add?
 subquestion: |
-  If you have listed all expenses, choose "No."
+  Check this box only if you have another rental expense to add.
 fields:
   - Do you have another rental expense to add?: schedule_b_expenses.there_is_another
     datatype: yesno

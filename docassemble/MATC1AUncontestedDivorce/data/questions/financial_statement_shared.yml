@@ -20,6 +20,7 @@ metadata:
 ---
 initial: True
 code: |
+  import re
   from docassemble.base.util import defined, log, value
 
   def fs_log(message, level="debug"):
@@ -67,6 +68,33 @@ code: |
     except Exception:
       return 0.0
 
+  def fs_currency_zero(amount):
+    if amount in (None, ""):
+      return currency(0)
+    return currency(fs_safe_float(amount))
+
+  def fs_text_or_default(text, default=""):
+    if text is None:
+      return default
+    text = str(text).strip()
+    return text if text else default
+
+  def fs_showifdef_or_default(var_name, default=""):
+    if defined(var_name):
+      return fs_text_or_default(value(var_name), default)
+    return default
+
+  def fs_normalize_phone(phone):
+    if phone in (None, ""):
+      return ""
+    raw = str(phone).strip()
+    digits = re.sub(r"\D", "", raw)
+    if len(digits) == 11 and digits.startswith("1"):
+      digits = digits[1:]
+    if len(digits) == 10:
+      return f"{digits[0:3]}-{digits[3:6]}-{digits[6:10]}"
+    return raw
+
   def fs_item_value(item, attr_name):
     var_name = f"{item.instanceName}.{attr_name}"
     if defined(var_name):
@@ -95,6 +123,114 @@ code: |
     except Exception:
       return 0.0
     return total
+
+  def _other_asset_items_by_type(asset_type_key):
+    matches = []
+    try:
+      for item in other_assets:
+        if fs_item_value(item, "asset_type") == asset_type_key:
+          matches.append(item)
+    except Exception:
+      return []
+    return matches
+
+  def _other_asset_nth_attr(asset_type_key, index, attr_name):
+    matches = _other_asset_items_by_type(asset_type_key)
+    if len(matches) > index:
+      return fs_text_or_default(fs_item_value(matches[index], attr_name))
+    return ""
+
+  def _short_asset_group_items(group_name):
+    account_types = {
+      "checking",
+      "savings",
+      "cash",
+      "cd",
+      "credit_union",
+      "escrow",
+      "stocks",
+      "bonds",
+      "bond_funds",
+      "notes_held",
+      "brokerage_cash",
+      "money_market",
+      "us_savings_bonds",
+      "ira",
+      "keough",
+      "profit_sharing",
+      "deferred_comp",
+      "other_retirement",
+    }
+    excluded_types = {"annuity", "life_insurance_cash"}
+    grouped_items = []
+    try:
+      for item in other_assets:
+        asset_type = fs_item_value(item, "asset_type")
+        if group_name == "account" and asset_type in account_types:
+          grouped_items.append(item)
+        elif (
+          group_name == "other"
+          and asset_type not in account_types
+          and asset_type not in excluded_types
+        ):
+          grouped_items.append(item)
+    except Exception:
+      return []
+    return grouped_items
+
+  def _short_asset_nth_attr(group_name, index, attr_name):
+    grouped_items = _short_asset_group_items(group_name)
+    if len(grouped_items) > index:
+      return fs_text_or_default(fs_item_value(grouped_items[index], attr_name))
+    return ""
+
+  def fs_yes_no_text(var_name):
+    if not defined(var_name):
+      return "Not answered"
+    return "Yes" if bool(value(var_name)) else "No"
+
+  def fs_vehicle_label(item):
+    parts = []
+    for attr_name in ("purchase_year", "make", "model", "vehicle_type"):
+      item_value = fs_item_value(item, attr_name)
+      if item_value not in (None, ""):
+        parts.append(str(item_value))
+    if parts:
+      return " ".join(parts)
+    return "Vehicle"
+
+  def fs_pension_label(item):
+    institution = fs_text_or_default(fs_item_value(item, "institution"))
+    if institution:
+      return institution
+    account_number = fs_text_or_default(fs_item_value(item, "account_number"))
+    if account_number:
+      return f"Retirement plan {account_number}"
+    return "Retirement plan"
+
+  def fs_other_asset_label(item):
+    asset_type = fs_text_or_default(fs_item_value(item, "asset_type"))
+    asset_type_label = dict(other_asset_type_choices).get(asset_type, asset_type)
+    description = fs_text_or_default(fs_item_value(item, "description"))
+    institution = fs_text_or_default(fs_item_value(item, "institution"))
+    if description:
+      return description
+    if institution:
+      return institution
+    if asset_type_label:
+      return asset_type_label
+    return "Asset"
+
+  def fs_liability_label(item):
+    creditor = fs_text_or_default(fs_item_value(item, "creditor"))
+    debt_type = fs_text_or_default(fs_item_value(item, "debt_type"))
+    if creditor and debt_type:
+      return f"{creditor} ({debt_type})"
+    if creditor:
+      return creditor
+    if debt_type:
+      return debt_type
+    return "Liability"
 ---
 variable name: cadence_choices
 data:
@@ -156,6 +292,24 @@ data: !!omap
   - household_contrib: "Contributions from household members"
   - other: "Other income"
 ---
+variable name: fs_income_checkbox_terms
+data: !!omap
+  - wages: "I receive salary or wages"
+  - overtime: "I receive overtime pay"
+  - part_time: "I receive income from a part-time job"
+  - tips: "I receive tips"
+  - commissions: "I receive commissions or bonuses"
+  - dividends: "I receive dividends or interest"
+  - trusts: "I receive income from trusts or annuities"
+  - pensions: "I receive pensions or retirement funds"
+  - social_security: "I receive Social Security"
+  - disability: "I receive disability, unemployment, or worker's compensation"
+  - public_assistance: "I receive public assistance (TAFDC, SNAP, etc.)"
+  - support_received: "I receive child support or alimony"
+  - royalties: "I receive royalties or payments for other rights"
+  - household_contrib: "I receive contributions from household members"
+  - other: "I receive other income"
+---
 variable name: fs_expense_terms
 data: !!omap
   - rent: "Rent or mortgage (PIT)"
@@ -178,11 +332,35 @@ data: !!omap
   - child_care: "Child care"
   - other: "Other"
 ---
+variable name: fs_expense_checkbox_terms
+data: !!omap
+  - rent: "I pay rent or a mortgage (PIT)"
+  - home_insurance: "I pay for homeowners or tenant insurance"
+  - maintenance: "I pay maintenance or repair expenses"
+  - heat: "I pay for heat"
+  - electric: "I pay for electricity or gas"
+  - phone: "I pay for telephone service"
+  - water: "I pay for water or sewer"
+  - food: "I pay for food"
+  - supplies: "I pay for house supplies"
+  - laundry: "I pay for laundry or cleaning"
+  - clothing: "I pay for clothing"
+  - life_insurance: "I pay for life insurance"
+  - medical_insurance: "I pay for medical insurance"
+  - uninsured_medical: "I pay uninsured medical expenses"
+  - incidentals: "I pay incidental or toiletry expenses"
+  - motor_vehicle: "I pay motor vehicle expenses"
+  - motor_vehicle_payment: "I make motor vehicle payments"
+  - child_care: "I pay child care expenses"
+  - other: "I have other expenses"
+---
 objects:
   - income_list: ALIncomeList.using(complete_attribute="complete", auto_gather=False)
   - expense_list: ALExpenseList.using(auto_gather=False)
   - fs_income_terms_ordered: DAOrderedDict.using(elements=fs_income_terms, auto_gather=False, gathered=True)
   - fs_expense_terms_ordered: DAOrderedDict.using(elements=fs_expense_terms, auto_gather=False, gathered=True)
+  - fs_income_checkbox_terms_ordered: DAOrderedDict.using(elements=fs_income_checkbox_terms, auto_gather=False, gathered=True)
+  - fs_expense_checkbox_terms_ordered: DAOrderedDict.using(elements=fs_expense_checkbox_terms, auto_gather=False, gathered=True)
   - motor_vehicles: DAList.using(object_type=DAObject, complete_attribute="complete")
   - pensions: DAList.using(object_type=DAObject, complete_attribute="complete")
   - other_assets: DAList.using(object_type=DAObject, complete_attribute="complete")
@@ -199,32 +377,119 @@ continue button field: fs_intro
 question: |
   Financial Statement
 subquestion: |
-  This interview helps you prepare a Massachusetts financial statement.
-  You will answer questions about your income, deductions, expenses, assets,
-  and debts.
+  This interview helps you prepare a Massachusetts financial statement for
+  court.
 
-  **What you will do**
-  - Enter amounts for one pay period or payment.
-  - Choose how often you receive or pay each amount.
-  - Check totals that the interview calculates for you.
+  **What to gather before you start**
 
-  **How long this usually takes**
-  Most people finish in about 20 to 40 minutes.
-
-  **What to gather (if available)**
   - Recent pay stubs or benefit statements
-  - Recent bills or statements for recurring expenses
+  - Recent bills or statements for regular expenses
   - Account balances for assets and debts
 
-  **Understanding legal terms**
-  If you see a green phrase like "gross annual income," tap it to see a
-  definition.
+  <div class="alert alert-info" role="alert">
+    <strong>Tip:</strong> Keep your pay information, bills, and account balances nearby.
+    Most people finish faster when they can enter each amount from one real document.
+  </div>
 
-  **Save your progress**
-  Your work is saved as you go. You can return later to continue.
+  **What happens here**
 
-  **Tip:** Estimates are OK if you are not sure. Aim for your best, good-faith
-  numbers so the court gets a clear picture.
+  1. We figure out which financial statement form applies.
+     ${ collapse_template(fs_intro_step_1) }
+  2. You enter income, deductions, and regular expenses.
+     ${ collapse_template(fs_intro_step_2) }
+  3. You list property, accounts, and debts that belong on the form.
+     ${ collapse_template(fs_intro_step_3) }
+  4. We calculate weekly totals and show you a final review screen.
+     ${ collapse_template(fs_intro_step_4) }
+  5. You sign and download the completed court forms.
+     ${ collapse_template(fs_intro_step_5) }
+
+  **How long this usually takes**
+
+  Most people finish in about 20 to 40 minutes.
+
+  **Help along the way**
+
+  You will see short explanations for legal or financial terms.
+
+  Example help term:
+  <span class="text-success"><strong>gross annual income</strong></span>
+
+  Example definition:
+  Total income before taxes for the last 12 months.
+
+  On later screens, tap a green term to open a short explanation.
+
+  - Your work is saved as you go, so you can come back later.
+
+  <div class="alert alert-warning" role="alert">
+    <strong>Important:</strong> You must complete this form truthfully and as fully as you can.
+    Filing under the pains and penalties of perjury means you are legally swearing
+    that the information is true, accurate, and complete to the best of your knowledge.
+  </div>
+
+  Estimates are OK when you do not know an exact number. Use your best,
+  good-faith numbers so the court gets a clear picture.
+---
+template: fs_intro_step_1
+subject: |
+  About the form type
+content: |
+  We ask for your gross annual income first because Massachusetts uses
+  different financial statement forms depending on your income.
+---
+template: fs_intro_step_2
+subject: |
+  About amount entry
+content: |
+  Enter one real amount at a time, then choose how often it happens.
+
+  Example:
+  If your electric bill is $120 each month, enter `120` and choose `Monthly`.
+---
+template: fs_intro_step_3
+subject: |
+  About assets and debts
+content: |
+  We will ask about real estate, vehicles, retirement accounts, other assets,
+  and debts like loans or credit cards.
+---
+template: fs_intro_step_4
+subject: |
+  About totals
+content: |
+  The interview converts amounts to the weekly totals the court form expects,
+  so you do not need to do that math yourself.
+---
+template: fs_intro_step_5
+subject: |
+  About the finish
+content: |
+  Before you download, you will get a review screen where you can jump back to
+  fix anything that looks wrong or incomplete.
+---
+template: fs_amount_entry_help
+subject: |
+  How amount entry works
+content: |
+  - Enter the amount from one paycheck, bill, or statement.
+  - Choose how often that amount happens.
+  - Do not convert it to weekly or yearly yourself. The interview does that for you.
+
+  **Examples**
+  - Paid $900 every 2 weeks: enter `900` and choose `Every 2 weeks`
+  - Electric bill is $120 per month: enter `120` and choose `Monthly`
+---
+template: fs_estimate_help
+subject: |
+  Using estimates
+content: |
+  If you do not know an exact amount:
+  - use the most recent number you have
+  - average a few recent statements if the amount changes
+  - round to the nearest dollar if needed
+
+  A good-faith estimate is usually better than leaving an answer blank.
 ---
 id: gross_annual_income
 question: |
@@ -232,8 +497,13 @@ question: |
 subquestion: |
   Enter your total income before taxes for the last 12 months.
 
+  We use this answer to decide whether the court requires the short form or the
+  long form.
+
   **Include:** wages, tips, overtime, benefits, rental income, and other income.
   If you are not sure, give your best estimate.
+
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - I do not know my gross annual income: gross_annual_income_unknown
     datatype: yesno
@@ -259,12 +529,23 @@ code: |
   if defined("gross_annual_income_unknown") and gross_annual_income_unknown:
     gross_annual_income = value("gross_annual_income_estimate") or 0
 ---
+id: financial_statement_court_division
+question: |
+  Court division
+subquestion: |
+  Enter the Probate and Family Court division for this case.
+fields:
+  - Court division: financial_statement_court_division
+    required: False
+---
 id: docket_number
 question: |
   Docket number
 subquestion: |
-  If the court has already assigned a docket number, enter it here.
-  If not, leave this blank.
+  Enter the docket number only if the court has already assigned one.
+
+  If you are starting the case and do not have a docket number yet, leave this
+  blank.
 fields:
   - Docket number: docket_number
     required: False
@@ -278,7 +559,9 @@ question: |
   Party names
 subquestion: |
   Use legal names as they appear on court paperwork.
-  If you do not know the other party's information yet, leave it blank for now.
+
+  If you do not know the other party's information yet, you can leave those
+  fields blank for now.
 fields:
   - Your first name: users[0].name.first
   - Your last name: users[0].name.last
@@ -328,16 +611,22 @@ question: |
   Contact information
 subquestion: |
   Give contact details where you can reliably receive court notices.
-  If you prefer not to share an email, you can leave it blank.
+
+  Email and phone are optional, but it helps to include the best contact
+  information you use regularly.
 fields:
   - Phone number: users[0].phone_number
     required: False
     help: |
-      Use a number where you can receive calls or texts.
+      Use a number where you can receive calls or texts. We will format a
+      10-digit number as XXX-XXX-XXXX.
   - Email address: users[0].email
     required: False
     help: |
       Use an email you check regularly.
+validation code: |
+  if users[0].phone_number:
+    users[0].phone_number = fs_normalize_phone(users[0].phone_number)
 ---
 id: user_address
 sets:
@@ -346,7 +635,8 @@ question: |
   Address
 subquestion: |
   Use your current mailing address.
-  If you receive mail elsewhere, enter that address instead.
+  If you receive mail somewhere else, enter the address where you want to get
+  court mail.
 fields:
   - Street address: users[0].address.address
     address autocomplete: True
@@ -361,8 +651,9 @@ sets:
 question: |
   Employment
 subquestion: |
-  If you are unemployed or self-employed, you can leave these blank or enter
-  your business name and role.
+  If you are unemployed, you can leave these blank.
+
+  If you are self-employed, you can enter your business name and your role.
 fields:
   - Employer name: user_employer_name
     required: False
@@ -374,9 +665,11 @@ question: |
   Employer address
 subquestion: |
   Enter your employer's address and phone number if you have them.
-  These fields are optional. Leave blank if unknown.
+
+  These fields are optional. Leave anything blank if you do not know it.
 fields:
   - Street address: user_employer_address_street
+    address autocomplete: True
     required: False
   - City/Town: user_employer_address_city
     required: False
@@ -387,6 +680,12 @@ fields:
     required: False
   - Employer phone number: user_employer_phone
     required: False
+    help: |
+      Enter a 10-digit number if you have it. We will format it as
+      XXX-XXX-XXXX.
+validation code: |
+  if user_employer_phone:
+    user_employer_phone = fs_normalize_phone(user_employer_phone)
 ---
 id: user_health_insurance
 sets:
@@ -395,7 +694,8 @@ question: |
   Health insurance
 subquestion: |
   Include any health coverage you currently have.
-  If you are covered through someone else, list the provider name.
+  If you are covered through someone else, list the provider name if you know
+  it.
 fields:
   - Do you have health insurance coverage?: user_has_health_insurance
     datatype: yesno
@@ -413,6 +713,8 @@ subquestion: |
 
   **Example:** If you are paid every 2 weeks and your pay is $900 per check,
   choose "Every 2 weeks" and enter 900.
+
+  ${ collapse_template(fs_amount_entry_help) }
 fields:
   - Pay frequency: financial_cadence_default
     input type: radio
@@ -429,13 +731,17 @@ question: |
 subquestion: |
   Choose all income sources you receive.
 
-  You will enter amounts and how often you receive them. If a category is
-  missing, choose "Other income."
+  You will enter the amount and how often you receive it on the next screen.
+  If a category is missing, choose "Other income."
+  If none apply, choose "None of the above."
+
+  We will pause after the income section so you can review or edit it before
+  you move on.
 fields:
   - no label: x.selected_types
     datatype: checkboxes
     code: |
-      fs_income_terms_ordered
+      fs_income_checkbox_terms_ordered
 ---
 generic object: ALIncomeList
 code: |
@@ -453,15 +759,15 @@ subquestion: |
   to a weekly amount for the court form.
 
   **Example:** If you receive $300 monthly, enter 300 and choose "Monthly."
+
+  ${ collapse_template(fs_amount_entry_help) }
 fields:
   - Type of income: x[i].source
     code: |
       fs_income_terms_ordered
     default: other
-  - Other income type: x[i].source
-    show if:
-      variable: x[i].source
-      is: other
+  - Description (if needed): x[i].description
+    required: False
   - Amount: x[i].value
     datatype: currency
   - Use my default cadence (${ financial_cadence_default }): x[i].use_default_cadence
@@ -476,7 +782,10 @@ fields:
       variable: x[i].use_default_cadence
       is: False
 validation code: |
-  x[i].display_name = fs_income_terms.get(x[i].source, x[i].source)
+  if x[i].source == "other":
+    x[i].display_name = fs_text_or_default(getattr(x[i], "description", ""), fs_income_terms.get(x[i].source, x[i].source))
+  else:
+    x[i].display_name = fs_income_terms.get(x[i].source, x[i].source)
   if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
     x[i].times_per_year = cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
 ---
@@ -509,7 +818,8 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Look over your entries. Use "Add another" to include more income sources.
+  Look over your entries. If something is missing, use "Add another" to include
+  more income sources.
 
   ${ x.add_action() }
 ---
@@ -522,11 +832,14 @@ subquestion: |
 
   You will add amounts and how often you pay them. If a category is missing,
   choose "Other."
+
+  We will pause after the expenses section so you can review or edit it before
+  you move on.
 fields:
   - no label: x.selected_types
     datatype: checkboxes
     code: |
-      fs_expense_terms_ordered
+      fs_expense_checkbox_terms_ordered
 ---
 generic object: ALExpenseList
 code: |
@@ -543,15 +856,15 @@ subquestion: |
   payment and how often you pay it. We will convert everything to weekly totals.
 
   **Example:** If your rent is $1,200 per month, enter 1200 and choose "Monthly."
+
+  ${ collapse_template(fs_amount_entry_help) }
 fields:
   - Type of expense: x[i].source
     code: |
       fs_expense_terms_ordered
     default: other
-  - Other expense type: x[i].source
-    show if:
-      variable: x[i].source
-      is: other
+  - Description (if needed): x[i].description
+    required: False
   - Amount: x[i].value
     datatype: currency
   - Use my default cadence (${ financial_cadence_default }): x[i].use_default_cadence
@@ -566,7 +879,10 @@ fields:
       variable: x[i].use_default_cadence
       is: False
 validation code: |
-  x[i].display_name = fs_expense_terms.get(x[i].source, x[i].source)
+  if x[i].source in ("other", "employment_other"):
+    x[i].display_name = fs_text_or_default(getattr(x[i], "description", ""), fs_expense_terms.get(x[i].source, x[i].source))
+  else:
+    x[i].display_name = fs_expense_terms.get(x[i].source, x[i].source)
   if hasattr(x[i], "use_default_cadence") and x[i].use_default_cadence:
     x[i].times_per_year = cadence_to_times_per_year(value("financial_cadence_default") if defined("financial_cadence_default") else "weekly")
 ---
@@ -599,7 +915,8 @@ question: |
 subquestion: |
   ${ x.table }
 
-  Look over your entries. Use "Add another" to include more expenses.
+  Look over your entries. If something is missing, use "Add another" to include
+  more expenses.
 
   ${ x.add_action() }
 ---
@@ -615,11 +932,13 @@ subquestion: |
   **Rental income examples:** rent from a house, apartment, or room.
 fields:
   - Do you have self-employment or business income?: has_self_employment_income
-    datatype: yesno
+    datatype: yesnoradio
+    required: True
     help: |
       Examples: gig work, freelance, or small business income.
   - Do you have rental income from property?: has_rental_income
-    datatype: yesno
+    datatype: yesnoradio
+    required: True
     help: |
       Examples: rent from a house, apartment, or room.
 ---
@@ -630,7 +949,9 @@ question: |
   Gross income (part 1)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
-  If a line does not apply, leave it blank.
+  Leave a line blank only if it truly does not apply.
+
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - Base pay from salary or wages: income_base_pay_amount
     datatype: currency
@@ -663,7 +984,9 @@ question: |
   Gross income (part 2)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
-  If a line does not apply, leave it blank.
+  Leave a line blank only if it truly does not apply.
+
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - Pensions and retirement funds: income_pensions_amount
     datatype: currency
@@ -696,7 +1019,9 @@ question: |
   Gross income (part 3)
 subquestion: |
   Enter amounts using your chosen cadence (${ financial_cadence_default }).
-  If a line does not apply, leave it blank.
+  Leave a line blank only if it truly does not apply.
+
+  ${ collapse_template(fs_estimate_help) }
 fields:
   - Other income description: income_other_description
     required: False
@@ -710,7 +1035,7 @@ question: |
   Income summary
 subquestion: |
   We will convert your amounts to weekly values for the financial statement.
-  You can go back to edit any income source if needed.
+  You can still go back and edit any income source before you download.
 
   Total gross weekly income (current): ${ currency(income_total_weekly) }
 ---
@@ -734,24 +1059,446 @@ code: |
     + income_self_employment_weekly
     + income_rental_weekly
   )
+
+  fs_has_any_income_entries = (
+    len(income_list) > 0
+    or has_self_employment_income
+    or has_rental_income
+  )
+  income_requires_confirmation = (
+    (not fs_has_any_income_entries)
+    or income_total_weekly == 0
+  )
 ---
-id: confirm_no_income_nonzero_default
-if: income_total_weekly != 0
+id: income_explanation
+continue button field: income_explanation
+question: |
+  Income explanation (optional)
+subquestion: |
+  If your income is estimated, averaged, seasonal, cash-based, or irregular,
+  you can write a short explanation to keep with your filing materials.
+
+  This note is for your records and filing packet guidance. It is not added to
+  the court PDF automatically.
+
+  Leave this blank if you do not want to save a note.
+fields:
+  - Explanation to keep with your filing materials: income_explanation_note
+    datatype: area
+    required: False
+validation code: |
+  if not defined("income_explanation_note") or not income_explanation_note:
+    income_explanation_note = ""
+  else:
+    income_explanation_note = income_explanation_note.strip()
+  income_explanation_needed = bool(income_explanation_note)
+---
 code: |
-  confirm_no_income = False
+  if not income_requires_confirmation:
+    confirm_no_income = False
 ---
-id: confirm_no_income
-if: income_total_weekly == 0
-continue button field: confirm_no_income
+id: confirm_no_income_screen
+continue button field: confirm_no_income_screen
 question: |
   Confirm no income
 subquestion: |
   You entered $0 for income.
 
-  Choose "Yes" to continue, or "No" to go back and add income.
+  Choose "Yes" only if you truly do not have income to list right now.
 fields:
-  - Yes, I do not have income to list: confirm_no_income
-    datatype: yesno
+  - Yes, I do not have income to list right now: confirm_no_income
+    datatype: yesnoradio
+    required: True
+---
+event: review_court_and_parties_fs
+question: |
+  Review court and parties
+subquestion: |
+  Update anything in this section before you move on.
+review:
+  - Edit: trial_court
+    button: |
+      **Court**
+      ${ financial_statement_court_division if defined("financial_statement_court_division") and financial_statement_court_division else "Not provided" }
+  - Edit: docket_number
+    button: |
+      **Docket number**
+      ${ docket_number if defined("docket_number") and docket_number else "Not provided" }
+  - Edit: users[0].name.first
+    button: |
+      **Your name**
+      ${ users[0] if defined("users[0].name.first") else "Not provided" }
+  - Edit: other_parties[0].name.first
+    button: |
+      **Other party**
+      ${ other_parties[0] if defined("other_parties[0].name.first") else "Not provided" }
+---
+id: fs_checkpoint_court_and_parties
+continue button field: fs_checkpoint_court_and_parties
+question: |
+  Court and parties complete
+subquestion: |
+  You finished the court and party information.
+
+  If you want, you can review or edit this section now before moving on.
+
+  ${ action_button_html(url_action('review_court_and_parties_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_personal_information_fs
+question: |
+  Review personal information
+subquestion: |
+  Update anything in this section before you move on.
+review:
+  - Edit: users[0].birthdate
+    button: |
+      **Birth date**
+      ${ users[0].birthdate if defined("users[0].birthdate") else "Not provided" }
+  - Edit: users[0].phone_number
+    button: |
+      **Phone**
+      ${ users[0].phone_number if defined("users[0].phone_number") and users[0].phone_number else "Not provided" }
+  - Edit: users[0].address.address
+    button: |
+      **Address**
+      ${ users[0].address.on_one_line() if defined("users[0].address.address") else "Not provided" }
+  - Edit: user_employer_name
+    button: |
+      **Employer**
+      ${ user_employer_name if defined("user_employer_name") and user_employer_name else "Not provided" }
+  - Edit: user_has_health_insurance
+    button: |
+      **Health insurance**
+      ${ fs_yes_no_text("user_has_health_insurance") }
+      % if defined("user_health_insurance_provider") and user_health_insurance_provider:
+      ${ user_health_insurance_provider }
+      % endif
+---
+id: fs_checkpoint_personal_information
+continue button field: fs_checkpoint_personal_information
+question: |
+  Personal information complete
+subquestion: |
+  You finished the personal information section.
+
+  If you want, you can review or edit this section now before moving on.
+
+  ${ action_button_html(url_action('review_personal_information_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_schedule_a_fs
+question: |
+  Review Schedule A
+subquestion: |
+  Update your self-employment or business income details here.
+review:
+  - Edit: schedule_a_gross_monthly_receipts
+    button: |
+      **Gross monthly receipts**
+      ${ currency(schedule_a_gross_monthly_receipts) if defined("schedule_a_gross_monthly_receipts") and schedule_a_gross_monthly_receipts not in (None, "") else "Not provided" }
+  - Edit: schedule_a_expenses.revisit
+    button: |
+      **Business expenses**
+      ${ len(schedule_a_expenses) if defined("schedule_a_expenses") else 0 } listed
+      Monthly total: ${ currency(schedule_a_total_monthly_expenses) if defined("schedule_a_total_monthly_expenses") else currency(0) }
+  - Edit: schedule_a_business_nature
+    button: |
+      **Nature of business**
+      ${ schedule_a_business_nature if defined("schedule_a_business_nature") and schedule_a_business_nature else "Not provided" }
+  - Edit: schedule_a_is_seasonal
+    button: |
+      **Seasonal business**
+      ${ fs_yes_no_text("schedule_a_is_seasonal") }
+  - Edit: schedule_a_accounting_basis
+    button: |
+      **Accounting method**
+      ${ schedule_a_accounting_basis if defined("schedule_a_accounting_basis") and schedule_a_accounting_basis else "Not provided" }
+  - Edit: schedule_a_gross_receipts_ytd
+    button: |
+      **Year-to-date receipts**
+      ${ currency(schedule_a_gross_receipts_ytd) if defined("schedule_a_gross_receipts_ytd") and schedule_a_gross_receipts_ytd not in (None, "") else "Not provided" }
+---
+event: review_schedule_b_fs
+question: |
+  Review Schedule B
+subquestion: |
+  Update your rental income details here.
+review:
+  - Edit: schedule_b_annual_rent_received
+    button: |
+      **Annual rent received**
+      ${ currency(schedule_b_annual_rent_received) if defined("schedule_b_annual_rent_received") and schedule_b_annual_rent_received not in (None, "") else "Not provided" }
+  - Edit: schedule_b_expenses.revisit
+    button: |
+      **Rental expenses**
+      ${ len(schedule_b_expenses) if defined("schedule_b_expenses") else 0 } listed
+      Annual total: ${ currency(schedule_b_total_annual_expenses) if defined("schedule_b_total_annual_expenses") else currency(0) }
+---
+event: review_income_fs
+question: |
+  Review income
+subquestion: |
+  Use the items below to update your income section.
+
+  % if defined("has_self_employment_income") and has_self_employment_income:
+  ${ action_button_html(url_action('review_schedule_a_fs'), label='Review Schedule A', color='secondary', size='sm') }
+  % endif
+  % if defined("has_rental_income") and has_rental_income:
+  ${ action_button_html(url_action('review_schedule_b_fs'), label='Review Schedule B', color='secondary', size='sm') }
+  % endif
+review:
+  - Edit: financial_cadence_default
+    button: |
+      **Default pay frequency**
+      ${ financial_cadence_default if defined("financial_cadence_default") else "Not provided" }
+  - Edit: income_list.revisit
+    button: |
+      **Income entries**
+      ${ len(income_list) if defined("income_list") else 0 } listed
+      Weekly total: ${ currency(income_total_weekly) if defined("income_total_weekly") else currency(0) }
+  - Edit: has_self_employment_income
+    button: |
+      **Self-employment or business income**
+      ${ fs_yes_no_text("has_self_employment_income") }
+  - Edit: has_rental_income
+    button: |
+      **Rental income**
+      ${ fs_yes_no_text("has_rental_income") }
+  - Edit: income_explanation_note
+    button: |
+      **Income explanation note**
+      ${ income_explanation_note if defined("income_explanation_note") and income_explanation_note else "Not provided" }
+---
+id: fs_checkpoint_income
+continue button field: fs_checkpoint_income
+question: |
+  Income complete
+subquestion: |
+  You finished the income section.
+
+  This is a good place to double-check your income sources, Schedule A or B
+  answers, and any note about irregular income before we move into deductions
+  and expenses.
+
+  ${ action_button_html(url_action('review_income_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_deductions_short_fs
+question: |
+  Review deductions
+subquestion: |
+  Update anything in the short-form deductions section before you move on.
+review:
+  - Edit: short_deduction_federal
+    button: |
+      **Itemized deductions**
+      Total weekly deductions: ${ currency(short_deductions_total_weekly) if defined("short_deductions_total_weekly") else currency(0) }
+  - Edit: short_other_deduction_credit_union_loan
+    button: |
+      **Other deductions**
+      Weekly total: ${ currency(short_other_deductions_total_weekly) if defined("short_other_deductions_total_weekly") else currency(0) }
+  - Edit: prior_year_gross_amount
+    button: |
+      **Prior year income**
+      ${ currency(prior_year_gross_amount) if defined("prior_year_gross_amount") and prior_year_gross_amount not in (None, "") else "Not provided" }
+---
+event: review_deductions_long_fs
+question: |
+  Review deductions
+subquestion: |
+  Update anything in the long-form deductions section before you move on.
+review:
+  - Edit: long_deduction_federal
+    button: |
+      **Itemized deductions**
+      Total weekly deductions: ${ currency(long_deductions_total_weekly) if defined("long_deductions_total_weekly") else currency(0) }
+  - Edit: prior_year_gross_amount
+    button: |
+      **Prior year income**
+      ${ currency(prior_year_gross_amount) if defined("prior_year_gross_amount") and prior_year_gross_amount not in (None, "") else "Not provided" }
+---
+id: fs_checkpoint_deductions
+continue button field: fs_checkpoint_deductions
+question: |
+  Deductions complete
+subquestion: |
+  You finished the deductions section.
+
+  If you want, you can review these entries now before moving on to expenses.
+
+  ${ action_button_html(url_action('review_deductions_long_fs' if financial_form_type == 'long' else 'review_deductions_short_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_expenses_short_fs
+question: |
+  Review expenses
+subquestion: |
+  Update anything in the short-form expenses section before you move on.
+review:
+  - Edit: expense_list.revisit
+    button: |
+      **Expense entries**
+      ${ len(expense_list) if defined("expense_list") else 0 } listed
+      Weekly total: ${ currency(short_expenses_total_weekly) if defined("short_expenses_total_weekly") else currency(0) }
+---
+event: review_expenses_long_fs
+question: |
+  Review expenses
+subquestion: |
+  Update anything in the long-form expenses section before you move on.
+review:
+  - Edit: long_expense_list.revisit
+    button: |
+      **Expense entries**
+      ${ len(long_expense_list) if defined("long_expense_list") else 0 } listed
+      Weekly total: ${ currency(long_expenses_total_weekly) if defined("long_expenses_total_weekly") else currency(0) }
+---
+id: fs_checkpoint_expenses
+continue button field: fs_checkpoint_expenses
+question: |
+  Expenses complete
+subquestion: |
+  You finished the expenses section.
+
+  If you want, you can review or edit your expense entries now before moving on
+  to assets.
+
+  ${ action_button_html(url_action('review_expenses_long_fs' if financial_form_type == 'long' else 'review_expenses_short_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_assets_short_fs
+question: |
+  Review assets
+subquestion: |
+  Update anything in the short-form assets section before you move on.
+review:
+  - Edit: short_counsel_retainer
+    button: |
+      **Counsel fees**
+      ${ currency(short_counsel_retainer) if defined("short_counsel_retainer") and short_counsel_retainer not in (None, "") else currency(0) }
+  - Edit: short_real_estate_location
+    button: |
+      **Real estate and cash value assets**
+      ${ short_real_estate_location if defined("short_real_estate_location") and short_real_estate_location else "Not provided" }
+  - Edit: motor_vehicles.revisit
+    button: |
+      **Motor vehicles**
+      ${ len(motor_vehicles) if defined("motor_vehicles.there_are_any") and motor_vehicles.there_are_any else 0 } listed
+  - Edit: pensions.revisit
+    button: |
+      **Retirement plans**
+      ${ len(pensions) if defined("pensions.there_are_any") and pensions.there_are_any else 0 } listed
+  - Edit: other_assets.revisit
+    button: |
+      **Other assets**
+      ${ len(other_assets) if defined("other_assets.there_are_any") and other_assets.there_are_any else 0 } listed
+---
+event: review_assets_long_fs
+question: |
+  Review assets
+subquestion: |
+  Update anything in the long-form assets section before you move on.
+review:
+  - Edit: long_counsel_retainer
+    button: |
+      **Counsel fees**
+      ${ currency(long_counsel_retainer) if defined("long_counsel_retainer") and long_counsel_retainer not in (None, "") else currency(0) }
+  - Edit: long_primary_real_estate_address
+    button: |
+      **Primary residence**
+      ${ long_primary_real_estate_address if defined("long_primary_real_estate_address") and long_primary_real_estate_address else "Not provided" }
+  - Edit: long_secondary_real_estate_address
+    button: |
+      **Second property**
+      ${ long_secondary_real_estate_address if defined("long_secondary_real_estate_address") and long_secondary_real_estate_address else "Not provided" }
+  - Edit: motor_vehicles.revisit
+    button: |
+      **Motor vehicles**
+      ${ len(motor_vehicles) if defined("motor_vehicles.there_are_any") and motor_vehicles.there_are_any else 0 } listed
+  - Edit: pensions.revisit
+    button: |
+      **Retirement plans**
+      ${ len(pensions) if defined("pensions.there_are_any") and pensions.there_are_any else 0 } listed
+  - Edit: other_assets.revisit
+    button: |
+      **Other assets**
+      ${ len(other_assets) if defined("other_assets.there_are_any") and other_assets.there_are_any else 0 } listed
+---
+id: fs_checkpoint_assets
+continue button field: fs_checkpoint_assets
+question: |
+  Assets complete
+subquestion: |
+  You finished the assets section.
+
+  If you want, you can review or edit your property, account, and asset entries
+  now before moving on to liabilities and signatures.
+
+  ${ action_button_html(url_action('review_assets_long_fs' if financial_form_type == 'long' else 'review_assets_short_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
+---
+event: review_liabilities_short_fs
+question: |
+  Review liabilities and signatures
+subquestion: |
+  Update anything in this last section before you move on to the final review.
+review:
+  - Edit: liabilities.revisit
+    button: |
+      **Liabilities**
+      ${ len(liabilities) if defined("liabilities.there_are_any") and liabilities.there_are_any else 0 } listed
+  - Edit: user_signature
+    button: |
+      **Your signature**
+      ${ user_signature if defined("user_signature") and user_signature else "Not provided" }
+  - Edit: has_attorney
+    button: |
+      **Attorney information**
+      ${ fs_yes_no_text("has_attorney") }
+---
+event: review_liabilities_long_fs
+question: |
+  Review liabilities and signatures
+subquestion: |
+  Update anything in this last section before you move on to the final review.
+review:
+  - Edit: liabilities.revisit
+    button: |
+      **Liabilities**
+      ${ len(liabilities) if defined("liabilities.there_are_any") and liabilities.there_are_any else 0 } listed
+  - Edit: user_signature
+    button: |
+      **Your signature**
+      ${ user_signature if defined("user_signature") and user_signature else "Not provided" }
+  - Edit: will_notarize_now
+    button: |
+      **Notary section**
+      ${ fs_yes_no_text("will_notarize_now") }
+  - Edit: has_attorney
+    button: |
+      **Attorney information**
+      ${ fs_yes_no_text("has_attorney") }
+---
+id: fs_checkpoint_liabilities
+continue button field: fs_checkpoint_liabilities
+question: |
+  Liabilities and signatures complete
+subquestion: |
+  You finished the last major section before final review.
+
+  If you want, you can review debts, signatures, notary details, or attorney
+  information now before we move to the final review page.
+
+  ${ action_button_html(url_action('review_liabilities_long_fs' if financial_form_type == 'long' else 'review_liabilities_short_fs'), label='Review or edit this section', color='info') }
+
+  Press **Next** when you are ready to keep going.
 ---
 id: review_fs
 event: review_fs
@@ -759,11 +1506,21 @@ question: |
   Edit your answers
 subquestion: |
   Choose any item below to edit it.
+
+  **Jump to a major section**
+
+  ${ action_button_html(url_action('review_court_and_parties_fs'), label='Court and parties', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_personal_information_fs'), label='Personal information', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_income_fs'), label='Income', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_deductions_long_fs' if financial_form_type == 'long' else 'review_deductions_short_fs'), label='Deductions', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_expenses_long_fs' if financial_form_type == 'long' else 'review_expenses_short_fs'), label='Expenses', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_assets_long_fs' if financial_form_type == 'long' else 'review_assets_short_fs'), label='Assets', color='secondary', size='sm') }
+  ${ action_button_html(url_action('review_liabilities_long_fs' if financial_form_type == 'long' else 'review_liabilities_short_fs'), label='Liabilities and signatures', color='secondary', size='sm') }
 review:
   - Edit: trial_court
     button: |
       **Court**
-      ${ trial_court.division if defined("trial_court.division") else "" }
+      ${ financial_statement_court_division if defined("financial_statement_court_division") and financial_statement_court_division else "" }
   - Edit: docket_number
     button: |
       **Docket number**
@@ -796,6 +1553,10 @@ review:
     button: |
       **Income**
       Weekly total: ${ currency(income_total_weekly) }
+  - Edit: income_explanation_note
+    button: |
+      **Income explanation**
+      ${ income_explanation_note if defined("income_explanation_note") and income_explanation_note else "Not provided" }
   - Edit: has_self_employment_income
     button: |
       **Self-employment income**
@@ -811,32 +1572,63 @@ code: |
   except:
     fs_section_links = []
 ---
+event: review_all_sections_fs
+question: |
+  Review by section
+subquestion: |
+  <div class="alert alert-info" role="alert">
+    <strong>Tip:</strong> Use the section list on the left or the links below to jump
+    back and update a part of your financial statement before you download.
+  </div>
+
+  % if fs_section_links:
+  **Jump to a section**
+  % for section in fs_section_links:
+  * ${ section }
+  % endfor
+  % else:
+  The section links are not available right now. Use the left-side section list
+  or the button below to edit individual answers.
+  % endif
+
+  ${ action_button_html(url_action('review_fs'), label='Edit individual answers', color='info', size='sm') }
+
+  Press **Resume** to return to your download page when you are done.
+buttons:
+  Resume: continue
+---
 id: fs_review
 continue button field: fs_review
 question: |
-  Check your answers
+  Review by section
 subquestion: |
   Form type: ${ financial_form_type.upper() }
 
   Gross weekly income: ${ currency(income_total_weekly) }
 
-  Check each section to confirm totals and details.
+  <div class="alert alert-info" role="alert">
+    <strong>Tip:</strong> Use the section list on the left or the links below to jump
+    back and update part of your financial statement before you download.
+  </div>
 
-  **Things to check**
-  - Your income sources and amounts
-  - Whether Schedule A or B applies
-  - Expenses, assets, and liabilities
-
+  % if fs_section_links:
   **Jump to a section**
   % for section in fs_section_links:
   * ${ section }
   % endfor
-  % if defined("debug_log") and debug_log:
-  ---
-  ### Debug log (last 5)
-  % for entry in debug_log[-5:]:
-  - ${ entry }
-  % endfor
+  % endif
+
+  ${ action_button_html(url_action('review_fs'), label='Edit individual answers', color='info', size='sm') }
+
+  **Things to check before download**
+  - Your income sources and amounts
+  - Whether Schedule A or Schedule B applies
+  - Expenses, assets, and liabilities
+  - Contact information and signatures
+  % if defined("income_explanation_note") and income_explanation_note:
+
+  **Saved income explanation**
+  ${ income_explanation_note }
   % endif
 ---
 id: fs_download
@@ -846,11 +1638,28 @@ question: |
 subquestion: |
   Your financial statement is ready. You can download the forms below.
 
-  This tool does not file your forms for you. After you download, you may need
-  to file with the court and give copies to the other party, depending on your
-  case and court instructions.
+  <div class="alert alert-info" role="alert">
+    <strong>Reminder:</strong> This interview prepares the forms, but it does not file
+    them for you.
+  </div>
 
-  ${ action_button_html(url_action('review_fs'), label='Edit answers', color='info') }
+  **Next steps**
+  1. Download and review the PDFs.
+  2. Sign anywhere the court requires your signature.
+  3. File the forms with the court if you are ready to submit them.
+  4. Give copies to the other party if your court requires that step.
+
+  If you are e-filing, gather any supporting documents the court expects before
+  you submit your packet.
+
+  % if defined("income_explanation_note") and income_explanation_note:
+  **Income explanation note**
+  Keep this note with your filing materials. It is not added to the court PDF:
+
+  ${ income_explanation_note }
+  % endif
+
+  ${ action_button_html(url_action('review_all_sections_fs'), label='Edit answers', color='info') }
 
   ${ al_user_bundle.download_list_html() }
 
@@ -863,15 +1672,20 @@ template: fs_attachment_checklist
 content: |
   **Attachment checklist**
   - Recent pay stubs or benefit statements
+  - Copies of W-2 and 1099 forms for the prior year if the court asks for them
   - Proof of child care or medical costs (if applicable)
-  - Business records for Schedule A
-  - Rental records for Schedule B
+  - Business income and expense records for Schedule A
+  - Rental income and expense records for Schedule B
+  - Any short explanation you want to keep with the packet for estimated or irregular income
+  - Review local court or e-filing instructions for how to upload or submit attachments
 ---
 id: motor_vehicles
 question: |
   Motor vehicles
 subquestion: |
   Include cars, trucks, motorcycles, and other motor vehicles you own.
+
+  Check this box only if you have one or more motor vehicles to list.
 fields:
   - Do you have motor vehicles to list?: motor_vehicles.there_are_any
     datatype: yesno
@@ -883,6 +1697,8 @@ question: |
 subquestion: |
   Enter the best information you have. Estimates are fine if exact values
   are not available.
+
+  You can leave any detail blank that you do not know.
 fields:
   - Type: motor_vehicles[i].vehicle_type
     required: False
@@ -917,11 +1733,50 @@ code: |
   motor_vehicles[i].equity
   motor_vehicles[i].complete = True
 ---
+code: |
+  if defined("motor_vehicles.there_are_any"):
+    if motor_vehicles.there_are_any:
+      for vehicle in motor_vehicles:
+        vehicle.complete
+    motor_vehicles.revisit = True
+---
+table: motor_vehicles.table
+rows: motor_vehicles
+columns:
+  - Vehicle: |
+      fs_vehicle_label(row_item)
+  - Equity: |
+      fs_currency_zero(fs_item_value(row_item, "equity"))
+edit:
+  - vehicle_type
+  - make
+  - model
+  - purchase_price
+  - purchase_year
+  - fair_market_value
+  - outstanding_loan
+  - equity
+---
+id: motor_vehicles_revisit
+continue button field: motor_vehicles.revisit
+question: |
+  Edit motor vehicles
+subquestion: |
+  % if defined("motor_vehicles.there_are_any") and motor_vehicles.there_are_any and len(motor_vehicles):
+  ${ motor_vehicles.table }
+  % else:
+  You have not added any motor vehicles yet.
+  % endif
+
+  Use "Add another" if you need to add a motor vehicle now.
+
+  ${ motor_vehicles.add_action() }
+---
 id: motor_vehicles_more
 question: |
   Do you have another motor vehicle to add?
 subquestion: |
-  If you have listed all vehicles, choose "No."
+  Check this box only if you have another motor vehicle to add.
 fields:
   - Do you have another motor vehicle to add?: motor_vehicles.there_is_another
     datatype: yesno
@@ -931,6 +1786,8 @@ question: |
   Pensions and retirement plans
 subquestion: |
   Include 401(k)s, IRAs, pensions, and other retirement accounts.
+
+  Check this box only if you have one or more retirement accounts to list.
 fields:
   - Do you have pensions or retirement plans to list?: pensions.there_are_any
     datatype: yesno
@@ -941,6 +1798,9 @@ question: |
   Pension or retirement plan
 subquestion: |
   Enter the most recent values you have access to.
+
+  If you do not know the account number or beneficiary, you can leave those
+  fields blank.
 fields:
   - Institution: pensions[i].institution
     required: False
@@ -963,11 +1823,50 @@ code: |
   pensions[i].defined_contribution_amount
   pensions[i].complete = True
 ---
+code: |
+  if defined("pensions.there_are_any"):
+    if pensions.there_are_any:
+      for plan in pensions:
+        plan.complete
+    pensions.revisit = True
+---
+table: pensions.table
+rows: pensions
+columns:
+  - Plan: |
+      fs_pension_label(row_item)
+  - Total value: |
+      currency(
+        fs_safe_float(fs_item_value(row_item, "defined_benefit_amount"))
+        + fs_safe_float(fs_item_value(row_item, "defined_contribution_amount"))
+      )
+edit:
+  - institution
+  - account_number
+  - beneficiary
+  - defined_benefit_amount
+  - defined_contribution_amount
+---
+id: pensions_revisit
+continue button field: pensions.revisit
+question: |
+  Edit pensions and retirement plans
+subquestion: |
+  % if defined("pensions.there_are_any") and pensions.there_are_any and len(pensions):
+  ${ pensions.table }
+  % else:
+  You have not added any retirement plans yet.
+  % endif
+
+  Use "Add another" if you need to add a retirement plan now.
+
+  ${ pensions.add_action() }
+---
 id: pensions_more
 question: |
   Do you have another pension or retirement plan to add?
 subquestion: |
-  If you have listed all plans, choose "No."
+  Check this box only if you have another retirement plan to add.
 fields:
   - Do you have another pension or retirement plan to add?: pensions.there_is_another
     datatype: yesno
@@ -977,6 +1876,11 @@ question: |
   Other assets
 subquestion: |
   List other assets you own that are not real estate or vehicles.
+
+  Examples include bank accounts, stocks, jewelry, cash value life insurance,
+  or other property of value.
+
+  Check this box only if you have one or more other assets to list.
 fields:
   - Do you have other assets to list?: other_assets.there_are_any
     datatype: yesno
@@ -987,6 +1891,8 @@ question: |
   Other asset details
 subquestion: |
   You can include notes to clarify ownership or the type of asset.
+
+  Leave any detail blank if you do not know it.
 fields:
   - Asset type: other_assets[i].asset_type
     code: |
@@ -1012,11 +1918,48 @@ code: |
   other_assets[i].current_balance
   other_assets[i].complete = True
 ---
+code: |
+  if defined("other_assets.there_are_any"):
+    if other_assets.there_are_any:
+      for asset in other_assets:
+        asset.complete
+    other_assets.revisit = True
+---
+table: other_assets.table
+rows: other_assets
+columns:
+  - Asset: |
+      fs_other_asset_label(row_item)
+  - Value: |
+      fs_currency_zero(fs_item_value(row_item, "current_balance"))
+edit:
+  - asset_type
+  - description
+  - institution
+  - account_number
+  - beneficiary
+  - current_balance
+---
+id: other_assets_revisit
+continue button field: other_assets.revisit
+question: |
+  Edit other assets
+subquestion: |
+  % if defined("other_assets.there_are_any") and other_assets.there_are_any and len(other_assets):
+  ${ other_assets.table }
+  % else:
+  You have not added any other assets yet.
+  % endif
+
+  Use "Add another" if you need to add an asset now.
+
+  ${ other_assets.add_action() }
+---
 id: other_assets_more
 question: |
   Do you have another asset to add?
 subquestion: |
-  If you have listed all assets, choose "No."
+  Check this box only if you have another asset to add.
 fields:
   - Do you have another asset to add?: other_assets.there_is_another
     datatype: yesno
@@ -1026,6 +1969,8 @@ question: |
   Liabilities
 subquestion: |
   Include credit cards, loans, tax debt, and other outstanding obligations.
+
+  Check this box only if you have one or more liabilities to list.
 fields:
   - Do you have liabilities to list?: liabilities.there_are_any
     datatype: yesno
@@ -1036,6 +1981,9 @@ question: |
   Liability details
 subquestion: |
   Enter the creditor and current balance if known.
+
+  Examples: credit card debt, personal loans, car loans, tax debt, or unpaid
+  medical bills.
 fields:
   - Creditor: liabilities[i].creditor
     required: False
@@ -1058,11 +2006,49 @@ code: |
   liabilities[i].weekly_payment
   liabilities[i].complete = True
 ---
+code: |
+  if defined("liabilities.there_are_any"):
+    if liabilities.there_are_any:
+      for liability in liabilities:
+        liability.complete
+    liabilities.revisit = True
+---
+table: liabilities.table
+rows: liabilities
+columns:
+  - Liability: |
+      fs_liability_label(row_item)
+  - Amount due: |
+      fs_currency_zero(fs_item_value(row_item, "amount_due"))
+  - Weekly payment: |
+      fs_currency_zero(fs_item_value(row_item, "weekly_payment"))
+edit:
+  - creditor
+  - debt_type
+  - date_incurred
+  - amount_due
+  - weekly_payment
+---
+id: liabilities_revisit
+continue button field: liabilities.revisit
+question: |
+  Edit liabilities
+subquestion: |
+  % if defined("liabilities.there_are_any") and liabilities.there_are_any and len(liabilities):
+  ${ liabilities.table }
+  % else:
+  You have not added any liabilities yet.
+  % endif
+
+  Use "Add another" if you need to add a liability now.
+
+  ${ liabilities.add_action() }
+---
 id: liabilities_more
 question: |
   Do you have another liability to add?
 subquestion: |
-  If you have listed all liabilities, choose "No."
+  Check this box only if you have another liability to add.
 fields:
   - Do you have another liability to add?: liabilities.there_is_another
     datatype: yesno
@@ -1074,7 +2060,10 @@ continue button field: attorney_statement
 question: |
   Attorney statement
 subquestion: |
-  If you do not have an attorney, choose "No" and skip the rest of this page.
+  Check this box only if you have an attorney and want to include attorney
+  information on this page.
+
+  If you leave it unchecked, the rest of this page will stay hidden.
 fields:
   - Do you have an attorney?: has_attorney
     datatype: yesno
