@@ -21,20 +21,23 @@ id: short_form_sections
 sets:
   - short_form_sections
 code: |
-  nav.set_section("Deductions")
+  nav.set_section("deductions")
   set_progress(60)
   short_deductions
   short_adjusted_net_income
   short_other_deductions
   short_net_income
   short_prior_year
-  nav.set_section("Expenses")
+  fs_checkpoint_deductions
+  nav.set_section("expenses")
   set_progress(70)
   expense_list.gathered
+  short_expense_other_description
   short_expenses_total
-  if short_expenses_total_weekly == 0:
-    need("confirm_no_expenses_short")
-  nav.set_section("Assets")
+  if short_expenses_require_confirmation:
+    confirm_no_expenses_short_screen
+  fs_checkpoint_expenses
+  nav.set_section("assets")
   set_progress(80)
   short_counsel_fees
   short_assets_real_estate
@@ -42,12 +45,14 @@ code: |
   pensions.gather()
   other_assets.gather()
   short_assets_total
-  nav.set_section("Liabilities")
+  fs_checkpoint_assets
+  nav.set_section("liabilities")
   set_progress(90)
   liabilities.gather()
   short_liabilities_total
   short_certification
   attorney_statement
+  fs_checkpoint_liabilities
   short_form_sections = True
 ---
 id: short_deductions
@@ -265,25 +270,27 @@ question: |
 subquestion: |
   Total weekly expenses: ${ currency(short_expenses_total_weekly) }
 
-  You can go back to edit expenses if needed.
+  You can still go back and edit any expense before you finish.
 ---
-id: confirm_no_expenses_short_nonzero_default
-if: short_expenses_total_weekly != 0
 code: |
-  confirm_no_expenses_short = False
+  if not short_expenses_require_confirmation:
+    confirm_no_expenses_short = False
 ---
-id: confirm_no_expenses_short
-if: short_expenses_total_weekly == 0
-continue button field: confirm_no_expenses_short
+id: confirm_no_expenses_short_screen
+continue button field: confirm_no_expenses_short_screen
 question: |
   Confirm no expenses
 subquestion: |
   You entered $0 for expenses.
 
-  Choose "Yes" to continue, or "No" to go back and edit expenses.
+  Choose "Yes" only if you truly do not have household expenses to list.
 fields:
-  - Yes, I do not have expenses to list: confirm_no_expenses_short
-    datatype: yesno
+  - Yes, I do not have household expenses to list right now: confirm_no_expenses_short
+    datatype: yesnoradio
+    required: True
+---
+code: |
+  short_expenses_require_confirmation = short_expenses_total_weekly == 0
 ---
 id: short_counsel_fees
 sets:
@@ -292,7 +299,9 @@ continue button field: short_counsel_fees
 question: |
   Counsel fees
 subquestion: |
-  Only fill this section if you have an attorney.
+  Fill out this section only if you have an attorney.
+
+  If you do not have an attorney, you can leave every field on this page blank.
 fields:
   - Retainer amount(s) paid to your attorney(s): short_counsel_retainer
     datatype: currency
@@ -315,6 +324,9 @@ question: |
   Assets - real estate
 subquestion: |
   If you do not own real estate, you can leave these blank.
+
+  Include the best numbers you have for value, mortgage balance, and equity.
+  Estimates are fine.
 fields:
   - Real estate location: short_real_estate_location
     required: False
@@ -377,13 +389,13 @@ continue button field: short_assets_total
 question: |
   Assets summary
 subquestion: |
-  Here is what you listed:
+  Here is a quick summary of the assets you listed:
 
   - **Motor vehicles:** ${ len(motor_vehicles) if defined('motor_vehicles') and motor_vehicles.there_are_any else 0 }
   - **Retirement plans:** ${ len(pensions) if defined('pensions') and pensions.there_are_any else 0 }
   - **Other assets:** ${ len(other_assets) if defined('other_assets') and other_assets.there_are_any else 0 }
 
-  Use **Back** if you want to make changes.
+  Use **Back** if you want to make changes before the form is generated.
 ---
 id: short_liabilities_total
 continue button field: short_liabilities_total
@@ -392,7 +404,7 @@ question: |
 subquestion: |
   **Liabilities listed:** ${ len(liabilities) if defined('liabilities') and liabilities.there_are_any else 0 }
 
-  Use **Back** if you want to make changes.
+  Use **Back** if you want to add or edit debts before you finish.
 ---
 code: |
   _short_liab_due = fs_sum_list_attr(liabilities, "amount_due") if defined("liabilities") else 0.0
@@ -409,6 +421,8 @@ question: |
 subquestion: |
   Sign to certify that the information you provided is true to the best of
   your knowledge.
+
+  Enter your signature and the date you are signing this statement.
 fields:
   - Signature: user_signature
     required: False
